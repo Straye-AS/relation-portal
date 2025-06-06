@@ -47,23 +47,38 @@ export function AuthForm({ type }: AuthFormProps) {
   const router = useRouter();
   const supabase = createClient();
 
-  // Select the appropriate schema based on form type
-  const formSchema = 
-    type === "sign-in" ? signInSchema :
-    type === "sign-up" ? signUpSchema :
-    resetSchema;
-
-  // Set up form with react-hook-form
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  // Create separate form instances for different types
+  const signInForm = useForm<z.infer<typeof signInSchema>>({
+    resolver: zodResolver(signInSchema),
     defaultValues: {
       email: "",
-      password: type !== "reset-password" ? "" : undefined,
-      fullName: type === "sign-up" ? "" : undefined,
+      password: "",
     },
   });
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  const signUpForm = useForm<z.infer<typeof signUpSchema>>({
+    resolver: zodResolver(signUpSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+      fullName: "",
+    },
+  });
+
+  const resetForm = useForm<z.infer<typeof resetSchema>>({
+    resolver: zodResolver(resetSchema),
+    defaultValues: {
+      email: "",
+    },
+  });
+
+  // Select the appropriate form based on type
+  const form = 
+    type === "sign-in" ? signInForm :
+    type === "sign-up" ? signUpForm :
+    resetForm;
+
+  async function onSubmit(values: any) {
     setIsLoading(true);
 
     try {
@@ -71,7 +86,7 @@ export function AuthForm({ type }: AuthFormProps) {
         // Handle sign in
         const { error } = await supabase.auth.signInWithPassword({
           email: values.email,
-          password: values.password as string,
+          password: values.password,
         });
 
         if (error) {
@@ -85,7 +100,7 @@ export function AuthForm({ type }: AuthFormProps) {
         // Handle sign up
         const { error } = await supabase.auth.signUp({
           email: values.email,
-          password: values.password as string,
+          password: values.password,
           options: {
             data: {
               full_name: values.fullName,
@@ -134,25 +149,24 @@ export function AuthForm({ type }: AuthFormProps) {
         </p>
       </div>
 
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email</FormLabel>
-                <FormControl>
-                  <Input placeholder="your@email.com" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          {type !== "reset-password" && (
+      {type === "sign-in" && (
+        <Form {...signInForm}>
+          <form onSubmit={signInForm.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
-              control={form.control}
+              control={signInForm.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input placeholder="your@email.com" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={signInForm.control}
               name="password"
               render={({ field }) => (
                 <FormItem>
@@ -164,11 +178,51 @@ export function AuthForm({ type }: AuthFormProps) {
                 </FormItem>
               )}
             />
-          )}
-          
-          {type === "sign-up" && (
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Signing in...
+                </>
+              ) : (
+                "Sign In"
+              )}
+            </Button>
+          </form>
+        </Form>
+      )}
+
+      {type === "sign-up" && (
+        <Form {...signUpForm}>
+          <form onSubmit={signUpForm.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
-              control={form.control}
+              control={signUpForm.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input placeholder="your@email.com" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={signUpForm.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Password</FormLabel>
+                  <FormControl>
+                    <Input type="password" placeholder="••••••••" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={signUpForm.control}
               name="fullName"
               render={({ field }) => (
                 <FormItem>
@@ -180,29 +234,58 @@ export function AuthForm({ type }: AuthFormProps) {
                 </FormItem>
               )}
             />
-          )}
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating account...
+                </>
+              ) : (
+                "Create Account"
+              )}
+            </Button>
+          </form>
+        </Form>
+      )}
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {type === "sign-in" ? "Signing in..." : type === "sign-up" ? "Creating account..." : "Sending email..."}
-              </>
-            ) : (
-              type === "sign-in" ? "Sign In" : type === "sign-up" ? "Create Account" : "Send Reset Link"
-            )}
-          </Button>
-        </form>
-      </Form>
+      {type === "reset-password" && (
+        <Form {...resetForm}>
+          <form onSubmit={resetForm.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={resetForm.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input placeholder="your@email.com" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Sending email...
+                </>
+              ) : (
+                "Send Reset Link"
+              )}
+            </Button>
+          </form>
+        </Form>
+      )}
 
       <div className="text-center text-sm">
         {type === "sign-in" ? (
           <>
-            <Link href="/reset-password\" className="text-primary hover:underline">
+            <Link href="/reset-password" className="text-primary hover:underline">
               Forgot password?
             </Link>
             <div className="mt-2">
-              Don't have an account?{" "}
+              Don&apos;t have an account?{" "}
               <Link href="/sign-up" className="text-primary font-medium hover:underline">
                 Sign up
               </Link>

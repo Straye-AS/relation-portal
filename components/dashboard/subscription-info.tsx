@@ -80,7 +80,7 @@ export function SubscriptionInfo({ subscription, createPortalSession }: Subscrip
       </CardContent>
       <CardFooter className="flex justify-between">
         {subscription.plan !== SUBSCRIPTION_PLANS.FREE ? (
-          <Button variant="outline\" onClick={handleManageSubscription} disabled={isLoading}>
+          <Button variant="outline" onClick={handleManageSubscription} disabled={isLoading}>
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
