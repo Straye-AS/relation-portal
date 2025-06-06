@@ -66,6 +66,20 @@ export async function POST(request: NextRequest) {
 async function handleSubscription(session: Stripe.Checkout.Session, supabase: any) {
   const customerId = session.customer as string;
   
+  // Get user_id from stripe_customers table
+  const { data: customerData, error: customerError } = await supabase
+    .from('stripe_customers')
+    .select('user_id')
+    .eq('customer_id', customerId)
+    .single();
+
+  if (customerError || !customerData) {
+    console.error('Error finding user for customer:', customerError);
+    return;
+  }
+
+  const userId = customerData.user_id;
+  
   // Get the subscription details
   const subscriptions = await stripe.subscriptions.list({
     customer: customerId,
@@ -74,22 +88,25 @@ async function handleSubscription(session: Stripe.Checkout.Session, supabase: an
 
   if (subscriptions.data.length > 0) {
     const subscription = subscriptions.data[0];
-    
-    // Update subscription in database
-    const { error } = await supabase
+      
+    // Update stripe_subscriptions table
+    const { error: stripeSubError } = await supabase
       .from('stripe_subscriptions')
       .upsert({
         customer_id: customerId,
+        user_id: userId,
         subscription_id: subscription.id,
         price_id: subscription.items.data[0].price.id,
         status: subscription.status,
         current_period_start: subscription.current_period_start,
         current_period_end: subscription.current_period_end,
         cancel_at_period_end: subscription.cancel_at_period_end,
-      }, { onConflict: 'customer_id' });
+      }, {
+        onConflict: 'customer_id',
+      });
 
-    if (error) {
-      console.error('Error updating stripe_subscriptions:', error);
+    if (stripeSubError) {
+      console.error('Error updating stripe_subscriptions:', stripeSubError);
     }
 
     // Update user subscription
@@ -121,6 +138,20 @@ async function handleOneTimePayment(session: Stripe.Checkout.Session, supabase: 
 
 async function syncSubscription(customerId: string, supabase: any) {
   try {
+    // Get user_id from stripe_customers table
+    const { data: customerData, error: customerError } = await supabase
+      .from('stripe_customers')
+      .select('user_id')
+      .eq('customer_id', customerId)
+      .single();
+
+    if (customerError || !customerData) {
+      console.error('Error finding user for customer:', customerError);
+      return;
+    }
+
+    const userId = customerData.user_id;
+
     // Get latest subscription from Stripe
     const subscriptions = await stripe.subscriptions.list({
       customer: customerId,
@@ -136,6 +167,7 @@ async function syncSubscription(customerId: string, supabase: any) {
         .from('stripe_subscriptions')
         .upsert({
           customer_id: customerId,
+          user_id: userId,
           subscription_id: subscription.id,
           price_id: subscription.items.data[0].price.id,
           status: subscription.status,
