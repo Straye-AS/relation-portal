@@ -9,6 +9,8 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
 export async function POST(request: NextRequest) {
+  console.log('🔔 Webhook received');
+  
   try {
     const body = await request.text();
     const signature = request.headers.get('stripe-signature')!;
@@ -17,21 +19,27 @@ export async function POST(request: NextRequest) {
 
     try {
       event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+      console.log(`✅ Webhook verified: ${event.type}`);
     } catch (error: any) {
-      console.error(`Webhook signature verification failed: ${error.message}`);
+      console.error(`❌ Webhook signature verification failed: ${error.message}`);
       return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
     }
 
     const supabase = createClient();
 
     // Handle the event
+    console.log(`🔄 Processing event: ${event.type}`);
+    
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
+        console.log(`💳 Checkout session completed for customer: ${session.customer}`);
         
         if (session.mode === 'subscription') {
+          console.log('📋 Processing subscription checkout...');
           await handleSubscription(session, supabase);
         } else {
+          console.log('💰 Processing one-time payment...');
           await handleOneTimePayment(session, supabase);
         }
         break;
@@ -40,12 +48,14 @@ export async function POST(request: NextRequest) {
       case 'customer.subscription.updated':
       case 'customer.subscription.deleted': {
         const subscription = event.data.object as Stripe.Subscription;
+        console.log(`🔄 Subscription ${event.type} for customer: ${subscription.customer}`);
         await syncSubscription(subscription.customer as string, supabase);
         break;
       }
 
       case 'invoice.payment_succeeded': {
         const invoice = event.data.object as Stripe.Invoice;
+        console.log(`💰 Invoice payment succeeded for customer: ${invoice.customer}`);
         if (invoice.subscription) {
           await syncSubscription(invoice.customer as string, supabase);
         }
@@ -53,18 +63,20 @@ export async function POST(request: NextRequest) {
       }
 
       default:
-        console.log(`Unhandled event type: ${event.type}`);
+        console.log(`⚠️ Unhandled event type: ${event.type}`);
     }
 
+    console.log('✅ Webhook processed successfully');
     return NextResponse.json({ received: true });
   } catch (error: any) {
-    console.error('Webhook error:', error);
+    console.error('❌ Webhook error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
 async function handleSubscription(session: Stripe.Checkout.Session, supabase: any) {
   const customerId = session.customer as string;
+  console.log(`🔍 Looking up user for customer: ${customerId}`);
   
   // Get user_id from stripe_customers table
   const { data: customerData, error: customerError } = await supabase
@@ -74,13 +86,15 @@ async function handleSubscription(session: Stripe.Checkout.Session, supabase: an
     .single();
 
   if (customerError || !customerData) {
-    console.error('Error finding user for customer:', customerError);
+    console.error('❌ Error finding user for customer:', customerError);
     return;
   }
 
   const userId = customerData.user_id;
+  console.log(`✅ Found user: ${userId} for customer: ${customerId}`);
   
   // Get the subscription details
+  console.log(`🔍 Fetching subscription details for customer: ${customerId}`);
   const subscriptions = await stripe.subscriptions.list({
     customer: customerId,
     limit: 1,
@@ -88,8 +102,10 @@ async function handleSubscription(session: Stripe.Checkout.Session, supabase: an
 
   if (subscriptions.data.length > 0) {
     const subscription = subscriptions.data[0];
+    console.log(`✅ Found subscription: ${subscription.id}, status: ${subscription.status}`);
       
     // Update stripe_subscriptions table
+    console.log(`💾 Updating stripe_subscriptions table...`);
     const { error: stripeSubError } = await supabase
       .from('stripe_subscriptions')
       .upsert({
@@ -106,11 +122,16 @@ async function handleSubscription(session: Stripe.Checkout.Session, supabase: an
       });
 
     if (stripeSubError) {
-      console.error('Error updating stripe_subscriptions:', stripeSubError);
+      console.error('❌ Error updating stripe_subscriptions:', stripeSubError);
+    } else {
+      console.log('✅ stripe_subscriptions table updated successfully');
     }
 
     // Update user subscription
+    console.log(`💾 Updating main subscriptions table...`);
     await updateUserSubscription(customerId, subscription, supabase);
+  } else {
+    console.log('⚠️ No subscription found for customer');
   }
 }
 
@@ -190,44 +211,51 @@ async function syncSubscription(customerId: string, supabase: any) {
 
 async function updateUserSubscription(customerId: string, subscription: Stripe.Subscription, supabase: any) {
   // Get user_id from stripe_customers
-  const { data: customer } = await supabase
+  const { data: customerData, error: customerError } = await supabase
     .from('stripe_customers')
     .select('user_id')
     .eq('customer_id', customerId)
     .single();
 
-  if (customer) {
-    // Determine plan based on price
-    let plan = 'free';
-    const priceId = subscription.items.data[0].price.id;
-    
-    // Map price IDs to plans - CORRECTED MAPPING
-    const priceToPlana = {
-      'price_1RPPbbJoSiKWb2MdXbffcx7E': 'basic',  // Basic - $9.90
-      'price_1RQbkYJoSiKWb2MdEF3JsP1z': 'plus',   // Plus - $29
-      'price_1RQblqJoSiKWb2MdyUKmYj9O': 'elite',  // Elite - $49
-    };
+  if (customerError || !customerData) {
+    console.error('Error finding user for customer:', customerError);
+    return;
+  }
 
-    plan = priceToPlana[priceId as keyof typeof priceToPlana] || 'free';
+  const userId = customerData.user_id;
 
-    // Update user subscription
-    const { error } = await supabase
-      .from('subscriptions')
-      .upsert({
-        user_id: customer.user_id,
-        stripe_customer_id: customerId,
-        stripe_subscription_id: subscription.id,
-        plan: plan,
-        status: subscription.status === 'active' ? 'active' : 'inactive',
-        current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-        current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-        cancel_at_period_end: subscription.cancel_at_period_end,
-      }, { onConflict: 'user_id' });
+  // Determine plan based on price
+  let plan = 'free';
+  const priceId = subscription.items.data[0].price.id;
+  
+  // Map price IDs to plans - CORRECTED MAPPING
+  const priceToPlana = {
+    'price_1RPPbbJoSiKWb2MdXbffcx7E': 'basic',  // Basic - $9.90
+    'price_1RQbkYJoSiKWb2MdEF3JsP1z': 'plus',   // Plus - $29
+    'price_1RQblqJoSiKWb2MdyUKmYj9O': 'elite',  // Elite - $49
+  };
 
-    if (error) {
-      console.error('Error updating user subscription:', error);
-    } else {
-      console.log(`✅ Updated subscription for user ${customer.user_id} to ${plan} (status: ${subscription.status})`);
-    }
+  plan = priceToPlana[priceId as keyof typeof priceToPlana] || 'free';
+
+  console.log(`🔄 Updating subscription for user ${userId}, plan: ${plan}, status: ${subscription.status}`);
+
+  // Update user subscription
+  const { error } = await supabase
+    .from('subscriptions')
+    .upsert({
+      user_id: userId,
+      stripe_customer_id: customerId,
+      stripe_subscription_id: subscription.id,
+      plan: plan,
+      status: subscription.status === 'active' ? 'active' : 'inactive',
+      current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+      current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+      cancel_at_period_end: subscription.cancel_at_period_end,
+    }, { onConflict: 'user_id' });
+
+  if (error) {
+    console.error('❌ Error updating user subscription:', error);
+  } else {
+    console.log(`✅ Updated subscription for user ${userId} to ${plan} (status: ${subscription.status})`);
   }
 } 
