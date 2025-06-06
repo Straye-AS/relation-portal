@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@supabase/supabase-js';
 import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -7,6 +7,18 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 });
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+
+// Service role Supabase client for webhook
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY!,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  }
+);
 
 export async function POST(request: NextRequest) {
   console.log('🔔 Webhook received');
@@ -25,8 +37,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
     }
 
-    const supabase = createClient();
-
     // Handle the event
     console.log(`🔄 Processing event: ${event.type}`);
     
@@ -37,10 +47,10 @@ export async function POST(request: NextRequest) {
         
         if (session.mode === 'subscription') {
           console.log('📋 Processing subscription checkout...');
-          await handleSubscription(session, supabase);
+          await handleSubscription(session, supabaseAdmin);
         } else {
           console.log('💰 Processing one-time payment...');
-          await handleOneTimePayment(session, supabase);
+          await handleOneTimePayment(session, supabaseAdmin);
         }
         break;
       }
@@ -49,7 +59,7 @@ export async function POST(request: NextRequest) {
       case 'customer.subscription.deleted': {
         const subscription = event.data.object as Stripe.Subscription;
         console.log(`🔄 Subscription ${event.type} for customer: ${subscription.customer}`);
-        await syncSubscription(subscription.customer as string, supabase);
+        await syncSubscription(subscription.customer as string, supabaseAdmin);
         break;
       }
 
@@ -57,7 +67,7 @@ export async function POST(request: NextRequest) {
         const invoice = event.data.object as Stripe.Invoice;
         console.log(`💰 Invoice payment succeeded for customer: ${invoice.customer}`);
         if (invoice.subscription) {
-          await syncSubscription(invoice.customer as string, supabase);
+          await syncSubscription(invoice.customer as string, supabaseAdmin);
         }
         break;
       }
