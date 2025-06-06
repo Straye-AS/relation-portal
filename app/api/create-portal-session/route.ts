@@ -1,9 +1,9 @@
 import { cookies } from "next/headers";
-import { NextResponse } from "next/response";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { stripe } from "@/lib/stripe";
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const supabase = createClient();
     
@@ -13,7 +13,7 @@ export async function POST(request: Request) {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      return new NextResponse("Unauthorized", { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Get the user's subscription
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
       .single();
 
     if (subscriptionError || !subscription?.stripe_customer_id) {
-      return new NextResponse("Subscription not found", { status: 404 });
+      return NextResponse.json({ error: "Subscription not found" }, { status: 404 });
     }
 
     // Create a Stripe customer portal session
@@ -36,6 +36,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ url: session.url });
   } catch (error: any) {
     console.error("Error creating portal session:", error);
-    return new NextResponse(`Error: ${error.message}`, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
