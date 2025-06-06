@@ -125,7 +125,7 @@ export function Header({ user }: { user: any }) {
                 </nav>
                 <div className="mt-auto flex flex-col gap-4">
                   {user ? (
-                    <Button asChild variant="default\" className="w-full">
+                    <Button asChild variant="default" className="w-full">
                       <Link href="/dashboard\" onClick={() => setIsMobileMenuOpen(false)}>
                         Dashboard
                       </Link>
