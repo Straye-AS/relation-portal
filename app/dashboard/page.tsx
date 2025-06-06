@@ -34,18 +34,60 @@ export default async function DashboardPage() {
       console.error("Error fetching subscription:", error);
     }
 
-    // Determine plan limits based on current plan
+    // Determine plan limits based on current plan (Free, Basic, Plus, Elite)
     const currentPlan = subscriptionData?.plan || 'free';
-    const storageLimit = currentPlan === 'free' ? 1 : currentPlan === 'basic' ? 10 : currentPlan === 'pro' ? 50 : 100;
-    const projectsLimit = currentPlan === 'free' ? 2 : currentPlan === 'basic' ? 10 : currentPlan === 'pro' ? 50 : 100;
-    const apiLimit = currentPlan === 'free' ? 10000 : currentPlan === 'basic' ? 50000 : currentPlan === 'pro' ? 500000 : 1000000;
+    
+    // Plan limits based on stripe-config.ts
+    const getPlanLimits = (plan: string) => {
+      switch (plan.toLowerCase()) {
+        case 'basic':
+          return {
+            projects: 2,
+            storage: 1, // 1GB
+            apiCalls: 10000,
+            price: '$9.90/month'
+          };
+        case 'plus':
+          return {
+            projects: 10,
+            storage: 10, // 10GB
+            apiCalls: 100000,
+            price: '$29/month'
+          };
+        case 'elite':
+          return {
+            projects: -1, // Unlimited
+            storage: 100, // 100GB
+            apiCalls: 1000000,
+            price: '$49/month'
+          };
+        default: // free
+          return {
+            projects: 1,
+            storage: 0.5, // 500MB
+            apiCalls: 1000,
+            price: 'Free'
+          };
+      }
+    };
+
+    const planLimits = getPlanLimits(currentPlan);
 
     // Mock current usage (in a real app, this would come from your analytics)
-    const currentUsage = {
-      projects: currentPlan === 'free' ? 1 : 4,
-      storage: currentPlan === 'free' ? 0.3 : 2.5,
-      apiCalls: currentPlan === 'free' ? 2500 : 15000,
+    const getCurrentUsage = (plan: string) => {
+      switch (plan.toLowerCase()) {
+        case 'basic':
+          return { projects: 1, storage: 0.3, apiCalls: 2500 };
+        case 'plus':
+          return { projects: 4, storage: 2.5, apiCalls: 25000 };
+        case 'elite':
+          return { projects: 15, storage: 35, apiCalls: 250000 };
+        default: // free
+          return { projects: 1, storage: 0.2, apiCalls: 450 };
+      }
     };
+
+    const currentUsage = getCurrentUsage(currentPlan);
 
     return (
       <div className="container mx-auto py-6">
@@ -56,7 +98,15 @@ export default async function DashboardPage() {
               Welcome back, {user.email}!
             </p>
             <div className="mt-2">
-              <span className="inline-flex items-center rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
+              <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ring-1 ring-inset ${
+                currentPlan === 'free' 
+                  ? 'bg-gray-50 text-gray-700 ring-gray-600/20'
+                  : currentPlan === 'basic'
+                  ? 'bg-blue-50 text-blue-700 ring-blue-600/20'
+                  : currentPlan === 'plus'
+                  ? 'bg-purple-50 text-purple-700 ring-purple-600/20'
+                  : 'bg-yellow-50 text-yellow-700 ring-yellow-600/20'
+              }`}>
                 {currentPlan.charAt(0).toUpperCase() + currentPlan.slice(1)} Plan
               </span>
               {subscriptionData?.status && (
@@ -77,18 +127,20 @@ export default async function DashboardPage() {
               <p className="text-2xl font-bold">
                 {currentUsage.projects}
                 <span className="text-sm font-normal text-muted-foreground">
-                  /{projectsLimit === 100 && currentPlan !== 'free' ? '∞' : projectsLimit}
+                  /{planLimits.projects === -1 ? '∞' : planLimits.projects}
                 </span>
               </p>
               <p className="text-sm text-muted-foreground">Active projects</p>
-              <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
-                <div 
-                  className="bg-blue-600 h-2 rounded-full" 
-                  style={{ 
-                    width: `${Math.min((currentUsage.projects / projectsLimit) * 100, 100)}%` 
-                  }}
-                ></div>
-              </div>
+              {planLimits.projects !== -1 && (
+                <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="bg-blue-600 h-2 rounded-full" 
+                    style={{ 
+                      width: `${Math.min((currentUsage.projects / planLimits.projects) * 100, 100)}%` 
+                    }}
+                  ></div>
+                </div>
+              )}
             </div>
             
             <div className="rounded-lg border bg-card p-6">
@@ -96,7 +148,7 @@ export default async function DashboardPage() {
               <p className="text-2xl font-bold">
                 {currentUsage.storage} GB
                 <span className="text-sm font-normal text-muted-foreground">
-                  /{storageLimit} GB
+                  /{planLimits.storage} GB
                 </span>
               </p>
               <p className="text-sm text-muted-foreground">Used storage</p>
@@ -104,7 +156,7 @@ export default async function DashboardPage() {
                 <div 
                   className="bg-green-600 h-2 rounded-full" 
                   style={{ 
-                    width: `${Math.min((currentUsage.storage / storageLimit) * 100, 100)}%` 
+                    width: `${Math.min((currentUsage.storage / planLimits.storage) * 100, 100)}%` 
                   }}
                 ></div>
               </div>
@@ -115,7 +167,7 @@ export default async function DashboardPage() {
               <p className="text-2xl font-bold">
                 {currentUsage.apiCalls.toLocaleString()}
                 <span className="text-sm font-normal text-muted-foreground">
-                  /{apiLimit.toLocaleString()}
+                  /{planLimits.apiCalls.toLocaleString()}
                 </span>
               </p>
               <p className="text-sm text-muted-foreground">This month</p>
@@ -123,7 +175,7 @@ export default async function DashboardPage() {
                 <div 
                   className="bg-purple-600 h-2 rounded-full" 
                   style={{ 
-                    width: `${Math.min((currentUsage.apiCalls / apiLimit) * 100, 100)}%` 
+                    width: `${Math.min((currentUsage.apiCalls / planLimits.apiCalls) * 100, 100)}%` 
                   }}
                 ></div>
               </div>
@@ -135,7 +187,7 @@ export default async function DashboardPage() {
               <p className="text-sm text-muted-foreground">
                 {subscriptionData?.current_period_end 
                   ? `Renews ${new Date(subscriptionData.current_period_end).toLocaleDateString()}`
-                  : 'Current plan'
+                  : planLimits.price
                 }
               </p>
               {currentPlan === 'free' && (
@@ -151,6 +203,56 @@ export default async function DashboardPage() {
             </div>
           </div>
 
+          {/* Plan Features */}
+          <div className="rounded-lg border bg-card p-6">
+            <h3 className="font-semibold mb-4">Current Plan Features</h3>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <div className="flex items-center">
+                  <span className="text-green-500 mr-2">✓</span>
+                  <span className="text-sm">
+                    {planLimits.projects === -1 ? 'Unlimited projects' : `Up to ${planLimits.projects} projects`}
+                  </span>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-green-500 mr-2">✓</span>
+                  <span className="text-sm">{planLimits.storage} GB storage</span>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-green-500 mr-2">✓</span>
+                  <span className="text-sm">{planLimits.apiCalls.toLocaleString()} API calls/month</span>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center">
+                  <span className="text-green-500 mr-2">✓</span>
+                  <span className="text-sm">
+                    {currentPlan === 'free' 
+                      ? 'Community support' 
+                      : currentPlan === 'basic'
+                      ? 'Community support'
+                      : currentPlan === 'plus'
+                      ? 'Email support'
+                      : 'Priority support'
+                    }
+                  </span>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-green-500 mr-2">✓</span>
+                  <span className="text-sm">
+                    {currentPlan === 'elite' ? 'Advanced analytics' : 'Basic analytics'}
+                  </span>
+                </div>
+                {currentPlan === 'elite' && (
+                  <div className="flex items-center">
+                    <span className="text-green-500 mr-2">✓</span>
+                    <span className="text-sm">SSO authentication</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
           {/* Quick Actions */}
           <div className="rounded-lg border bg-card p-6">
             <h3 className="font-semibold mb-4">Quick Actions</h3>
@@ -160,8 +262,12 @@ export default async function DashboardPage() {
                 className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
               >
                 <div>
-                  <p className="font-medium">Upgrade Plan</p>
-                  <p className="text-sm text-muted-foreground">Get more features</p>
+                  <p className="font-medium">
+                    {currentPlan === 'free' ? 'Upgrade Plan' : 'Change Plan'}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {currentPlan === 'free' ? 'Get more features' : 'View all plans'}
+                  </p>
                 </div>
                 <span className="text-blue-600">→</span>
               </a>
