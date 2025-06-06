@@ -15,8 +15,6 @@ interface PricingSectionProps {
 }
 
 export function PricingSection({ currentPlan = "free" }: PricingSectionProps) {
-  const [isYearly, setIsYearly] = useState(true);
-
   return (
     <div className="container mx-auto px-4 py-16">
       <div className="text-center mb-16">
@@ -24,20 +22,6 @@ export function PricingSection({ currentPlan = "free" }: PricingSectionProps) {
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
           Choose the plan thats right for you and start building your SaaS product today.
         </p>
-        
-        <div className="flex items-center justify-center gap-4 mb-8">
-          <Label htmlFor="billing-toggle" className={!isYearly ? "text-foreground font-medium" : "text-muted-foreground"}>
-            Monthly
-          </Label>
-          <Switch
-            id="billing-toggle"
-            checked={isYearly}
-            onCheckedChange={setIsYearly}
-          />
-          <Label htmlFor="billing-toggle" className={isYearly ? "text-foreground font-medium" : "text-muted-foreground"}>
-            Yearly <span className="text-primary text-sm">Save 10%</span>
-          </Label>
-        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
@@ -53,9 +37,6 @@ export function PricingSection({ currentPlan = "free" }: PricingSectionProps) {
                   <span className="text-4xl font-bold">${product.price}</span>
                   <span className="text-muted-foreground ml-2">/month</span>
                 </div>
-                {isYearly && (
-                  <p className="text-sm text-primary font-medium mt-2">Save 10% with annual billing</p>
-                )}
               </div>
               
               <ul className="space-y-3">
