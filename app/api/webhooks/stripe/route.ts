@@ -79,19 +79,52 @@ async function handleSubscription(session: Stripe.Checkout.Session, supabase: an
   console.log(`🔍 Looking up user for customer: ${customerId}`);
   
   // Get user_id from stripe_customers table
-  const { data: customerData, error: customerError } = await supabase
+  let customerData = null;
+  let userId = null;
+  
+  const { data, error: customerError } = await supabase
     .from('stripe_customers')
     .select('user_id')
     .eq('customer_id', customerId)
     .single();
 
-  if (customerError || !customerData) {
-    console.error('❌ Error finding user for customer:', customerError);
-    return;
+  if (customerError || !data) {
+    console.log('⚠️ Customer not found in stripe_customers, trying to fetch from Stripe...');
+    
+    try {
+      // Get customer from Stripe API
+      const stripeCustomer = await stripe.customers.retrieve(customerId);
+      
+      if (stripeCustomer && !stripeCustomer.deleted && stripeCustomer.metadata?.userId) {
+        userId = stripeCustomer.metadata.userId;
+        console.log(`✅ Found user ID in Stripe metadata: ${userId}`);
+        
+        // Insert missing customer record
+        const { error: insertError } = await supabase
+          .from('stripe_customers')
+          .insert({
+            user_id: userId,
+            customer_id: customerId,
+          });
+        
+        if (insertError) {
+          console.error('❌ Error inserting customer:', insertError);
+        } else {
+          console.log('✅ Customer record created in stripe_customers table');
+        }
+      } else {
+        console.error('❌ Cannot find user ID in Stripe customer metadata');
+        return;
+      }
+    } catch (error) {
+      console.error('❌ Error fetching customer from Stripe:', error);
+      return;
+    }
+  } else {
+    customerData = data;
+    userId = customerData.user_id;
+    console.log(`✅ Found user: ${userId} for customer: ${customerId}`);
   }
-
-  const userId = customerData.user_id;
-  console.log(`✅ Found user: ${userId} for customer: ${customerId}`);
   
   // Get the subscription details
   console.log(`🔍 Fetching subscription details for customer: ${customerId}`);
