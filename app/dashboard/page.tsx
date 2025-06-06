@@ -55,24 +55,29 @@ export default async function DashboardPage() {
     "use server";
     
     if (!subscriptionData?.stripe_customer_id) {
-      return { error: "No subscription found" };
+      console.error("No subscription found");
+      return;
     }
 
-    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/create-portal-session`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Cookie": cookies().toString(),
-      },
-    });
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/create-portal-session`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Cookie": cookies().toString(),
+        },
+      });
 
-    const data = await response.json();
-    
-    if (data.url) {
-      redirect(data.url);
+      const data = await response.json();
+      
+      if (data.url) {
+        redirect(data.url);
+      } else {
+        console.error("Failed to create portal session");
+      }
+    } catch (error) {
+      console.error("Error creating portal session:", error);
     }
-
-    return { error: "Failed to create portal session" };
   }
 
   return (
