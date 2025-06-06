@@ -6,49 +6,77 @@ import { UserSettings } from "@/components/dashboard/user-settings";
 import { SubscriptionInfo } from "@/components/dashboard/subscription-info";
 import { UsageStats } from "@/components/dashboard/usage-stats";
 
+// Make page dynamic
+export const dynamic = 'force-dynamic';
+
 export default async function DashboardPage() {
   const supabase = createClient();
   
-  // Get the current user
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  let user: any = null;
+  let userData: any = null;
+  let preferencesData: any = null;
+  let subscriptionData: any = null;
 
-  if (!user) {
+  try {
+    // Get the current user
+    const {
+      data: { user: authUser },
+    } = await supabase.auth.getUser();
+
+    if (!authUser) {
+      redirect("/sign-in");
+    }
+
+    user = authUser;
+
+    // Get user profile with error handling
+    try {
+      const { data, error } = await supabase
+        .from("users")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+      
+      if (!error) {
+        userData = data;
+      }
+    } catch (error) {
+      console.error("Error fetching user:", error);
+    }
+
+    // Get user preferences with error handling
+    try {
+      const { data, error } = await supabase
+        .from("user_preferences")
+        .select("*")
+        .eq("user_id", user.id)
+        .single();
+      
+      if (!error) {
+        preferencesData = data;
+      }
+    } catch (error) {
+      console.error("Error fetching preferences:", error);
+    }
+
+    // Get user subscription with error handling
+    try {
+      const { data, error } = await supabase
+        .from("subscriptions")
+        .select("*")
+        .eq("user_id", user.id)
+        .single();
+      
+      if (!error) {
+        subscriptionData = data;
+      }
+    } catch (error) {
+      console.error("Error fetching subscription:", error);
+    }
+
+  } catch (error) {
+    console.error("Dashboard error:", error);
     redirect("/sign-in");
-  }
-
-  // Get user profile
-  const { data: userData, error: userError } = await supabase
-    .from("users")
-    .select("*")
-    .eq("id", user.id)
-    .single();
-
-  if (userError) {
-    console.error("Error fetching user:", userError);
-  }
-
-  // Get user preferences
-  const { data: preferencesData, error: preferencesError } = await supabase
-    .from("user_preferences")
-    .select("*")
-    .eq("user_id", user.id)
-    .single();
-
-  if (preferencesError) {
-    console.error("Error fetching preferences:", preferencesError);
-  }
-
-  // Get user subscription
-  const { data: subscriptionData, error: subscriptionError } = await supabase
-    .from("subscriptions")
-    .select("*")
-    .eq("user_id", user.id)
-    .single();
-
-  if (subscriptionError) {
-    console.error("Error fetching subscription:", subscriptionError);
   }
 
   async function createPortalSession() {
@@ -107,7 +135,7 @@ export default async function DashboardPage() {
           />
           
           <UserSettings
-            user={userData || { id: user.id, email: user.email || "", full_name: null }}
+            user={userData || { id: user?.id || "", email: user?.email || "", full_name: null }}
             preferences={preferencesData || { notifications_enabled: true, theme: "light" }}
           />
         </div>
