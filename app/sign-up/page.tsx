@@ -6,6 +6,8 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AuthForm } from "@/components/auth/auth-form";
+import { Rocket } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function SignUpPage() {
   const [loading, setLoading] = useState(true);
@@ -49,12 +51,13 @@ export default function SignUpPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4 py-12">
-      <Link
-        href="/"
-        className="absolute left-4 top-4 md:left-8 md:top-8 font-bold text-lg"
-      >
-        SaaS<span className="text-primary">Kit</span>
-      </Link>
+      <div className="absolute top-4 left-4 md:left-8 md:top-8 flex items-center gap-2">
+        <Rocket className="h-6 w-6 text-primary" />
+        <Link href="/" className="text-lg font-bold">
+          ACME Inc.
+        </Link>
+        {/* <ThemeToggle /> */}
+      </div>
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-center text-2xl">Create an Account</CardTitle>

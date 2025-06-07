@@ -125,7 +125,9 @@ export function AuthForm({ type }: AuthFormProps) {
           throw error;
         }
 
-        toast.success("Password reset email sent");
+        toast.success("Password reset email sent! Check your inbox for the reset link.");
+        // Clear the form after successful submission
+        resetForm.reset();
       }
     } catch (error: any) {
       toast.error(error.message || "An error occurred");
@@ -136,19 +138,6 @@ export function AuthForm({ type }: AuthFormProps) {
 
   return (
     <div className="w-full max-w-md mx-auto space-y-6">
-      <div className="text-center space-y-2">
-        <h1 className="text-2xl font-bold">
-          {type === "sign-in" ? "Sign In" : type === "sign-up" ? "Create an Account" : "Reset Password"}
-        </h1>
-        <p className="text-muted-foreground">
-          {type === "sign-in" 
-            ? "Enter your email and password to sign in to your account" 
-            : type === "sign-up" 
-            ? "Enter your details to create a new account"
-            : "Enter your email to reset your password"}
-        </p>
-      </div>
-
       {type === "sign-in" && (
         <Form {...signInForm}>
           <form onSubmit={signInForm.handleSubmit(onSubmit)} className="space-y-4">
@@ -178,7 +167,7 @@ export function AuthForm({ type }: AuthFormProps) {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button type="submit" className="w-full rounded-xl" disabled={isLoading}>
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -234,7 +223,7 @@ export function AuthForm({ type }: AuthFormProps) {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button type="submit" className="w-full rounded-xl" disabled={isLoading}>
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -264,7 +253,7 @@ export function AuthForm({ type }: AuthFormProps) {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button type="submit" className="w-full rounded-xl" disabled={isLoading}>
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

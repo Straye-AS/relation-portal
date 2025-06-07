@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 // Make page dynamic
 export const dynamic = 'force-dynamic';
@@ -50,15 +51,44 @@ export default function DashboardPage() {
 
   const handleSignOut = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error('Error signing out:', error);
-      } else {
-        router.push('/');
-        router.refresh();
+      console.log('Starting sign out process...');
+      
+      // Clear any existing session state
+      setUser(null);
+      setSubscriptionData(null);
+      
+      // For development: Clear all storage
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Development mode: Clearing storage...');
+        localStorage.clear();
+        sessionStorage.clear();
+        // Clear all cookies
+        document.cookie.split(";").forEach(cookie => {
+          const eqPos = cookie.indexOf("=");
+          const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
+          document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+        });
       }
+      
+      // Sign out from Supabase
+      const { error } = await supabase.auth.signOut({
+        scope: 'local' // Ensures local session is cleared
+      });
+      
+      if (error) {
+        console.error('Supabase signOut error:', error);
+        // Even if there's an error, try to redirect
+      } else {
+        console.log('Successfully signed out from Supabase');
+      }
+      
+      // Clear any cached data and force redirect
+      window.location.href = '/';
+      
     } catch (error) {
-      console.error('SignOut error:', error);
+      console.error('SignOut catch error:', error);
+      // Force redirect even if there's an error
+      window.location.href = '/';
     }
   };
 
@@ -175,6 +205,7 @@ export default function DashboardPage() {
             <LogOut className="h-4 w-4 mr-2" />
             Sign Out
           </Button>
+          <ThemeToggle />
         </div>
         
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -199,7 +230,7 @@ export default function DashboardPage() {
             )}
           </div>
           
-          <div className="rounded-lg border bg-card p-6">
+            <div className="rounded-2xl border bg-card p-6">
             <h3 className="font-semibold">Storage</h3>
             <p className="text-2xl font-bold">
               {currentUsage.storage} GB
@@ -218,7 +249,7 @@ export default function DashboardPage() {
             </div>
           </div>
           
-          <div className="rounded-lg border bg-card p-6">
+          <div className="rounded-2xl border bg-card p-6">
             <h3 className="font-semibold">API Calls</h3>
             <p className="text-2xl font-bold">
               {currentUsage.apiCalls.toLocaleString()}
@@ -237,7 +268,7 @@ export default function DashboardPage() {
             </div>
           </div>
           
-          <div className="rounded-lg border bg-card p-6">
+          <div className="rounded-2xl border bg-card p-6">
             <h3 className="font-semibold">Subscription</h3>
             <p className="text-2xl font-bold capitalize">{currentPlan}</p>
             <p className="text-sm text-muted-foreground">
@@ -260,7 +291,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Plan Features */}
-        <div className="rounded-lg border bg-card p-6">
+        <div className="rounded-2xl border bg-card p-6">
           <h3 className="font-semibold mb-4">Current Plan Features</h3>
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
@@ -310,12 +341,12 @@ export default function DashboardPage() {
         </div>
 
         {/* Quick Actions */}
-        <div className="rounded-lg border bg-card p-6">
+        <div className="rounded-2xl border bg-card p-6">
           <h3 className="font-semibold mb-4">Quick Actions</h3>
           <div className="grid gap-4 md:grid-cols-3">
             <a 
               href="/pricing"
-              className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+              className="flex items-center justify-between p-4 border rounded-2xl hover:bg-gray-50 dark:hover:bg-[#101010] transition-colors"
             >
               <div>
                 <p className="font-medium">
@@ -330,7 +361,7 @@ export default function DashboardPage() {
             
             <a 
               href="/dashboard/settings"
-              className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+              className="flex items-center justify-between p-4 border rounded-2xl hover:bg-gray-50 dark:hover:bg-[#101010] transition-colors"
             >
               <div>
                 <p className="font-medium">Account Settings</p>
@@ -341,7 +372,7 @@ export default function DashboardPage() {
             
             <a 
               href="/docs"
-              className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+              className="flex items-center justify-between p-4 border rounded-2xl hover:bg-gray-50 dark:hover:bg-[#101010] transition-colors"
             >
               <div>
                 <p className="font-medium">Documentation</p>
