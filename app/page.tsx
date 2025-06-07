@@ -9,6 +9,7 @@ import { Testimonials } from "@/components/landing/testimonials";
 import { CallToAction } from "@/components/landing/cta";
 import { Footer } from "@/components/layout/footer";
 import { Header } from "@/components/layout/header";
+import { Logos } from "@/components/landing/logos";
 
 export default function Home() {
   const [user, setUser] = useState<any>(null);
@@ -55,6 +56,7 @@ export default function Home() {
         <Hero />
         <Features />
         <Testimonials />
+        <Logos />
         <CallToAction />
       </main>
       <Footer />

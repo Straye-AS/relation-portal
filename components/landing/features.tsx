@@ -25,32 +25,32 @@ const features: Feature[] = [
   {
     title: "Authentication",
     description: "Secure user authentication with email and password login, password reset, and protected routes.",
-    icon: <Lock className="h-10 w-10 text-primary" />,
+    icon: <Lock className="h-6 w-6 text-primary" />,
   },
   {
     title: "Subscription Management",
     description: "Flexible subscription plans with Stripe integration for seamless billing and payment processing.",
-    icon: <CreditCard className="h-10 w-10 text-primary" />,
+    icon: <CreditCard className="h-6 w-6 text-primary" />,
   },
   {
     title: "User Dashboard",
     description: "Beautiful and intuitive dashboard for users to manage their account, preferences, and subscriptions.",
-    icon: <Users className="h-10 w-10 text-primary" />,
+    icon: <Users className="h-6 w-6 text-primary" />,
   },
   {
     title: "Analytics",
     description: "Insightful analytics to track user engagement, subscription metrics, and business performance.",
-    icon: <BarChart3 className="h-10 w-10 text-primary" />,
+    icon: <BarChart3 className="h-6 w-6 text-primary" />,
   },
   {
     title: "Customization",
     description: "Highly customizable components and settings to match your brand and business requirements.",
-    icon: <Settings className="h-10 w-10 text-primary" />,
+    icon: <Settings className="h-6 w-6 text-primary" />,
   },
   {
     title: "Performance",
     description: "Optimized for speed and efficiency with Next.js, ensuring a smooth user experience.",
-    icon: <Zap className="h-10 w-10 text-primary" />,
+    icon: <Zap className="h-6 w-6 text-primary" />,
   },
 ];
 
@@ -66,7 +66,7 @@ export function Features() {
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
           <h2 className={cn(
-            "text-3xl md:text-4xl font-bold mb-4 transition-all duration-700",
+            "text-3xl md:text-4xl mb-4 transition-all duration-700",
             mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
           )}>
             Everything you need to succeed
@@ -101,8 +101,8 @@ export function Features() {
                     <div className="mb-4">
                       {feature.icon}
                     </div>
-                    <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
-                    <p className="text-muted-foreground">{feature.description}</p>
+                    <h3 className="text-sm font-medium mb-2">{feature.title}</h3>
+                    <p className="text-sm font-light text-muted-foreground">{feature.description}</p>
                   </CardContent>
                 </Card>
               ))}

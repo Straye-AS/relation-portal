@@ -50,7 +50,7 @@ export function Testimonials() {
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
           <h2 className={cn(
-            "text-3xl md:text-4xl font-bold mb-4 transition-all duration-700",
+            "text-3xl md:text-4xl mb-4 transition-all duration-700",
             mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
           )}>
             Trusted by developers worldwide
@@ -72,7 +72,7 @@ export function Testimonials() {
             )}>
               <CardContent className="p-6 flex flex-col h-full">
                 <Quote className="h-8 w-8 text-primary/30 mb-4" />
-                <p className="text-lg mb-6 flex-grow">{testimonial.content}</p>
+                <p className="text-sm font-light mb-6 flex-grow">{testimonial.content}</p>
                 <div className="flex items-center">
                   <div className="relative h-12 w-12 rounded-full overflow-hidden mr-4">
                     <Image
@@ -83,8 +83,8 @@ export function Testimonials() {
                     />
                   </div>
                   <div>
-                    <h4 className="font-semibold">{testimonial.author}</h4>
-                    <p className="text-sm text-muted-foreground">
+                    <h4 className="text-sm font-medium">{testimonial.author}</h4>
+                    <p className="text-xs text-muted-foreground">
                       {testimonial.role}, {testimonial.company}
                     </p>
                   </div>

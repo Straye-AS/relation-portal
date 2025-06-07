@@ -59,7 +59,7 @@ export function Header({ user }: { user: any }) {
           : "bg-white/70 dark:bg-black/70 backdrop-blur-md border py-4 border-border border-[1.5px] mt-5"
       )}
     >
-      <div className="px-6 grid grid-cols-3 items-center">
+      <div className="px-6 grid grid-cols-2 md:grid-cols-3 items-center">
         {/* Sol taraf - Logo */}
         <div className="justify-self-start flex items-center gap-2">
           <Rocket className="h-6 w-6 text-primary" />
