@@ -178,7 +178,7 @@ export default function DashboardPage() {
         </div>
         
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-lg border bg-card p-6">
+          <div className="rounded-2xl border bg-card p-6">
             <h3 className="font-semibold">Projects</h3>
             <p className="text-2xl font-bold">
               {currentUsage.projects}
