@@ -18,7 +18,7 @@ export function CallToAction() {
               Get Started <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>
-          <Button asChild size="lg" variant="outline" className="border-primary-foreground/20 hover:bg-primary-foreground/10">
+          <Button asChild size="lg" variant="outline" className="border-primary-foreground/20 bg-primary text-white dark:text-black hover:text-white dark:hover:text-black hover:bg-primary-foreground/10">
             <Link href="/contact">Contact Sales</Link>
           </Button>
         </div>

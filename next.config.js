@@ -6,6 +6,7 @@ const nextConfig = {
   images: { unoptimized: true },
   experimental: {
     serverActions: true,
+    forceSwcTransforms: true,
   },
   webpack: (config, { isServer }) => {
     // Suppress the warning about the dynamic require in @supabase/realtime-js

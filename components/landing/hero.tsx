@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, CheckCircle2 } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function Hero() {
@@ -30,14 +31,14 @@ export function Hero() {
           </div>
           
           <h1 className={cn(
-            "text-4xl md:text-5xl lg:text-6xl font-bold mb-6 tracking-tight transition-all duration-700 delay-100",
+            "text-4xl md:text-5xl lg:text-6xl mb-6 tracking-tight transition-all duration-700 delay-100",
             mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
           )}>
             Build your SaaS product faster than ever
           </h1>
           
           <p className={cn(
-            "text-xl text-muted-foreground mb-8 max-w-2xl mx-auto transition-all duration-700 delay-200",
+            "text-xl font-light text-muted-foreground mb-8 max-w-2xl mx-auto transition-all duration-700 delay-200",
             mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
           )}>
             Everything you need to launch, grow, and scale your SaaS business. 
@@ -59,15 +60,48 @@ export function Hero() {
           </div>
           
           <div className={cn(
-            "flex flex-wrap justify-center gap-x-8 gap-y-4 transition-all duration-700 delay-400",
+            "flex flex-wrap justify-center items-center gap-x-8 gap-y-6 transition-all duration-700 delay-400",
             mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
           )}>
-            {["Authentication", "Subscriptions", "Dashboard", "Analytics"].map((feature) => (
-              <div key={feature} className="flex items-center text-sm">
-                <CheckCircle2 className="mr-2 h-4 w-4 text-primary" />
-                <span>{feature}</span>
-              </div>
-            ))}
+            <div className="flex items-center border border-border rounded-md p-2">
+              <Image
+                src="/next.png"
+                alt="Next.js"
+                width={80}
+                height={48}
+                className="h-8 w-auto opacity-70 hover:opacity-100 transition-opacity rounded-md"
+              />
+            </div>
+            
+            <div className="flex items-center border border-border rounded-md p-2">
+              <Image
+                src="/supabase.png"
+                alt="Supabase"
+                width={80}
+                height={48}
+                className="h-8 w-auto opacity-70 hover:opacity-100 transition-opacity rounded-md"
+              />
+            </div>
+            
+            <div className="flex items-center border border-border rounded-md p-2">
+              <Image
+                src="/stripe.png"
+                alt="Stripe"
+                width={80}
+                height={48}
+                className="h-8 w-auto opacity-70 hover:opacity-100 transition-opacity rounded-md"
+              />
+            </div>
+           
+            <div className="flex items-center border border-border rounded-md p-2">
+              <Image
+                src="/openai.jpg"
+                alt="OpenAI"
+                width={80}
+                height={48}
+                className="h-8 w-auto opacity-70 hover:opacity-100 transition-opacity rounded-md"
+              />
+            </div>
           </div>
         </div>
       </div>

@@ -1,8 +1,52 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AuthForm } from "@/components/auth/auth-form";
 
 export default function SignUpPage() {
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+  const supabase = createClient();
+
+  useEffect(() => {
+    async function checkUser() {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user) {
+        // Kullanıcı zaten giriş yapmış, dashboard'a yönlendir
+        router.push('/dashboard');
+        return;
+      }
+      
+      setLoading(false);
+    }
+
+    checkUser();
+
+    // Auth değişikliklerini dinle
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (session?.user) {
+          router.push('/dashboard');
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, [router, supabase]);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-muted/40">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4 py-12">
       <Link

@@ -62,7 +62,7 @@ export function Features() {
   }, []);
 
   return (
-    <section className="py-20 bg-muted/50">
+    <section className="py-20">
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
           <h2 className={cn(
@@ -93,7 +93,7 @@ export function Features() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {features.map((feature, index) => (
                 <Card key={index} className={cn(
-                  "overflow-hidden border bg-background transition-all duration-700 hover:shadow-md",
+                  "border-[1.5px] bg-card border-border transition-all duration-700",
                   mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4",
                   { "delay-100": index % 3 === 0, "delay-200": index % 3 === 1, "delay-300": index % 3 === 2 }
                 )}>
