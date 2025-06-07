@@ -1,26 +1,25 @@
 export const STRIPE_PRODUCTS = {
-  ELITE: {
-    id: 'prod_SLIMID4CHzjlrm',
-    name: 'Elite',
-    description: 'For growing businesses and teams',
-    priceId: 'price_1RQblqJoSiKWb2MdyUKmYj9O',
-    price: 49.00,
+  BASIC: {
+    id: 'prod_SK3j6XDyMHNtrP',
+    name: 'Basic',
+    description: 'Perfect for trying out the platform',
+    priceId: 'price_1RXOdFR4180vV2vzstsIlApi',
+    price: 19,
     mode: 'subscription' as const,
     features: [
-      'Everything in Plus',
-      'Unlimited projects',
-      'Priority support',
-      'Custom integrations',
-      'Advanced security',
-      'SSO authentication',
+      'Basic access',
+      '2 projects',
+      'Community support',
+      '1GB storage',
+      'Basic analytics',
     ],
   },
   PLUS: {
     id: 'prod_SLILb9CwBPHZfl',
     name: 'Plus',
     description: 'For individuals and small teams',
-    priceId: 'price_1RQbkYJoSiKWb2MdEF3JsP1z',
-    price: 29.00,
+    priceId: 'price_1RXOdZR4180vV2vz2cwzuGUL',
+    price: 49,
     mode: 'subscription' as const,
     features: [
       'Everything in Basic',
@@ -31,21 +30,24 @@ export const STRIPE_PRODUCTS = {
       'Team collaboration',
     ],
   },
-  BASIC: {
-    id: 'prod_SK3j6XDyMHNtrP',
-    name: 'Basic',
-    description: 'Perfect for trying out the platform',
-    priceId: 'price_1RPPbbJoSiKWb2MdXbffcx7E',
-    price: 9.90,
+  
+  ELITE: {
+    id: 'prod_SLIMID4CHzjlrm',
+    name: 'Elite',
+    description: 'For growing businesses and teams',
+    priceId: 'price_1RXOdmR4180vV2vzeW1272Qy',
+    price: 99,
     mode: 'subscription' as const,
     features: [
-      'Basic access',
-      '2 projects',
-      'Community support',
-      '1GB storage',
-      'Basic analytics',
+      'Everything in Plus',
+      'Unlimited projects',
+      'Priority support',
+      'Custom integrations',
+      'Advanced security',
+      'SSO authentication',
     ],
   },
+ 
 } as const;
 
 export type StripeProduct = typeof STRIPE_PRODUCTS[keyof typeof STRIPE_PRODUCTS];

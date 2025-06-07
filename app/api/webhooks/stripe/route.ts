@@ -273,9 +273,9 @@ async function updateUserSubscription(customerId: string, subscription: Stripe.S
   
   // Map price IDs to plans - CORRECTED MAPPING
   const priceToPlana = {
-    'price_1RPPbbJoSiKWb2MdXbffcx7E': 'basic',  // Basic - $9.90
-    'price_1RQbkYJoSiKWb2MdEF3JsP1z': 'plus',   // Plus - $29
-    'price_1RQblqJoSiKWb2MdyUKmYj9O': 'elite',  // Elite - $49
+    'price_1RXOdFR4180vV2vzstsIlApi': 'basic',  // Basic - $19
+    'price_1RXOdZR4180vV2vz2cwzuGUL': 'plus',   // Plus - $49
+    'price_1RXOdmR4180vV2vzeW1272Qy': 'elite',  // Elite - $99
   };
 
   plan = priceToPlana[priceId as keyof typeof priceToPlana] || 'free';

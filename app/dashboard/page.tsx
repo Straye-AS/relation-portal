@@ -88,7 +88,7 @@ export default function DashboardPage() {
           projects: 2,
           storage: 1, // 1GB
           apiCalls: 10000,
-          price: '$9.90/month'
+          price: '$99/month'
         };
       case 'plus':
         return {
