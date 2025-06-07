@@ -71,7 +71,7 @@ export function PricingSection({ currentPlan = "free" }: PricingSectionProps) {
             key={product.id} 
             className={`flex flex-col transition-all duration-300 ${
               product.name === "Plus" 
-                ? "border-2 border-purple-500 relative scale-105 z-10 shadow-xl" 
+                ? "border-2 border-[#8C50F7] relative scale-105 z-10 shadow-xl" 
                 : ""
             }`}
           >

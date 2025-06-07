@@ -34,7 +34,7 @@ export function Hero() {
             "text-4xl md:text-5xl lg:text-6xl mb-6 tracking-tight transition-all duration-700 delay-100",
             mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
           )}>
-            Build your SaaS product faster than ever
+            Build your SaaS product <span className="text-[#8C50F7]">faster </span>than ever
           </h1>
           
           <p className={cn(
