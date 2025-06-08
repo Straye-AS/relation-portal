@@ -19,6 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { OAuthButton } from "./oauth";
 
 // Schema for sign in
 const signInSchema = z.object({
@@ -138,9 +139,14 @@ export function AuthForm({ type }: AuthFormProps) {
 
   return (
     <div className="w-full max-w-md mx-auto space-y-6">
+      
       {type === "sign-in" && (
         <Form {...signInForm}>
           <form onSubmit={signInForm.handleSubmit(onSubmit)} className="space-y-4">
+          <div className="space-y-2">
+  <OAuthButton provider="google" />
+  <OAuthButton provider="github" />
+</div>
             <FormField
               control={signInForm.control}
               name="email"
@@ -182,8 +188,13 @@ export function AuthForm({ type }: AuthFormProps) {
       )}
 
       {type === "sign-up" && (
+        
         <Form {...signUpForm}>
           <form onSubmit={signUpForm.handleSubmit(onSubmit)} className="space-y-4">
+          <div className="space-y-2">
+  <OAuthButton provider="google" />
+  <OAuthButton provider="github" />
+</div>
             <FormField
               control={signUpForm.control}
               name="email"
