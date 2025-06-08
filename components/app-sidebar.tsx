@@ -142,8 +142,8 @@ export function AppSidebar({ user, subscriptionData, onSignOut }: AppSidebarProp
                   <div className="w-8 h-8 rounded-full overflow-hidden relative">
   <Image
     src={
-      user.raw_user_meta_data?.avatar_url ||
-      user.raw_user_meta_data?.picture ||
+      user.raw_user_meta_data.avatar_url ||
+      user.raw_user_meta_data.picture ||
       "/defaultavatar.png" 
     }
     alt="User Avatar"
