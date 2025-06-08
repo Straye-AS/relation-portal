@@ -12,7 +12,9 @@ export function OAuthButton({ provider }: { provider: Provider }) {
   const handleOAuthLogin = async () => {
     await supabase.auth.signInWithOAuth({
       provider,
-     
+      options: {
+        redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`,
+      },
     });
   };
 
