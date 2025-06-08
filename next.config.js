@@ -3,7 +3,11 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  images: { unoptimized: true },
+  images: { unoptimized: true,
+   
+      domains: ["lh3.googleusercontent.com", "avatars.githubusercontent.com"],
+    
+   },
   experimental: {
     serverActions: true,
     forceSwcTransforms: true,

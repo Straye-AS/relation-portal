@@ -35,8 +35,9 @@ import {
   FileText,
   HelpCircle,
   UserCircle,
-  Crown
+  Crown,
 } from "lucide-react";
+import Image from "next/image";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 interface AppSidebarProps {
@@ -138,11 +139,20 @@ export function AppSidebar({ user, subscriptionData, onSignOut }: AppSidebarProp
               <MenubarTrigger className="flex items-center gap-3 w-full p-3 rounded-lg hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
                 <div className="flex items-center gap-3 flex-1">
                   {/* User Avatar */}
-                  <div className="w-8 h-8 bg-sidebar-accent rounded-full flex items-center justify-center">
-                    <span className="text-xs font-medium text-sidebar-accent-foreground">
-                      {getInitials(userName)}
-                    </span>
-                  </div>
+                  <div className="w-8 h-8 rounded-full overflow-hidden relative">
+  <Image
+    src={
+      user.raw_user_metadata?.avatar_url ||
+      user.raw_user_metadata?.picture ||
+      "/defaultavatar.png" 
+    }
+    alt="User Avatar"
+    width={32}
+    height={32}
+    className="object-cover"
+  />
+</div>
+
                   
                   {/* User Info */}
                   <div className="flex flex-col text-left flex-1 min-w-0">
@@ -156,9 +166,19 @@ export function AppSidebar({ user, subscriptionData, onSignOut }: AppSidebarProp
                 <div className="px-2 py-1.5">
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 bg-sidebar-accent rounded-full flex items-center justify-center">
-                      <span className="text-xs font-medium text-sidebar-accent-foreground">
-                        {getInitials(userName)}
-                      </span>
+                    <div className="w-8 h-8 rounded-full overflow-hidden relative">
+  <Image
+    src={
+      user.raw_user_metadata?.avatar_url ||
+      user.raw_user_metadata?.picture ||
+      "/defaultavatar.png" 
+    }
+    alt="User Avatar"
+    width={32}
+    height={32}
+    className="object-cover"
+  />
+</div>
                     </div>
                     <div className="flex flex-col">
                       <span className="text-sm font-medium">{userName}</span>
