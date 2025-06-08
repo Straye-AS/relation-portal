@@ -81,7 +81,7 @@ export function AppSidebar({ user, subscriptionData, onSignOut }: AppSidebarProp
         <div className="flex items-center justify-between p-2">
           <div>
             <h2 className="text-lg font-semibold">ACME Inc.</h2>
-            <p className="text-sm text-muted-foreground">{userName}</p>
+            <p className="text-sm text-muted-foreground">👋 {userName}</p>
           </div>
           <ThemeToggle />
         </div>
@@ -101,9 +101,9 @@ export function AppSidebar({ user, subscriptionData, onSignOut }: AppSidebarProp
             <span className={`ml-2 inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ring-1 ring-inset ${
               subscriptionData.status === 'active' 
                 ? 'bg-green-50 text-green-700 ring-green-600/20'
-                : 'bg-gray-50 text-gray-700 ring-gray-600/20'
+                : 'bg-red-200 text-red-700 ring-red-600/20'
             }`}>
-              {subscriptionData.status}
+              {subscriptionData.status.charAt(0).toUpperCase() + subscriptionData.status.slice(1)}
             </span>
           )}
         </div>

@@ -62,6 +62,16 @@ export function PricingSection({ currentPlan = "free" }: PricingSectionProps) {
         <h2 className="text-3xl md:text-4xl mb-4">Simple, transparent pricing</h2>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
           Choose the plan thats right for you and start building your SaaS product today.
+          <br />
+          <div className="flex justify-center items-center mt-4">
+          <span className="text-sm text-red-500 border-2 border-red-500 p-2 bg-red-500/10 rounded-xl">
+          Try it out below with test credit card number
+          <br />
+          4242 4242 4242 4242 4242.
+          <br />
+          Use any CVC and any expiration date in the future.
+          </span>
+          </div>
         </p>
       </div>
 

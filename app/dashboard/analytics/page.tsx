@@ -6,7 +6,7 @@ export default function AnalyticsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold mb-2">Analytics</h1>
+        <h1 className="text-3xl mb-2">Analytics</h1>
         <p className="text-muted-foreground">
           Track your usage and performance metrics.
         </p>
