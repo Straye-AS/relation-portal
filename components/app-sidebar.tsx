@@ -17,6 +17,14 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import {
+  Menubar,
+  MenubarContent,
+  MenubarItem,
+  MenubarMenu,
+  MenubarSeparator,
+  MenubarTrigger,
+} from "@/components/ui/menubar";
 import { 
   LogOut, 
   Home, 
@@ -25,7 +33,9 @@ import {
   Settings, 
   User, 
   FileText,
-  HelpCircle
+  HelpCircle,
+  UserCircle,
+  Crown
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 
@@ -50,13 +60,27 @@ export function AppSidebar({ user, subscriptionData, onSignOut }: AppSidebarProp
   const pathname = usePathname();
   const currentPlan = subscriptionData?.plan || 'free';
 
+  // Get user display name and avatar
+  const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
+  const userEmail = user?.email;
+  
+  // Get user initials for avatar
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(word => word.charAt(0))
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   return (
     <Sidebar>
       <SidebarHeader>
         <div className="flex items-center justify-between p-2">
           <div>
-            <h2 className="text-lg font-semibold">Menu</h2>
-            <p className="text-sm text-muted-foreground">{user?.user_metadata?.full_name || user?.email}</p>
+            <h2 className="text-lg font-semibold">ACME Inc.</h2>
+            <p className="text-sm text-muted-foreground">{userName}</p>
           </div>
           <ThemeToggle />
         </div>
@@ -109,15 +133,87 @@ export function AppSidebar({ user, subscriptionData, onSignOut }: AppSidebarProp
 
       <SidebarFooter>
         <div className="p-2">
-          <Button 
-            onClick={onSignOut}
-            variant="outline" 
-            size="sm"
-            className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-          >
-            <LogOut className="h-4 w-4 mr-2" />
-            Sign Out
-          </Button>
+          <Menubar className="border-0 bg-transparent">
+            <MenubarMenu>
+              <MenubarTrigger className="flex items-center gap-3 w-full p-3 rounded-lg hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
+                <div className="flex items-center gap-3 flex-1">
+                  {/* User Avatar */}
+                  <div className="w-8 h-8 bg-sidebar-accent rounded-full flex items-center justify-center">
+                    <span className="text-xs font-medium text-sidebar-accent-foreground">
+                      {getInitials(userName)}
+                    </span>
+                  </div>
+                  
+                  {/* User Info */}
+                  <div className="flex flex-col text-left flex-1 min-w-0">
+                    <span className="text-sm font-medium truncate">{userName}</span>
+                    <span className="text-xs text-muted-foreground truncate">{userEmail}</span>
+                  </div>
+                </div>
+              </MenubarTrigger>
+              
+              <MenubarContent align="end" className="w-56">
+                <div className="px-2 py-1.5">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-sidebar-accent rounded-full flex items-center justify-center">
+                      <span className="text-xs font-medium text-sidebar-accent-foreground">
+                        {getInitials(userName)}
+                      </span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium">{userName}</span>
+                      <span className="text-xs text-muted-foreground">{userEmail}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <MenubarSeparator />
+                
+                <MenubarItem className="flex items-center gap-2">
+                  <Crown className="h-4 w-4" />
+                  <div className="flex flex-col">
+                    <span className="text-sm">Current Plan</span>
+                    <span className="text-xs text-muted-foreground capitalize">
+                      {currentPlan} {subscriptionData?.status && `(${subscriptionData.status})`}
+                    </span>
+                  </div>
+                </MenubarItem>
+                
+                <MenubarSeparator />
+                
+                <MenubarItem asChild>
+                  <Link href="/dashboard/profile" className="flex items-center gap-2">
+                    <UserCircle className="h-4 w-4" />
+                    <span>Profile</span>
+                  </Link>
+                </MenubarItem>
+                
+                <MenubarItem asChild>
+                  <Link href="/dashboard/settings" className="flex items-center gap-2">
+                    <Settings className="h-4 w-4" />
+                    <span>Settings</span>
+                  </Link>
+                </MenubarItem>
+                
+                <MenubarItem asChild>
+                  <Link href="/pricing" className="flex items-center gap-2">
+                    <CreditCard className="h-4 w-4" />
+                    <span>Billing</span>
+                  </Link>
+                </MenubarItem>
+                
+                <MenubarSeparator />
+                
+                <MenubarItem 
+                  onClick={onSignOut}
+                  className="flex items-center gap-2 text-red-600 focus:text-red-600 focus:bg-red-50"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Sign Out</span>
+                </MenubarItem>
+              </MenubarContent>
+            </MenubarMenu>
+          </Menubar>
         </div>
       </SidebarFooter>
     </Sidebar>
