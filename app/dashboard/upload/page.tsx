@@ -1,5 +1,6 @@
 'use client'
 
+import { Input } from '@/components/ui/input'
 import React, { useState } from 'react'
 
 export default function UploadPage() {
@@ -48,10 +49,10 @@ export default function UploadPage() {
     <main className="max-w-md mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">Upload File</h1>
 
-      <input
+      <Input
         type="file"
         onChange={handleFileChange}
-        className="mb-4 block w-full text-sm text-gray-700 border border-gray-300 rounded px-2 py-1"
+        className="mb-4 block w-full text-sm text-gray-700 border border-gray-300 rounded-xl px-2 py-1"
         disabled={uploading}
       />
 
