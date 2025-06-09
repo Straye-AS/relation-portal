@@ -36,6 +36,8 @@ import {
   HelpCircle,
   UserCircle,
   Crown,
+  Brain,
+  Upload,
 } from "lucide-react";
 import Image from "next/image";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -55,6 +57,8 @@ const navigationItems = [
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
   { href: "/docs", label: "Documentation", icon: FileText },
   { href: "/support", label: "Support", icon: HelpCircle },
+  { href: "/dashboard/ai", label: "AI", icon: Brain },
+  { href: "/dashboard/upload", label: "Upload", icon: Upload },
 ];
 
 export function AppSidebar({ user, subscriptionData, onSignOut }: AppSidebarProps) {
