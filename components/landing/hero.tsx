@@ -27,7 +27,7 @@ export function Hero() {
             mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
           )}>
             <span className="mr-2">✨</span>
-            <span>Introducing SaaSKit</span>
+            <span>Introducing NeoSaaS</span>
           </div>
           
           <h1 className={cn(

@@ -16,7 +16,7 @@ interface Testimonial {
 
 const testimonials: Testimonial[] = [
   {
-    content: "SaaSKit has been a game-changer for our business. We were able to launch our product in just two weeks instead of months.",
+    content: "NeoSaaS has been a game-changer for our business. We were able to launch our product in just two weeks instead of months.",
     author: "Sarah Johnson",
     role: "Founder & CEO",
     company: "GrowthMetrics",
@@ -59,7 +59,7 @@ export function Testimonials() {
             "text-xl text-muted-foreground max-w-2xl mx-auto transition-all duration-700 delay-100",
             mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
           )}>
-            See what our customers are saying about their experience with SaaSKit.
+            See what our customers are saying about their experience with NeoSaaS.
           </p>
         </div>
 

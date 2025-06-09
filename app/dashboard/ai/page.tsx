@@ -22,15 +22,13 @@ export default function AIPage() {
 
   const generateTasks = async () => {
     setLoading(true);
-    const prompt = `Create a detailed, time-based schedule for: ${input}. Maximum 6 tasks. Each section must be like this format:
+    const prompt = `Create a time-based schedule for: ${input}. Limit with 6 tasks maximum. Each section must be like this format:
 
 ### Morning: 8:00 AM - 10:00 AM
 - Research and generate logo ideas
-- Sketch first drafts
 
 ### Late Morning: 10:00 AM - 12:00 PM
-- Continue logo development
-- Review and finalize`;
+- Continue logo development`;
 
     const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",

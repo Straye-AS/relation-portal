@@ -5,7 +5,7 @@ import { CheckCircle } from "lucide-react";
 export default function SuccessPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="rounded-lg border bg-card p-8 shadow-lg text-center">
+      <div className="rounded-xl border bg-card p-8 shadow-lg text-center">
         <CheckCircle className="h-12 w-12 text-primary mx-auto mb-4" />
         <h2 className="text-2xl font-bold mb-2">Payment Successful!</h2>
         <p className="text-muted-foreground mb-6">

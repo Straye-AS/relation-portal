@@ -5,7 +5,7 @@ import { FileQuestion } from "lucide-react";
 export default function NotFound() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="rounded-lg border bg-card p-8 shadow-lg text-center">
+      <div className="rounded-xl border bg-card p-8 shadow-lg text-center">
         <FileQuestion className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
         <h2 className="text-2xl font-bold mb-2">Page Not Found</h2>
         <p className="text-muted-foreground mb-4">
