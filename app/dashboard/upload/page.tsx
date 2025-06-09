@@ -2,6 +2,7 @@
 
 import { Input } from '@/components/ui/input'
 import React, { useState } from 'react'
+import { Button } from '@/components/ui/button'
 
 export default function UploadPage() {
   const [file, setFile] = useState<File | null>(null)
@@ -56,13 +57,13 @@ export default function UploadPage() {
         disabled={uploading}
       />
 
-      <button
+      <Button
         onClick={handleUpload}
         disabled={!file || uploading}
-        className="bg-blue-600 text-white px-4 py-2 rounded disabled:bg-gray-400"
+        className=""
       >
         {uploading ? 'Uploading...' : 'Upload'}
-      </button>
+      </Button>
 
       {message && <p className="mt-4 text-center text-sm">{message}</p>}
     </main>
