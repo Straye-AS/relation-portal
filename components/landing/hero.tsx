@@ -124,7 +124,7 @@ export function Hero() {
                 height={782}
                 className="hidden dark:block"
                 priority
-              />
+              /> 
             </div>
           </div>
         </div>
