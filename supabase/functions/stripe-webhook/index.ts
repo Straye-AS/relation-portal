@@ -5,7 +5,7 @@ const stripeSecret = process.env.STRIPE_SECRET_KEY!;
 const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 const stripe = new Stripe(stripeSecret, {
   appInfo: {
-    name: 'Bolt Integration',
+    name: 'NeoSaaS',
     version: '1.0.0',
   },
 });
