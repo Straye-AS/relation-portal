@@ -21,7 +21,7 @@ export function Hero() {
       
       {/* Content */}
       <div className="container relative px-4 mx-auto">
-        <div className="max-w-3xl mx-auto text-center">
+        <div className="max-w-6xl mx-auto text-center">
           <div className={cn(
             "inline-block px-3 py-1 mb-6 text-sm font-medium rounded-full border transition-all duration-700",
             mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
@@ -29,7 +29,7 @@ export function Hero() {
             <span className="mr-2">✨</span>
             <span>Introducing NeoSaaS</span>
           </div>
-          
+          <div className="max-w-3xl mx-auto">
           <h1 className={cn(
             "text-4xl md:text-5xl lg:text-6xl mb-6 tracking-tight transition-all duration-700 delay-100",
             mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
@@ -44,7 +44,7 @@ export function Hero() {
             Everything you need to launch, grow, and scale your SaaS business. 
             Authentication, payments, and a beautiful UI right out of the box.
           </p>
-          
+          </div>          
           <div className={cn(
             "flex flex-col sm:flex-row items-center justify-center gap-4 mb-12 transition-all duration-700 delay-300",
             mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
@@ -100,6 +100,30 @@ export function Hero() {
                 width={80}
                 height={48}
                 className="dark:invert h-8 w-auto hover:opacity-100 transition-opacity rounded-md"
+              />
+            </div>
+          </div>
+          
+          <div className={cn(
+            "mt-12 transition-all duration-700 delay-500",
+            mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+          )}>
+            <div className="relative w-full rounded-xl overflow-hidden border border-border max-w-6xl">
+              <Image
+                src="/light.png"
+                alt="Product Demo"
+                width={1399}
+                height={782}
+                className="block dark:hidden"
+                priority
+              />
+              <Image
+                src="/dark.png"
+                alt="Product Demo"
+                width={1399}
+                height={782}
+                className="hidden dark:block"
+                priority
               />
             </div>
           </div>
