@@ -10,6 +10,28 @@ const inter = Inter({ subsets: ['latin'] });
 export const metadata: Metadata = {
   title: 'NeoSaaS - Modern SaaS Starter',
   description: 'A modern SaaS starter kit built with Next.js, TypeScript, Supabase and Tailwind CSS',
+  icons: {
+    icon: '/icon.png',
+  },
+  openGraph: {
+    title: 'NeoSaaS - Modern SaaS Starter',
+    description: 'A modern SaaS starter kit built with Next.js, TypeScript, Supabase and Tailwind CSS',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'NeoSaaS Preview',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'NeoSaaS - Modern SaaS Starter',
+    description: 'A modern SaaS starter kit built with Next.js, TypeScript, Supabase and Tailwind CSS',
+    images: ['/og-image.png'],
+    creator: '@neosaas',
+  },
 };
 
 export default function RootLayout({
