@@ -48,6 +48,19 @@ export default function RootLayout({
           src="https://datafa.st/js/script.js"
           strategy="afterInteractive"
         /> */}
+
+        <meta property="og:url" content="https://demo.neosaas.dev" />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="NeoSaaS - Modern SaaS Starter" />
+        <meta property="og:description" content="A modern SaaS starter kit built with Next.js, TypeScript, Supabase and Tailwind CSS" />
+        <meta property="og:image" content="https://demo.neosaas.dev/og-image.png" />
+
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta property="twitter:domain" content="demo.neosaas.dev" />
+        <meta property="twitter:url" content="https://demo.neosaas.dev" />
+        <meta name="twitter:title" content="NeoSaaS - Modern SaaS Starter" />
+        <meta name="twitter:description" content="A modern SaaS starter kit built with Next.js, TypeScript, Supabase and Tailwind CSS" />
+        <meta name="twitter:image" content="https://demo.neosaas.dev/og-image.png" />
       </head>
       <body className={inter.className}>
         <ThemeProvider
