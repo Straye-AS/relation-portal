@@ -51,7 +51,7 @@ export default function SignInPage() {
     <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4 py-12">
       <Link
         href="/"
-        className="absolute left-4 top-4 md:left-8 md:top-8 font-bold text-lg"
+        className="absolute left-4 top-4 md:left-8 md:top-8   text-lg"
       >
         SaaS<span className="text-primary">Kit</span>
       </Link>

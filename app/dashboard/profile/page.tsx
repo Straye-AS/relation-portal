@@ -49,7 +49,7 @@ export default function ProfilePage() {
           <CardContent className="space-y-4">
             <div className="flex items-center space-x-4">
               <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center">
-                <span className="text-2xl font-bold text-muted-foreground">JD</span>
+                <span className="text-2xl   text-muted-foreground">JD</span>
               </div>
               <div>
                 <Button variant="outline" size="sm">

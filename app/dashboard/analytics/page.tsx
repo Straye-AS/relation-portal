@@ -19,7 +19,7 @@ export default function AnalyticsPage() {
             <CardTitle>Total Visits</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">12,345</div>
+            <div className="text-2xl">12,345</div>
             <p className="text-xs text-muted-foreground">+20.1% from last month</p>
           </CardContent>
         </Card>
@@ -29,7 +29,7 @@ export default function AnalyticsPage() {
             <CardTitle>Page Views</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">45,678</div>
+            <div className="text-2xl">45,678</div>
             <p className="text-xs text-muted-foreground">+15.3% from last month</p>
           </CardContent>
         </Card>
@@ -39,7 +39,7 @@ export default function AnalyticsPage() {
             <CardTitle>Conversion Rate</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">3.2%</div>
+            <div className="text-2xl  ">3.2%</div>
             <p className="text-xs text-muted-foreground">+0.5% from last month</p>
           </CardContent>
         </Card>

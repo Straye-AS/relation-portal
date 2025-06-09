@@ -121,7 +121,7 @@ export default function DashboardPage() {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-2xl border bg-card p-6">
           <h3 className="font-semibold">Projects</h3>
-          <p className="text-2xl font-bold">
+          <p className="text-2xl">
             {currentUsage.projects}
             <span className="text-sm font-normal text-muted-foreground">
               /{planLimits.projects === -1 ? '∞' : planLimits.projects}
@@ -142,7 +142,7 @@ export default function DashboardPage() {
         
         <div className="rounded-2xl border bg-card p-6">
           <h3 className="font-semibold">Storage</h3>
-          <p className="text-2xl font-bold">
+          <p className="text-2xl">
             {currentUsage.storage} GB
             <span className="text-sm font-normal text-muted-foreground">
               /{planLimits.storage} GB
@@ -161,7 +161,7 @@ export default function DashboardPage() {
         
         <div className="rounded-2xl border bg-card p-6">
           <h3 className="font-semibold">API Calls</h3>
-          <p className="text-2xl font-bold">
+          <p className="text-2xl">
             {currentUsage.apiCalls.toLocaleString()}
             <span className="text-sm font-normal text-muted-foreground">
               /{planLimits.apiCalls.toLocaleString()}
@@ -180,7 +180,7 @@ export default function DashboardPage() {
         
         <div className="rounded-2xl border bg-card p-6">
           <h3 className="font-semibold">Subscription</h3>
-          <p className="text-2xl font-bold capitalize">{currentPlan}</p>
+          <p className="text-2xl capitalize">{currentPlan}</p>
           <p className="text-sm text-muted-foreground">
             {subscriptionData?.current_period_end 
               ? `Renews ${new Date(subscriptionData.current_period_end).toLocaleDateString()}`

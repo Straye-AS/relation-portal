@@ -38,10 +38,10 @@ export function PlanCard({
       <CardContent className="flex-grow">
         <div className="mb-6">
           {price === null ? (
-            <div className="text-4xl font-bold">Free</div>
+            <div className="text-4xl  ">Free</div>
           ) : (
             <div className="flex items-baseline">
-              <span className="text-4xl font-bold">{formatCurrency(price)}</span>
+              <span className="text-4xl  ">{formatCurrency(price)}</span>
               <span className="text-muted-foreground ml-2">/{isYearly ? 'year' : 'month'}</span>
             </div>
           )}

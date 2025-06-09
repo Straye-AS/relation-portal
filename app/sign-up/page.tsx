@@ -53,7 +53,7 @@ export default function SignUpPage() {
     <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4 py-12">
       <div className="absolute top-4 left-4 md:left-8 md:top-8 flex items-center gap-2">
         <Rocket className="h-6 w-6 text-primary" />
-        <Link href="/" className="text-lg font-bold">
+        <Link href="/" className="text-lg  ">
           ACME Inc.
         </Link>
         {/* <ThemeToggle /> */}

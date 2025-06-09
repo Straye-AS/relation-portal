@@ -156,7 +156,7 @@ export function AppSidebar({ user, subscriptionData, onSignOut }: AppSidebarProp
 ) : (
   // avatar_url yoksa baş harfleri göster
   <div className="w-8 h-8 bg-gray-400 rounded-full flex items-center justify-center">
-    <span className="text-white font-bold">
+    <span className="text-white  ">
       {(user.raw_user_meta_data?.full_name || user.email)?.charAt(0).toUpperCase()}
     </span>
   </div>
@@ -189,7 +189,7 @@ export function AppSidebar({ user, subscriptionData, onSignOut }: AppSidebarProp
 ) : (
   // avatar_url yoksa baş harfleri göster
   <div className="w-8 h-8 bg-gray-400 rounded-full flex items-center justify-center">
-    <span className="text-white font-bold">
+    <span className="text-white  ">
       {(user.raw_user_meta_data?.full_name || user.email)?.charAt(0).toUpperCase()}
     </span>
   </div>

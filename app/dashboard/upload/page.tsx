@@ -48,7 +48,7 @@ export default function UploadPage() {
 
   return (
     <main className="max-w-md mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Upload File</h1>
+      <h1 className="text-2xl   mb-4">Upload File</h1>
 
       <Input
         type="file"

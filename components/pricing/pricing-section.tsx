@@ -99,7 +99,7 @@ export function PricingSection({ currentPlan = "free" }: PricingSectionProps) {
             <CardContent className="flex-grow">
               <div className="mb-6">
                 <div className="flex items-baseline">
-                  <span className="text-4xl font-bold">${product.price}</span>
+                  <span className="text-4xl  ">${product.price}</span>
                   <span className="text-muted-foreground ml-2">/month</span>
                 </div>
               </div>

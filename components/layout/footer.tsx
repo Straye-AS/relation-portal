@@ -7,7 +7,7 @@ export function Footer({ className }: { className?: string }) {
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="space-y-4">
-            <h3 className="text-xl font-bold">ACME</h3>
+            <h3 className="text-xl  ">ACME</h3>
             <p className="text-muted-foreground max-w-xs">
               Modern SaaS platform for building and scaling your business.
             </p>
