@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/lib/supabase/browserClient";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { PricingSection } from "@/components/pricing/pricing-section";

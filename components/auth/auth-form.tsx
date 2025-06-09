@@ -6,7 +6,7 @@ import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/lib/supabase/browserClient";
 import { Button } from "@/components/ui/button";
 import {
   Form,

@@ -1,6 +1,6 @@
 "use client";
 
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/lib/supabase/browserClient";
 import { Button } from "@/components/ui/button";
 import { Github, Mail, Shield, User, Zap } from "lucide-react";
 

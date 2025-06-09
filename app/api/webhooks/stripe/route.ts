@@ -11,7 +11,7 @@ const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 // Service role Supabase client for webhook
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
   {
     auth: {
       autoRefreshToken: false,

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/lib/supabase/browserClient";
 import { Hero } from "@/components/landing/hero";
 import { Features } from "@/components/landing/features";
 import { Testimonials } from "@/components/landing/testimonials";
