@@ -143,25 +143,27 @@ export function AppSidebar({ user, subscriptionData, onSignOut }: AppSidebarProp
               <MenubarTrigger className="flex items-center gap-3 w-full p-3 rounded-lg hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
                 <div className="flex items-center gap-3 flex-1">
                   {/* User Avatar */}
-                  {user.avatar_url ? (
-                    <div className="relative w-8 h-8 rounded-full overflow-hidden">
-                      <Image
-                        src={user.avatar_url}
-                        alt={user.raw_user_meta_data?.full_name || "User Avatar"}
-                        width={32}
-                        height={32}
-                        className="object-cover"
-                      />
-                    </div>
-                  ) : (
-                    // avatar_url yoksa baş harfleri göster
-                    <div className="w-8 h-8 bg-gray-400 rounded-full flex items-center justify-center">
-                      <span className="text-white">
-                        {(user.raw_user_meta_data?.full_name || user.email)?.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                  )}
+                  {user.raw_user_meta_data?.avatar_url ? (
+  <div className="relative w-8 h-8 rounded-full overflow-hidden">
+    <Image
+      src={user.raw_user_meta_data.avatar_url}
+      alt={user.raw_user_meta_data.full_name || "User Avatar"}
+      width={32}
+      height={32}
+      className="object-cover"
+    />
+  </div>
+) : (
+  // avatar_url yoksa baş harfleri göster
+  <div className="w-8 h-8 bg-gray-400 rounded-full flex items-center justify-center">
+    <span className="text-white  ">
+      {(user.raw_user_meta_data?.full_name || user.email)?.charAt(0).toUpperCase()}
+    </span>
+  </div>
+)}
 
+
+                  
                   {/* User Info */}
                   <div className="flex flex-col text-left flex-1 min-w-0">
                     <span className="text-sm font-medium truncate">{userName}</span>
@@ -174,24 +176,25 @@ export function AppSidebar({ user, subscriptionData, onSignOut }: AppSidebarProp
                 <div className="px-2 py-1.5">
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 bg-sidebar-accent rounded-full flex items-center justify-center">
-                      {user.avatar_url ? (
-                        <div className="relative w-8 h-8 rounded-full overflow-hidden">
-                          <Image
-                            src={user.avatar_url || ""}
-                            alt={user.raw_user_meta_data?.full_name || "User Avatar"}
-                            width={32}
-                            height={32}
-                            className="object-cover"
-                          />
-                        </div>
-                      ) : (
-                        // avatar_url yoksa baş harfleri göster
-                        <div className="w-8 h-8 bg-gray-400 rounded-full flex items-center justify-center">
-                          <span className="text-white">
-                            {(user.raw_user_meta_data?.full_name || user.email)?.charAt(0).toUpperCase()}
-                          </span>
-                        </div>
-                      )}
+                    {user.raw_user_meta_data?.avatar_url ? (
+  <div className="relative w-8 h-8 rounded-full overflow-hidden">
+    <Image
+      src={user.raw_user_meta_data.avatar_url}
+      alt={user.raw_user_meta_data.full_name || "User Avatar"}
+      width={32}
+      height={32}
+      className="object-cover"
+    />
+  </div>
+) : (
+  // avatar_url yoksa baş harfleri göster
+  <div className="w-8 h-8 bg-gray-400 rounded-full flex items-center justify-center">
+    <span className="text-white  ">
+      {(user.raw_user_meta_data?.full_name || user.email)?.charAt(0).toUpperCase()}
+    </span>
+  </div>
+)}
+
                     </div>
                     <div className="flex flex-col">
                       <span className="text-sm font-medium">{userName}</span>
