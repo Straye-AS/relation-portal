@@ -1,10 +1,72 @@
+"use client";
+
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { createClient } from "@/lib/supabase/browserClient";
+import { toast } from "sonner";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
 
-export default function ProfilePage() {
+interface ProfilePageProps {
+  user: {
+    id: string;
+    email: string;
+    avatar_url: string | null;
+  };
+}
+
+export default function ProfilePage({ user }: ProfilePageProps) {
+  const [isUploading, setIsUploading] = useState(false);
+  const supabase = createClient();
+  const router = useRouter();
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Check file size (2MB limit)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("File size should be less than 2MB");
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      // Upload to Supabase Storage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const { error: uploadError, data } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      // Update user profile
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({ avatar_url: publicUrl })
+        .eq('id', (await supabase.auth.getUser()).data.user?.id);
+
+      if (updateError) throw updateError;
+
+      toast.success("Profile picture updated successfully");
+      router.refresh();
+    } catch (error: any) {
+      toast.error(error.message || "Error updating profile picture");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -48,13 +110,37 @@ export default function ProfilePage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center space-x-4">
-              <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center">
-                <span className="text-2xl   text-muted-foreground">JD</span>
+              <div className="w-20 h-20 bg-muted rounded-full overflow-hidden">
+                {user?.avatar_url ? (
+                  <Image
+                    src={user.avatar_url}
+                    alt="Profile"
+                    width={80}
+                    height={80}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-2xl text-muted-foreground flex items-center justify-center h-full">
+                    {user?.email?.charAt(0).toUpperCase()}
+                  </span>
+                )}
               </div>
               <div>
-                <Button variant="outline" size="sm">
-                  Change Picture
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={isUploading}
+                  onClick={() => document.getElementById('avatar-upload')?.click()}
+                >
+                  {isUploading ? "Uploading..." : "Change Picture"}
                 </Button>
+                <input
+                  id="avatar-upload"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
                 <p className="text-xs text-muted-foreground mt-2">
                   JPG, PNG or GIF. Max size 2MB.
                 </p>

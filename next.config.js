@@ -3,11 +3,14 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  images: { unoptimized: true,
-   
-      domains: ["lh3.googleusercontent.com", "avatars.githubusercontent.com"],
-    
-   },
+  images: { 
+    unoptimized: true,
+    domains: [
+      "lh3.googleusercontent.com", 
+      "avatars.githubusercontent.com",
+      "rnvvnmtfgwvhvyqjmqxc.supabase.co" // Supabase storage domain
+    ],
+  },
   experimental: {
     serverActions: true,
     forceSwcTransforms: true,
