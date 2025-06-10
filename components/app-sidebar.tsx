@@ -146,7 +146,7 @@ export function AppSidebar({ user, subscriptionData, onSignOut }: AppSidebarProp
                   {user.raw_user_meta_data?.avatar_url ? (
   <div className="relative w-8 h-8 rounded-full overflow-hidden">
     <Image
-      src={user.raw_user_meta_data.avatar_url}
+      src={user.avatar_url}
       alt={user.raw_user_meta_data.full_name || "User Avatar"}
       width={32}
       height={32}
@@ -176,10 +176,10 @@ export function AppSidebar({ user, subscriptionData, onSignOut }: AppSidebarProp
                 <div className="px-2 py-1.5">
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 bg-sidebar-accent rounded-full flex items-center justify-center">
-                    {user.raw_user_meta_data?.avatar_url ? (
+                    {user.avatar_url ? (
   <div className="relative w-8 h-8 rounded-full overflow-hidden">
     <Image
-      src={user.raw_user_meta_data.avatar_url}
+      src={user.avatar_url}
       alt={user.raw_user_meta_data.full_name || "User Avatar"}
       width={32}
       height={32}
