@@ -42,12 +42,18 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+
+        {/* Uncomment this to use Datafast */}
+
       {/* <Script
           data-website-id="YOUR_WEBSITE_ID"
           data-domain="YOUR_DOMAIN.COM"
           src="https://datafa.st/js/script.js"
           strategy="afterInteractive"
         /> */}
+
+
+        {/* Uncomment this to use Google Analytics */}
 
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-7CX695C9QV"
