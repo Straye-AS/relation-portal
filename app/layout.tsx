@@ -49,6 +49,19 @@ export default function RootLayout({
           strategy="afterInteractive"
         /> */}
 
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-7CX695C9QV"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-7CX695C9QV');
+          `}
+        </Script>
+
         <meta property="og:url" content="https://demo.neosaas.dev" />
         <meta property="og:type" content="website" />
         <meta property="og:title" content="NeoSaaS - Modern SaaS Starter" />
