@@ -3,14 +3,22 @@ import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { ManageSubscriptionButton } from "@/components/dashboard/manage-subscription-button";
 import { format } from "date-fns";
+import { redirect } from "next/navigation";
 
 export default async function BillingPage() {
   const supabase = createServerComponentClient({ cookies });
+
+  // Get authenticated user
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    redirect('/sign-in');
+  }
 
   // Get user's subscription
   const { data: subscription } = await supabase
     .from('subscriptions')
     .select('*')
+    .eq('user_id', user.id)
     .single();
 
   return (

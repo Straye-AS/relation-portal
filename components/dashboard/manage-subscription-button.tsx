@@ -4,10 +4,15 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
+interface Subscription {
+  id: string;
+  stripe_customer_id: string | null;
+  status: string;
+  plan: string;
+}
+
 interface ManageSubscriptionButtonProps {
-  subscription: {
-    stripe_customer_id: string | null;
-  } | null;
+  subscription: Subscription | null;
 }
 
 export function ManageSubscriptionButton({ subscription }: ManageSubscriptionButtonProps) {
@@ -34,7 +39,6 @@ export function ManageSubscriptionButton({ subscription }: ManageSubscriptionBut
       window.location.href = data.url;
     } catch (error: any) {
       toast.error(error.message || 'Error accessing billing portal');
-    } finally {
       setIsLoading(false);
     }
   };
@@ -43,7 +47,7 @@ export function ManageSubscriptionButton({ subscription }: ManageSubscriptionBut
     <Button
       variant="outline"
       onClick={handlePortalAccess}
-      disabled={isLoading || !subscription?.stripe_customer_id}
+      disabled={isLoading}
     >
       {isLoading ? "Loading..." : "Manage Subscription in Stripe"}
     </Button>
