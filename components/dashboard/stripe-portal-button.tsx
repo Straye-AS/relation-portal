@@ -2,13 +2,13 @@
 
 import { Button } from "@/components/ui/button";
 
-export function ManageSubscriptionButton() {
+export function StripePortalButton() {
   return (
-    <Button
-      variant="outline"
+    <Button 
+      variant="outline" 
       onClick={() => window.location.href = 'https://billing.stripe.com/p/login/test_4gM5kF5Z39hCeOkdiU5EY00'}
     >
-      Manage Subscription in Stripe
+      Manage Subscription
     </Button>
   );
 } 
