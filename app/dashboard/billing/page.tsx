@@ -5,6 +5,8 @@ import { format } from "date-fns";
 import { redirect } from "next/navigation";
 import { StripePortalButton } from "@/components/dashboard/stripe-portal-button";
 
+export const dynamic = 'force-dynamic';
+
 export default async function BillingPage() {
   const supabase = createServerComponentClient({ cookies });
 
