@@ -1,9 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
-import { ManageSubscriptionButton } from "@/components/dashboard/manage-subscription-button";
 import { format } from "date-fns";
 import { redirect } from "next/navigation";
+import { ManageSubscriptionButton } from "@/components/dashboard/manage-subscription-button";
 
 export default async function BillingPage() {
   const supabase = createServerComponentClient({ cookies });
@@ -64,7 +64,7 @@ export default async function BillingPage() {
             <CardTitle>Manage Subscription</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <ManageSubscriptionButton subscription={subscription} />
+            <ManageSubscriptionButton />
           </CardContent>
         </Card>
       </div>
