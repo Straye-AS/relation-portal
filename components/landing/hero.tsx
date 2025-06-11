@@ -59,50 +59,7 @@ export function Hero() {
             </Button>
           </div>
           
-          <div className={cn(
-            "flex flex-wrap justify-center items-center gap-x-8 gap-y-6 transition-all duration-700 delay-400",
-            mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-          )}>
-            <div className="flex items-center border border-border rounded-xl p-2">
-              <Image
-                src="/next.png"
-                alt="Next.js"
-                width={80}
-                height={48}
-                className="h-8 w-auto hover:opacity-100 transition-opacity rounded-md dark:invert"
-              />
-            </div>
-            
-            <div className="flex items-center border border-border rounded-xl p-2">
-              <Image
-                src="/supabase.png"
-                alt="Supabase"
-                width={80}
-                height={48}
-                className="h-8 w-auto hover:opacity-100 transition-opacity rounded-md"
-              />
-            </div>
-            
-            <div className="flex items-center border border-border rounded-xl p-2">
-              <Image
-                src="/stripe2.webp"
-                alt="Stripe"
-                width={80}
-                height={48}
-                className="h-8 w-auto hover:opacity-100 transition-opacity rounded-md"
-              />
-            </div>
-           
-            <div className="flex items-center border border-border rounded-xl p-2">
-              <Image
-                src="/open-ai.png"
-                alt="OpenAI"
-                width={80}
-                height={48}
-                className="dark:invert h-8 w-auto hover:opacity-100 transition-opacity rounded-md"
-              />
-            </div>
-          </div>
+         
           
           <div className={cn(
             "mt-12 transition-all duration-700 delay-500",
