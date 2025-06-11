@@ -52,7 +52,7 @@ interface AppSidebarProps {
 const navigationItems = [
   { href: "/dashboard", label: "Dashboard", icon: Home },
   { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
-  { href: "/pricing", label: "Billing", icon: CreditCard },
+  { href: "/dashboard/billing", label: "Billing", icon: CreditCard },
   { href: "/dashboard/profile", label: "Profile", icon: User },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
   { href: "/docs", label: "Documentation", icon: FileText },
@@ -232,7 +232,7 @@ export function AppSidebar({ user, subscriptionData, onSignOut }: AppSidebarProp
                 </MenubarItem>
                 
                 <MenubarItem asChild>
-                  <Link href="/pricing" className="flex items-center gap-2">
+                  <Link href="/dashboard/billing" className="flex items-center gap-2">
                     <CreditCard className="h-4 w-4" />
                     <span>Billing</span>
                   </Link>
