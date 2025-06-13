@@ -56,8 +56,8 @@ const navigationItems = [
   { href: "/dashboard/billing", label: "Billing", icon: CreditCard },
   { href: "/dashboard/profile", label: "Profile", icon: User },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
-  { href: "/docs", label: "Documentation", icon: FileText },
-  { href: "/support", label: "Support", icon: HelpCircle },
+  { href: "https://docs.neosaas.dev", label: "Documentation", icon: FileText },
+  { href: "mailto:info@neosaas.dev", label: "Support", icon: HelpCircle },
   { href: "/dashboard/ai", label: "AI", icon: Brain },
   { href: "/dashboard/upload", label: "Upload", icon: Upload },
 ];

@@ -43,7 +43,7 @@ export function Footer({ className }: { className?: string }) {
                 </Link>
               </li>
               <li>
-                <Link href="/documentation" className="text-muted-foreground hover:text-foreground transition-colors">
+                <Link href="https://docs.neosaas.dev" target="_blank" className="text-muted-foreground hover:text-foreground transition-colors">
                   Documentation
                 </Link>
               </li>

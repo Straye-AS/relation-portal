@@ -281,7 +281,8 @@ export default function DashboardPage() {
           </Link>
           
           <Link 
-            href="/docs"
+            href="https://docs.neosaas.dev"
+            target="_blank"
             className="flex items-center justify-between p-4 border rounded-2xl hover:bg-gray-50 dark:hover:bg-[#101010] transition-colors"
           >
             <div>

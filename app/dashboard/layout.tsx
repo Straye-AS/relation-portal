@@ -8,6 +8,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { LogOut } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
+import Link from "next/link";
 
 export default function DashboardLayout({
   children,
@@ -141,6 +142,9 @@ export default function DashboardLayout({
         {/* Desktop Header with Trigger */}
         <header className="hidden lg:flex h-16 shrink-0 items-center gap-2 px-4 border-b">
           <SidebarTrigger className="-ml-1" />
+          <Link href="https://buy.stripe.com/00w28sgaE73OfzD4RRcAo0A">
+          <Button variant="default" size="sm" className="bg-red-500 rounded-full hover:bg-red-600 text-white">Buy Boilerplate</Button>
+          </Link>
           <div className="flex-1" />
         </header>
         
