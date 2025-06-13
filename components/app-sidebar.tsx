@@ -38,6 +38,7 @@ import {
   Crown,
   Brain,
   Upload,
+  Rocket,
 } from "lucide-react";
 import Image from "next/image";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -84,7 +85,9 @@ export function AppSidebar({ user, subscriptionData, onSignOut }: AppSidebarProp
       <SidebarHeader>
         <div className="flex items-center justify-between p-2">
           <div>
+            <Link href="/">
             <h2 className="text-lg font-semibold">ACME Inc.</h2>
+            </Link>
             <p className="text-sm text-muted-foreground">👋 {userName}</p>
           </div>
           <ThemeToggle />

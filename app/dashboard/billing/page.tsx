@@ -4,6 +4,8 @@ import { cookies } from "next/headers";
 import { format } from "date-fns";
 import { redirect } from "next/navigation";
 import { StripePortalButton } from "@/components/dashboard/stripe-portal-button";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export const dynamic = 'force-dynamic';
 
@@ -58,6 +60,13 @@ export default async function BillingPage() {
                 </div>
               )}
             </div>
+            <div className="mt-4">
+              <Link href="/pricing">
+                <Button variant="outline">
+                  Change Plan
+                </Button>
+              </Link>
+            </div>
           </CardContent>
         </Card>
 
@@ -67,6 +76,7 @@ export default async function BillingPage() {
           </CardHeader>
           <CardContent>
             <StripePortalButton />
+            
           </CardContent>
         </Card>
       </div>

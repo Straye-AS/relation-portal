@@ -9,7 +9,7 @@ export default function ResetPasswordPage() {
         href="/"
         className="absolute left-4 top-4 md:left-8 md:top-8   text-lg"
       >
-        SaaS<span className="text-primary">Kit</span>
+        ACME Inc.
       </Link>
       <Card className="w-full max-w-md">
         <CardHeader>
