@@ -13,6 +13,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar"
 
 interface AppSidebarProps {
@@ -43,6 +44,8 @@ export function AppSidebar({ user, subscriptionData, onSignOut }: AppSidebarProp
   const userEmail = user?.email
   const userAvatar = user?.raw_user_meta_data?.avatar_url || null
   
+  const { isMobile, setOpenMobile } = useSidebar();
+
   return (
     <Sidebar variant="inset">
       <SidebarHeader>
@@ -88,7 +91,7 @@ export function AppSidebar({ user, subscriptionData, onSignOut }: AppSidebarProp
       </SidebarHeader>
 
       <SidebarContent>
-        <NavMain items={navigationItems} />
+        <NavMain items={navigationItems} onNavigate={isMobile ? () => setOpenMobile(false) : undefined} />
       </SidebarContent>
 
       <SidebarFooter>

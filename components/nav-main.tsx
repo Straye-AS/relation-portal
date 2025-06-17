@@ -19,9 +19,10 @@ interface NavMainProps {
     label: string
     icon: LucideIcon
   }[]
+  onNavigate?: () => void
 }
 
-export function NavMain({ items }: NavMainProps) {
+export function NavMain({ items, onNavigate }: NavMainProps) {
   const pathname = usePathname()
 
   return (
@@ -34,7 +35,7 @@ export function NavMain({ items }: NavMainProps) {
             return (
               <SidebarMenuItem key={href}>
                 <SidebarMenuButton asChild isActive={isActive}>
-                  <Link href={href}>
+                  <Link href={href} onClick={onNavigate}>
                     <Icon className="h-4 w-4 text-foreground" />
                     <span>{label}</span>
                   </Link>
