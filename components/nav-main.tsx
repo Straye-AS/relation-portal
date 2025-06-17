@@ -35,7 +35,7 @@ export function NavMain({ items }: NavMainProps) {
               <SidebarMenuItem key={href}>
                 <SidebarMenuButton asChild isActive={isActive}>
                   <Link href={href}>
-                    <Icon className="h-4 w-4" />
+                    <Icon className="h-4 w-4 text-foreground" />
                     <span>{label}</span>
                   </Link>
                 </SidebarMenuButton>

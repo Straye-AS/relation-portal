@@ -6,9 +6,10 @@ import { createClient } from "@/lib/supabase/browserClient";
 import { Button } from "@/components/ui/button";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
-import { LogOut } from "lucide-react";
+import { LogOut, Menu } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import Link from "next/link";
+import { NavUser } from "@/components/nav-user";
 
 export default function DashboardLayout({
   children,
@@ -20,6 +21,7 @@ export default function DashboardLayout({
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const supabase = createClient();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     async function getUser() {
@@ -119,29 +121,33 @@ export default function DashboardLayout({
           subscriptionData={subscriptionData} 
           onSignOut={handleSignOut} 
         />
-        <div className="flex-1 flex flex-col h-full">
+        <div className="flex-1 flex flex-col h-full overflow-y-auto">
           {/* Mobile Header */}
           <header className="flex h-16 shrink-0 items-center gap-2 px-4 lg:hidden border-b">
-            <div className="flex-1">
-              <h2 className="font-semibold">Dashboard</h2>
-              <p className="text-sm text-muted-foreground">{user.user_metadata?.full_name || user.email}</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <ThemeToggle />
-              <Button 
-                onClick={handleSignOut}
-                variant="outline" 
-                size="sm"
-                className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-              >
-                <LogOut className="h-4 w-4" />
-              </Button>
-            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="lg:hidden"
+              onClick={() => setSidebarOpen(true)}
+            >
+              <Menu className="h-6 w-6" />
+              <span className="sr-only">Toggle menu</span>
+            </Button>
+            <div className="flex-1" />
+            <NavUser
+              user={{
+                name: user.user_metadata?.full_name || user.email,
+                email: user.email,
+                avatar: user.user_metadata?.avatar_url
+              }}
+              subscriptionData={subscriptionData}
+              onSignOut={handleSignOut}
+            />
           </header>
           
           {/* Main Content */}
-          <main className="flex-1 h-full p-4">
-            <div className="h-full w-full rounded-xl border bg-card text-card-foreground shadow-sm p-6 dark:bg-black">
+          <main className="flex-1 p-4">
+            <div className="w-full min-h-full rounded-xl border bg-card text-card-foreground shadow-sm p-6 dark:bg-black">
               {children}
             </div>
           </main>
