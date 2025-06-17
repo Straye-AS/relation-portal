@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/browserClient";
 import { Button } from "@/components/ui/button";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { LogOut } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -113,48 +113,40 @@ export default function DashboardLayout({
 
   return (
     <SidebarProvider>
-      <AppSidebar 
-        user={user} 
-        subscriptionData={subscriptionData} 
-        onSignOut={handleSignOut} 
-      />
-      <main className="flex flex-col w-full">
-        {/* Mobile Header */}
-        <header className="flex h-16 shrink-0 items-center gap-2 px-4 lg:hidden border-b">
-          <SidebarTrigger className="-ml-1" />
-          <div className="flex-1">
-            <h2 className="font-semibold">Dashboard</h2>
-            <p className="text-sm text-muted-foreground">{user.user_metadata?.full_name || user.email}</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <ThemeToggle />
-            <Button 
-              onClick={handleSignOut}
-              variant="outline" 
-              size="sm"
-              className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-            >
-              <LogOut className="h-4 w-4" />
-            </Button>
-          </div>
-        </header>
-        
-        {/* Desktop Header with Trigger */}
-        <header className="hidden lg:flex h-16 shrink-0 items-center gap-2 px-4 border-b">
-          <SidebarTrigger className="-ml-1" />
-          <Link href="https://buy.stripe.com/00w28sgaE73OfzD4RRcAo0A">
-          <Button variant="default" size="sm" className="bg-red-500 rounded-full hover:bg-red-600 text-white">Buy Boilerplate</Button>
-          </Link>
-          <div className="flex-1" />
-        </header>
-        
-        {/* Main Content */}
-        <div className="flex-1 p-6 lg:p-8">
-          <div className="max-w-7xl mx-auto">
-            {children}
-          </div>
+      <div className="flex h-screen w-screen overflow-hidden">
+        <AppSidebar 
+          user={user} 
+          subscriptionData={subscriptionData} 
+          onSignOut={handleSignOut} 
+        />
+        <div className="flex-1 flex flex-col h-full">
+          {/* Mobile Header */}
+          <header className="flex h-16 shrink-0 items-center gap-2 px-4 lg:hidden border-b">
+            <div className="flex-1">
+              <h2 className="font-semibold">Dashboard</h2>
+              <p className="text-sm text-muted-foreground">{user.user_metadata?.full_name || user.email}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <Button 
+                onClick={handleSignOut}
+                variant="outline" 
+                size="sm"
+                className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </div>
+          </header>
+          
+          {/* Main Content */}
+          <main className="flex-1 h-full p-4">
+            <div className="h-full w-full rounded-xl border bg-card text-card-foreground shadow-sm p-6 dark:bg-black">
+              {children}
+            </div>
+          </main>
         </div>
-      </main>
+      </div>
     </SidebarProvider>
   );
 } 
