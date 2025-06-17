@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/browserClient";
 import { Button } from "@/components/ui/button";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
-import { LogOut, Menu } from "lucide-react";
+import { LogOut, Menu, PanelLeft } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import Link from "next/link";
 import { NavUser } from "@/components/nav-user";
@@ -16,12 +16,13 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
   const [user, setUser] = useState<any>(null);
   const [subscriptionData, setSubscriptionData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const supabase = createClient();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   useEffect(() => {
     async function getUser() {
@@ -98,6 +99,13 @@ export default function DashboardLayout({
     }
   };
 
+  // Get page title from pathname
+  const getPageTitle = () => {
+    const path = pathname.split('/').pop();
+    if (!path) return 'Dashboard';
+    return path.charAt(0).toUpperCase() + path.slice(1);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -114,7 +122,7 @@ export default function DashboardLayout({
   }
 
   return (
-    <SidebarProvider>
+    <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
       <div className="flex h-screen w-screen overflow-hidden">
         <AppSidebar 
           user={user} 
@@ -131,7 +139,6 @@ export default function DashboardLayout({
               onClick={() => setSidebarOpen(true)}
             >
               <Menu className="h-6 w-6" />
-              <span className="sr-only">Toggle menu</span>
             </Button>
             <div className="flex-1" />
             <NavUser
@@ -148,7 +155,22 @@ export default function DashboardLayout({
           {/* Main Content */}
           <main className="flex-1 p-4">
             <div className="w-full min-h-full rounded-xl border bg-card text-card-foreground shadow-sm p-6 dark:bg-black">
-              {children}
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-2 border-b w-full">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setSidebarOpen(!sidebarOpen)}
+                  >
+                    <PanelLeft className="h-4 w-4" />
+                  </Button>
+                  <div className="h-4 w-px bg-gray-200" />
+                  <h1 className="text-sm">{getPageTitle()}</h1>
+                </div>
+              </div>
+              <div>
+                {children}
+              </div>
             </div>
           </main>
         </div>

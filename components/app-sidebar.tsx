@@ -60,7 +60,9 @@ export function AppSidebar({ user, subscriptionData, onSignOut }: AppSidebarProp
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
+        
         <div className="px-2 mt-2">
+          
           <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ring-1 ring-inset ${
             currentPlan === 'free' 
               ? 'bg-gray-50 text-gray-700 ring-gray-600/20'
@@ -82,6 +84,7 @@ export function AppSidebar({ user, subscriptionData, onSignOut }: AppSidebarProp
             </span>
           )}
         </div>
+        
       </SidebarHeader>
 
       <SidebarContent>

@@ -28,12 +28,7 @@ export default async function BillingPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl mb-2">Billing</h1>
-        <p className="text-muted-foreground">
-          Manage your subscription and billing information.
-        </p>
-      </div>
+     
 
       {/* Profile Content */}
       <div className="grid gap-6 md:grid-cols-2">

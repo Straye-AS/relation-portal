@@ -110,13 +110,8 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl mb-2">Dashboard</h1>
-        <p className="text-muted-foreground">
-          Welcome back, {user?.user_metadata?.full_name || user?.email || 'User'}!
-        </p>
-      </div>
+      {/* Welcome Message */}
+     
       
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-2xl border bg-card p-6">
