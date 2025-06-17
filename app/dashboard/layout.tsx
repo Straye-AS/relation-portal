@@ -4,12 +4,13 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/browserClient";
 import { Button } from "@/components/ui/button";
-import { SidebarProvider } from "@/components/ui/sidebar";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { LogOut, Menu, PanelLeft } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import Link from "next/link";
 import { NavUser } from "@/components/nav-user";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 
 export default function DashboardLayout({
   children,
@@ -101,7 +102,7 @@ export default function DashboardLayout({
 
   // Get page title from pathname
   const getPageTitle = () => {
-    const path = pathname.split('/').pop();
+    const path = (pathname ?? "").split('/').pop();
     if (!path) return 'Dashboard';
     return path.charAt(0).toUpperCase() + path.slice(1);
   };
@@ -132,14 +133,8 @@ export default function DashboardLayout({
         <div className="flex-1 flex flex-col h-full overflow-y-auto">
           {/* Mobile Header */}
           <header className="flex h-16 shrink-0 items-center gap-2 px-4 lg:hidden border-b">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="lg:hidden"
-              onClick={() => setSidebarOpen(true)}
-            >
-              <Menu className="h-6 w-6" />
-            </Button>
+            <SidebarTrigger className="-ml-1" />
+            <ThemeToggle />
             <div className="flex-1" />
             <NavUser
               user={{
@@ -156,7 +151,7 @@ export default function DashboardLayout({
           <main className="flex-1 p-4">
             <div className="w-full min-h-full rounded-xl border bg-card text-card-foreground shadow-sm p-6 dark:bg-black">
               <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-2 border-b w-full">
+                <div className="hidden lg:flex items-center gap-2 border-b w-full">
                   <Button
                     variant="ghost"
                     size="icon"
