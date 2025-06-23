@@ -92,7 +92,7 @@ export function Header({ user }: { user: any }) {
         {/* Sağ taraf - Buttons */}
         <div className="justify-self-end">
           <div className="hidden md:flex items-center gap-4">
-          <Link href="https://buy.stripe.com/00w28sgaE73OfzD4RRcAo0A">
+          <Link href="https://buy.stripe.com/00w28sgaE73OfzD4RRcAo0A?prefilled_promo_code=extra40">
           <Button variant="default" size="sm" className="rounded-full bg-red-500 hover:bg-red-600 text-white">Buy Boilerplate</Button>
           </Link>
             <ThemeToggle />
