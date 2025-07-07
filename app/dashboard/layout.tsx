@@ -159,9 +159,14 @@ export default function DashboardLayout({
                   >
                     <PanelLeft className="h-4 w-4" />
                   </Button>
+                  
                   <div className="h-4 w-px bg-gray-200" />
                   <h1 className="text-sm">{getPageTitle()}</h1>
+                  <Link href="https://buy.stripe.com/00w28sgaE73OfzD4RRcAo0A">
+          <Button variant="default" size="sm" className="rounded-full bg-red-500 hover:bg-red-600 text-white">Buy Boilerplate</Button>
+          </Link>
                 </div>
+                
               </div>
               <div>
                 {children}
