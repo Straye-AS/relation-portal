@@ -49,7 +49,7 @@ export function Header({ user }: { user: any }) {
       active: pathname === "/about",
     },
     {
-      href: "https://docs.neosaas.dev",
+      href: "https://neosaas.nodocs.io",
       label: "Docs",
       active: false,
     },
