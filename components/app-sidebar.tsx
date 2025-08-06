@@ -29,7 +29,7 @@ const navigationItems = [
   { href: "/dashboard/billing", label: "Billing", icon: CreditCard },
   { href: "/dashboard/profile", label: "Profile", icon: User },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
-  { href: "https://docs.neosaas.dev", label: "Documentation", icon: Book },
+  { href: "https://neosaas.nodocs.io/", label: "Documentation", icon: Book },
   { href: "mailto:info@neosaas.dev", label: "Support", icon: Mail },
   { href: "/dashboard/ai", label: "AI", icon: Brain },
   { href: "/dashboard/upload", label: "Upload", icon: UploadCloud },
