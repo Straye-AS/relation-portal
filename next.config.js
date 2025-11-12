@@ -1,34 +1,19 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'standalone',
+  reactStrictMode: true,
+  swcMinify: true,
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
-  images: { 
+  images: {
     unoptimized: true,
-    domains: [
-      "lh3.googleusercontent.com", 
-      "avatars.githubusercontent.com",
-      "rnvvnmtfgwvhvyqjmqxc.supabase.co" // Supabase storage domain
-    ],
   },
   experimental: {
-    serverActions: true,
-    forceSwcTransforms: true,
+    serverActions: {
+      bodySizeLimit: '2mb',
+    },
   },
-  webpack: (config, { isServer }) => {
-    // Suppress the warning about the dynamic require in @supabase/realtime-js
-    config.module.exprContextCritical = false;
-    
-    // Ignore specific warnings
-    if (!config.ignoreWarnings) {
-      config.ignoreWarnings = [];
-    }
-    config.ignoreWarnings.push(
-      /Critical dependency: the request of a dependency is an expression/
-    );
-    
-    return config;
-  },
-};
+}
 
-module.exports = nextConfig;
+module.exports = nextConfig

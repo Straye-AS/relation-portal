@@ -1,36 +1,30 @@
-import './globals.css';
-import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
-import { ThemeProvider } from "@/components/theme-provider";
-import { Toaster } from "@/components/ui/toaster";
-import Script from 'next/script';
+import "./globals.css";
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import { Providers } from "@/lib/providers";
+import Script from "next/script";
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'NeoSaaS - Modern SaaS Starter',
-  description: 'A modern SaaS starter kit built with Next.js, TypeScript, Supabase and Tailwind CSS',
+  title: "Straye Relation - CRM for Straye Group",
+  description:
+    "Intern CRM og tilbudshåndtering for Straye Group - Administrer tilbud, kunder og prosjekter effektivt",
   icons: {
-    icon: '/icon.png',
+    icon: "/icon.png",
   },
   openGraph: {
-    title: 'NeoSaaS - Modern SaaS Starter',
-    description: 'A modern SaaS starter kit built with Next.js, TypeScript, Supabase and Tailwind CSS',
+    title: "Straye Relation - CRM for Straye Group",
+    description:
+      "Intern CRM og tilbudshåndtering for Straye Group - Administrer tilbud, kunder og prosjekter effektivt",
     images: [
       {
-        url: '/og-image.png',
+        url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: 'NeoSaaS Preview',
+        alt: "Straye Relation",
       },
     ],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'NeoSaaS - Modern SaaS Starter',
-    description: 'A modern SaaS starter kit built with Next.js, TypeScript, Supabase and Tailwind CSS',
-    images: ['/og-image.png'],
-    creator: '@neosaas',
   },
 };
 
@@ -40,57 +34,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="no" suppressHydrationWarning>
       <head>
-
-        {/* Uncomment this to use Datafast */}
-
-      {/* <Script
-          data-website-id="YOUR_WEBSITE_ID"
-          data-domain="YOUR_DOMAIN.COM"
-          src="https://datafa.st/js/script.js"
-          strategy="afterInteractive"
-        /> */}
-
-
-        {/* Uncomment this to use Google Analytics */}
-
-        <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-7CX695C9QV"
-          strategy="afterInteractive"
-        />
-        <Script id="google-analytics" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'G-7CX695C9QV');
-          `}
-        </Script>
-
-        <meta property="og:url" content="https://demo.neosaas.dev" />
-        <meta property="og:type" content="website" />
-        <meta property="og:title" content="NeoSaaS - Modern SaaS Starter" />
-        <meta property="og:description" content="A modern SaaS starter kit built with Next.js, TypeScript, Supabase and Tailwind CSS" />
-        <meta property="og:image" content="https://demo.neosaas.dev/og-image.png" />
-
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta property="twitter:domain" content="demo.neosaas.dev" />
-        <meta property="twitter:url" content="https://demo.neosaas.dev" />
-        <meta name="twitter:title" content="NeoSaaS - Modern SaaS Starter" />
-        <meta name="twitter:description" content="A modern SaaS starter kit built with Next.js, TypeScript, Supabase and Tailwind CSS" />
-        <meta name="twitter:image" content="https://demo.neosaas.dev/og-image.png" />
+        {process.env.NEXT_PUBLIC_DATAFAST_WEBSITE_ID && (
+          <Script
+            data-website-id={process.env.NEXT_PUBLIC_DATAFAST_WEBSITE_ID}
+            data-domain={process.env.NEXT_PUBLIC_DATAFAST_DOMAIN}
+            src="https://datafa.st/js/script.js"
+            strategy="afterInteractive"
+          />
+        )}
       </head>
       <body className={inter.className}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          {children}
-          <Toaster />
-        </ThemeProvider>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
