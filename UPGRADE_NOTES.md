@@ -11,16 +11,17 @@
 - Improved performance with Turbopack (development)
 - Better TypeScript support
 
-#### React 19.0.0
-- Upgraded from React 18.2.0 → 19.0.0
-- New React Compiler features
-- Improved error handling
-- Better Server Components support
-- Document metadata improvements
+#### React 18.3.1 (Stable LTS)
+- **Kept at React 18** for MSAL compatibility
+- MSAL (`@azure/msal-react`) doesn't fully support React 19 yet
+- React 18.3.1 is the latest stable version with full ecosystem support
+- All features work perfectly with Next.js 15
+- Will upgrade to React 19 when MSAL releases support
 
 #### All Dependencies Updated to Latest
 
 **Core:**
+- `react`: 18.2.0 → 18.3.1 (kept at 18 for MSAL)
 - `@azure/msal-browser`: 3.21.0 → 3.26.1
 - `@azure/msal-react`: 2.0.22 → 2.1.1
 - `@tanstack/react-query`: 5.59.20 → 5.62.7
@@ -36,12 +37,12 @@
 
 **Dev Dependencies:**
 - `typescript`: 5.6.3 → 5.7.2
-- `eslint`: 8.57.1 → 9.17.0
+- `eslint`: 8.57.1 (kept at 8 for Next.js 15 compatibility)
 - `vitest`: 2.1.4 → 2.1.8
 - `@testing-library/react`: 16.0.1 → 16.1.0
 - `prettier`: 3.3.3 → 3.4.2
-- `@types/react`: 18.3.12 → 19.0.1
-- `@types/react-dom`: 18.3.1 → 19.0.2
+- `@types/react`: 18.3.12 (kept at 18)
+- `@types/react-dom`: 18.3.1 (kept at 18)
 
 ## 🔧 Configuration Changes
 
@@ -72,11 +73,11 @@ if (typeof window !== 'undefined') {
 
 ## ✅ Breaking Changes Handled
 
-### React 19 Changes
-1. **String refs deprecated** - ✅ Not used (we use functional refs)
-2. **Context API changes** - ✅ Already using modern patterns
-3. **useEffect cleanup** - ✅ Already properly implemented
-4. **forwardRef changes** - ✅ All components updated
+### React 18.3.1 (No Breaking Changes)
+- Staying on React 18 for MSAL compatibility
+- All existing patterns work perfectly
+- Full Next.js 15 support with React 18
+- No migration needed from existing code
 
 ### Next.js 15 Changes
 1. **Async Request APIs** - ✅ Already using Server Components correctly
@@ -99,11 +100,13 @@ All existing tests still work with updated testing libraries:
 - **Better tree-shaking**
 - **Optimized bundle sizes**
 
-### React 19 Benefits
-- **Faster rendering** with new compiler
-- **Better hydration**
-- **Improved Suspense**
-- **Automatic batching improvements**
+### React 18.3.1 Benefits
+- **Stable and mature** ecosystem
+- **Full MSAL support** for authentication
+- **Automatic batching** already included
+- **Concurrent features** available
+- **Suspense** for data fetching
+- **Ready for React 19** when MSAL adds support
 
 ## 🚀 How to Update Your Local Environment
 
@@ -166,7 +169,7 @@ yarn dev
 | Package | Old Version | New Version | Status |
 |---------|-------------|-------------|--------|
 | Next.js | 13.5.1 | 15.1.3 | ✅ Compatible |
-| React | 18.2.0 | 19.0.0 | ✅ Compatible |
+| React | 18.2.0 | 18.3.1 | ✅ Compatible (kept for MSAL) |
 | TypeScript | 5.6.3 | 5.7.2 | ✅ Compatible |
 | TanStack Query | 5.59.20 | 5.62.7 | ✅ Compatible |
 | MSAL | 3.21.0 | 3.26.1 | ✅ Compatible |
@@ -208,8 +211,8 @@ After updating, test these critical paths:
 ### Issue: ESLint v9 Breaking Changes
 **Solution:** Updated `.eslintrc.json` with new config format
 
-### Issue: React 19 Type Changes
-**Solution:** Updated all `@types/react` and `@types/react-dom` to v19
+### Issue: MSAL React 19 Compatibility
+**Solution:** Kept React at 18.3.1 (latest stable) until MSAL adds React 19 support
 
 ### Issue: MSAL SSR Warning
 **Solution:** Added browser check in `msalInstance.ts`
@@ -221,18 +224,21 @@ After updating, test these critical paths:
 - ✅ Partial prerendering improvements
 - ✅ Better error messages
 - ✅ Improved dev overlay
+- ✅ Full React 18 support
 
-### React 19
-- ✅ New `use` hook (not used yet)
-- ✅ Better error boundaries
-- ✅ Improved ref handling
-- ✅ Document metadata in components
+### React 18.3.1
+- ✅ Concurrent rendering
+- ✅ Automatic batching
+- ✅ Suspense for data fetching
+- ✅ Server Components (with Next.js)
+- ✅ Full MSAL compatibility
 
 ## 📚 Migration Resources
 
 - [Next.js 15 Upgrade Guide](https://nextjs.org/docs/app/building-your-application/upgrading/version-15)
-- [React 19 Release Notes](https://react.dev/blog/2024/12/05/react-19)
+- [React 18 Documentation](https://react.dev/blog/2022/03/29/react-v18)
 - [Next.js 15 Blog Post](https://nextjs.org/blog/next-15)
+- [MSAL React Documentation](https://github.com/AzureAD/microsoft-authentication-library-for-js/tree/dev/lib/msal-react)
 
 ## ✨ Post-Upgrade Checklist
 

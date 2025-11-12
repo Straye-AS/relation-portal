@@ -2,11 +2,12 @@
 
 ## Latest Version Info
 - **Next.js:** 15.1.3 (latest stable)
-- **React:** 19.0.0 (latest stable)
+- **React:** 18.3.1 (stable LTS - for MSAL compatibility)
 - **TypeScript:** 5.7.2
 - **All dependencies:** Updated December 2024
 
-> **Note:** Next.js 16 doesn't exist yet. Version 15.1.3 is the latest stable release.
+> **Note:** React is kept at 18.3.1 because MSAL doesn't fully support React 19 yet.
+> Next.js 15 works perfectly with React 18.
 
 ## Prerequisites
 - Node.js 20.18.0 (LTS) - Use `nvm use` if you have .nvmrc

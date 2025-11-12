@@ -1,9 +1,15 @@
 # Dependency Resolution Fix
 
-## Problem
-The original package.json had conflicting TypeScript ESLint versions that caused npm peer dependency errors:
+## Problems Fixed
+
+### 1. TypeScript ESLint Conflicts
+The original package.json had conflicting TypeScript ESLint versions:
 - `@typescript-eslint/eslint-plugin@^8.14.0` required `@typescript-eslint/parser@^8.46.4`
 - `eslint-config-next@15.1.3` expected `@typescript-eslint/parser@^5.4.2 || ^6.0.0`
+
+### 2. React Version + MSAL Compatibility
+- MSAL (`@azure/msal-react@2.1.1`) doesn't fully support React 19 yet
+- Using React 18.3.1 (stable LTS) for guaranteed authentication compatibility
 
 ## Solution
 Removed the separate TypeScript ESLint packages since Next.js 15's `eslint-config-next` includes them internally.
@@ -140,10 +146,11 @@ pnpm install
 
 ### Dependencies
 - Next.js: `15.1.3` (pinned)
-- React: `^19.0.0`
+- React: `^18.3.1` (kept at 18 for MSAL)
 - TypeScript: `^5.7.2`
 - TanStack Query: `^5.62.7`
 - MSAL: `^3.26.1`
+- react-day-picker: `8.10.1` (pinned for React 18)
 
 ### Dev Dependencies
 - ESLint: `^8.57.1`

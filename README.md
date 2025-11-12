@@ -5,7 +5,7 @@ Intern CRM og tilbudshåndtering for Straye Group.
 ## 🚀 Teknologier
 
 - **Framework:** Next.js 15.1.3 (App Router) - Latest stable version
-- **React:** React 19.0.0 - Latest stable version
+- **React:** React 18.3.1 - Stable LTS (for MSAL compatibility)
 - **Language:** TypeScript 5.7.2 (strict mode)
 - **Styling:** TailwindCSS + shadcn/ui
 - **State Management:** Zustand + TanStack Query (React Query)
