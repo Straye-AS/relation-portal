@@ -4,8 +4,9 @@ Intern CRM og tilbudshåndtering for Straye Group.
 
 ## 🚀 Teknologier
 
-- **Framework:** Next.js 15 (App Router)
-- **Language:** TypeScript (strict mode)
+- **Framework:** Next.js 15.1.3 (App Router) - Latest stable version
+- **React:** React 19.0.0 - Latest stable version
+- **Language:** TypeScript 5.7.2 (strict mode)
 - **Styling:** TailwindCSS + shadcn/ui
 - **State Management:** Zustand + TanStack Query (React Query)
 - **Authentication:** Microsoft Entra ID (MSAL)
@@ -17,9 +18,11 @@ Intern CRM og tilbudshåndtering for Straye Group.
 
 ## 📋 Forutsetninger
 
-- Node.js 20+
+- Node.js 20.18.0+ (LTS)
 - pnpm 8+
 - Microsoft Entra ID (Azure AD) app registrering
+
+> **Note:** All dependencies updated to latest stable versions (December 2024)
 
 ## 🛠️ Installasjon
 

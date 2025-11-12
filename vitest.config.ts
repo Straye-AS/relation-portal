@@ -19,6 +19,7 @@ export default defineConfig({
         "**/*.config.*",
         "**/*.d.ts",
         "**/types/**",
+        ".next/**",
       ],
     },
   },
