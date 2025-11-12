@@ -10,22 +10,36 @@
 
 ## Prerequisites
 - Node.js 20.18.0 (LTS) - Use `nvm use` if you have .nvmrc
-- pnpm 8 or later
+- npm 10+ (or pnpm 8+ / yarn 4+)
 - Azure AD app registration (for authentication)
 
 ## Installation
 
-### 1. Install Dependencies
+### 1. Clean Install (if upgrading)
 ```bash
-# Using pnpm (recommended)
-pnpm install
+# Remove old dependencies first
+rm -rf node_modules package-lock.json
 
-# Or using npm
+# Then install
 npm install
+```
+
+### 1. Fresh Install
+```bash
+# Using npm (recommended)
+npm install
+
+# Or using pnpm
+pnpm install
 
 # Or using yarn
 yarn install
 ```
+
+> **Tip:** If you get peer dependency errors with npm, try:
+> ```bash
+> npm install --legacy-peer-deps
+> ```
 
 ### 2. Configure Environment
 ```bash
@@ -55,24 +69,27 @@ Open http://localhost:3000 in your browser.
 
 ```bash
 # Development
-pnpm dev              # Start dev server (with Turbopack)
+npm run dev           # Start dev server
+npm run dev -- --turbo  # Start with Turbopack (faster)
 
 # Building
-pnpm build            # Build for production
-pnpm start            # Start production server
+npm run build         # Build for production
+npm start             # Start production server
 
 # Code Quality
-pnpm lint             # Run ESLint
-pnpm lint:fix         # Fix ESLint issues
-pnpm format           # Format code with Prettier
-pnpm format:check     # Check formatting
-pnpm type-check       # TypeScript type checking
+npm run lint          # Run ESLint
+npm run lint:fix      # Fix ESLint issues
+npm run format        # Format code with Prettier
+npm run format:check  # Check formatting
+npm run type-check    # TypeScript type checking
 
 # Testing
-pnpm test             # Run tests
-pnpm test:ui          # Run tests with UI
-pnpm test:coverage    # Run tests with coverage
+npm test              # Run tests
+npm run test:ui       # Run tests with UI
+npm run test:coverage # Run tests with coverage
 ```
+
+> Replace `npm run` with `pnpm` or `yarn` if using those package managers
 
 ## Docker (Production)
 

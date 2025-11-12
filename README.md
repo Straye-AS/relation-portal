@@ -19,10 +19,11 @@ Intern CRM og tilbudshåndtering for Straye Group.
 ## 📋 Forutsetninger
 
 - Node.js 20.18.0+ (LTS)
-- pnpm 8+
+- npm 10+ (eller pnpm 8+ / yarn 4+)
 - Microsoft Entra ID (Azure AD) app registrering
 
 > **Note:** All dependencies updated to latest stable versions (December 2024)
+> Works with npm, pnpm, or yarn
 
 ## 🛠️ Installasjon
 
@@ -34,7 +35,14 @@ cd straye-relation
 
 2. Installer avhengigheter:
 ```bash
+# Using npm (recommended)
+npm install
+
+# Or using pnpm
 pnpm install
+
+# Or using yarn
+yarn install
 ```
 
 3. Kopier `.env.example` til `.env.local` og fyll inn verdier:
@@ -53,7 +61,8 @@ NEXT_PUBLIC_AZURE_REDIRECT_URI=http://localhost:3000
 ## 🏃 Kjøre lokalt
 
 ```bash
-pnpm dev
+npm run dev
+# Or: pnpm dev / yarn dev
 ```
 
 Applikasjonen vil være tilgjengelig på http://localhost:3000
@@ -62,39 +71,39 @@ Applikasjonen vil være tilgjengelig på http://localhost:3000
 
 ```bash
 # Kjør tester
-pnpm test
+npm test
 
 # Kjør tester med UI
-pnpm test:ui
+npm run test:ui
 
 # Kjør tester med dekning
-pnpm test:coverage
+npm run test:coverage
 ```
 
 ## 🔍 Linting og Formattering
 
 ```bash
 # Kjør ESLint
-pnpm lint
+npm run lint
 
 # Fiks ESLint-feil automatisk
-pnpm lint:fix
+npm run lint:fix
 
 # Kjør Prettier
-pnpm format
+npm run format
 
 # Sjekk formattering
-pnpm format:check
+npm run format:check
 
 # Type-sjekk
-pnpm type-check
+npm run type-check
 ```
 
 ## 🏗️ Bygg for produksjon
 
 ```bash
-pnpm build
-pnpm start
+npm run build
+npm start
 ```
 
 ## 🐳 Docker

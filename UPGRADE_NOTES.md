@@ -107,6 +107,25 @@ All existing tests still work with updated testing libraries:
 
 ## 🚀 How to Update Your Local Environment
 
+### Using npm (recommended for compatibility)
+```bash
+# 1. Remove old dependencies
+rm -rf node_modules package-lock.json
+
+# 2. Install new dependencies
+npm install
+
+# 3. Run type check
+npm run type-check
+
+# 4. Run tests
+npm test
+
+# 5. Start dev server
+npm run dev
+```
+
+### Using pnpm
 ```bash
 # 1. Remove old dependencies
 rm -rf node_modules pnpm-lock.yaml
@@ -122,6 +141,24 @@ pnpm test
 
 # 5. Start dev server
 pnpm dev
+```
+
+### Using yarn
+```bash
+# 1. Remove old dependencies
+rm -rf node_modules yarn.lock
+
+# 2. Install new dependencies
+yarn install
+
+# 3. Run type check
+yarn type-check
+
+# 4. Run tests
+yarn test
+
+# 5. Start dev server
+yarn dev
 ```
 
 ## 📋 Compatibility Matrix
