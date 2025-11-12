@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Circle, Menu, Rocket, X } from "lucide-react";
+import { Menu, Rocket } from "lucide-react";
 
 interface Route {
   href: string;
@@ -92,9 +92,9 @@ export function Header({ user }: { user: any }) {
         {/* Sağ taraf - Buttons */}
         <div className="justify-self-end">
           <div className="hidden md:flex items-center gap-4">
-          <Link href="https://buy.stripe.com/00w28sgaE73OfzD4RRcAo0A">
-          <Button variant="default" size="sm" className="rounded-full bg-red-500 hover:bg-red-600 text-white">Buy Boilerplate</Button>
-          </Link>
+            <Link href="https://buy.stripe.com/00w28sgaE73OfzD4RRcAo0A">
+              <Button variant="default" size="sm" className="rounded-full bg-red-500 hover:bg-red-600 text-white">Buy Boilerplate</Button>
+            </Link>
             <ThemeToggle />
             {user ? (
               <Button asChild variant="default" className="rounded-full">

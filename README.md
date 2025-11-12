@@ -45,14 +45,22 @@ pnpm install
 yarn install
 ```
 
-3. Kopier `.env.example` til `.env.local` og fyll inn verdier:
+3. Kopier `.env.local.example` til `.env.local`:
 ```bash
-cp .env.example .env.local
+cp .env.local.example .env.local
 ```
 
 4. Konfigurer miljøvariabler i `.env.local`:
+
+**For lokal utvikling (anbefalt for å komme raskt i gang):**
+```env
+# Bruk lokal test-bruker (ingen Microsoft-konto nødvendig)
+NEXT_PUBLIC_USE_LOCAL_AUTH=true
 ```
-NEXT_PUBLIC_API_URL=https://api.straye-relation.dev
+
+**For produksjonslignende testing med Microsoft:**
+```env
+NEXT_PUBLIC_USE_LOCAL_AUTH=false
 NEXT_PUBLIC_AZURE_CLIENT_ID=your-client-id
 NEXT_PUBLIC_AZURE_TENANT_ID=your-tenant-id
 NEXT_PUBLIC_AZURE_REDIRECT_URI=http://localhost:3000
@@ -143,6 +151,23 @@ docker-compose up -d
 ## 🔐 Autentisering
 
 Applikasjonen bruker Microsoft Entra ID (Azure AD) for autentisering via MSAL. Bare autoriserte brukere i Straye Group kan logge inn.
+
+### Lokal utvikling uten Microsoft-konto
+
+For lokal utvikling kan du bruke lokal autentisering uten å trenge en Microsoft-konto:
+
+```bash
+# I .env.local
+NEXT_PUBLIC_USE_LOCAL_AUTH=true
+```
+
+Dette gir deg tilgang til en testutvikler uten innlogging via Microsoft. Se [LOCAL_AUTH.md](./LOCAL_AUTH.md) for fullstendig dokumentasjon.
+
+**Quick start:**
+1. Sett `NEXT_PUBLIC_USE_LOCAL_AUTH=true` i `.env.local`
+2. Start dev-serveren
+3. Klikk "Logg inn som testutvikler" på login-siden
+4. Bruk auth-toggle-knappen for å bytte mellom lokal og Microsoft-autentisering
 
 ## 🎨 Temaer
 

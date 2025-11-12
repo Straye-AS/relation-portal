@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -13,15 +15,22 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Bell, Menu } from "lucide-react";
+import { Bell, Menu, Search } from "lucide-react";
 import { useNotificationStore } from "@/store/useNotificationStore";
 import { useUIStore } from "@/store/useUIStore";
 import { Badge } from "@/components/ui/badge";
+import { CompanySelector } from "@/components/dashboard/company-selector";
+import { GlobalSearch } from "@/components/search/global-search";
+import { useKeyboardShortcut } from "@/hooks/useKeyboardShortcut";
 
 export function AppHeader() {
   const { user, logout } = useAuth();
   const unreadCount = useNotificationStore((state) => state.unreadCount);
   const toggleSidebar = useUIStore((state) => state.toggleSidebar);
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  // Keyboard shortcut: Cmd+K (Mac) or Ctrl+K (Windows/Linux)
+  useKeyboardShortcut("k", () => setSearchOpen(true), { ctrl: true, meta: true });
 
   const userInitials = user?.name
     .split(" ")
@@ -42,12 +51,51 @@ export function AppHeader() {
         </Button>
 
         <div className="mr-4 flex">
-          <Link href="/" className="flex items-center space-x-2">
-            <span className="font-bold text-xl">Straye Relation</span>
+          <Link href="/" className="flex items-center space-x-3">
+            <Image
+              src="/straye-logo-blue.png"
+              alt="Straye"
+              width={32}
+              height={32}
+              className="dark:hidden"
+              priority
+            />
+            <Image
+              src="/straye-logo-white.png"
+              alt="Straye"
+              width={32}
+              height={32}
+              className="hidden dark:block"
+              priority
+            />
+            <span className="font-semibold text-lg hidden sm:inline text-muted-foreground">Relation</span>
           </Link>
         </div>
 
         <div className="flex flex-1 items-center justify-end space-x-2">
+          <Button
+            variant="outline"
+            className="gap-2 text-muted-foreground hidden sm:flex"
+            onClick={() => setSearchOpen(true)}
+          >
+            <Search className="h-4 w-4" />
+            <span className="hidden md:inline">Søk...</span>
+            <kbd className="hidden md:inline pointer-events-none ml-auto h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100">
+              <span className="text-xs">⌘</span>K
+            </kbd>
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            className="sm:hidden"
+            onClick={() => setSearchOpen(true)}
+          >
+            <Search className="h-5 w-5" />
+          </Button>
+
+          <CompanySelector />
+
           <Link href="/notifications">
             <Button variant="ghost" size="icon" className="relative">
               <Bell className="h-5 w-5" />
@@ -93,6 +141,9 @@ export function AppHeader() {
           </DropdownMenu>
         </div>
       </div>
+
+      {/* Global Search */}
+      <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} />
     </header>
   );
 }

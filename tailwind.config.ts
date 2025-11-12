@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import animate from "tailwindcss-animate";
 
 const config: Config = {
   darkMode: ["class"],
@@ -19,6 +20,21 @@ const config: Config = {
       },
     },
     extend: {
+      fontFamily: {
+        sans: [
+          'Montserrat',
+          'Inter',
+          'system-ui',
+          '-apple-system',
+          'BlinkMacSystemFont',
+          'Segoe UI',
+          'Roboto',
+          'Helvetica Neue',
+          'Arial',
+          'sans-serif',
+        ],
+        heading: ['Montserrat', 'Inter', 'sans-serif'],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -53,6 +69,11 @@ const config: Config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        straye: {
+          navy: "hsl(var(--straye-navy))",
+          blue: "hsl(var(--straye-blue))",
+          lightBlue: "hsl(var(--straye-light-blue))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -75,7 +96,7 @@ const config: Config = {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [animate],
 };
 
 export default config;

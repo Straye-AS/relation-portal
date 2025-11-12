@@ -1,22 +1,21 @@
 // Core CRM entity types for Straye Relation
 
 export type OfferPhase =
-  | "Lead"
-  | "Qualification"
-  | "Proposal"
-  | "Sent"
-  | "Negotiation"
-  | "Won"
-  | "Lost";
+  | "draft"
+  | "in_progress"
+  | "sent"
+  | "won"
+  | "lost"
+  | "expired";
 
-export type OfferStatus = "Active" | "Inactive" | "Archived";
+export type OfferStatus = "active" | "inactive" | "archived";
 
 export type ProjectStatus =
-  | "Planning"
-  | "Active"
-  | "OnHold"
-  | "Completed"
-  | "Cancelled";
+  | "planning"
+  | "active"
+  | "on_hold"
+  | "completed"
+  | "cancelled";
 
 export interface Discipline {
   id: string;
@@ -42,6 +41,7 @@ export interface Offer {
   title: string;
   customerId: string;
   customerName?: string;
+  companyId: CompanyId;
   phase: OfferPhase;
   probability: number; // 0-100
   value: number;
@@ -74,12 +74,27 @@ export interface Customer {
   activeOffers?: number;
 }
 
+export interface Contact {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  role?: string;
+  customerId?: string;
+  customerName?: string;
+  projectId?: string;
+  projectName?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Project {
   id: string;
   name: string;
   description?: string;
   customerId: string;
   customerName?: string;
+  companyId: CompanyId;
   status: ProjectStatus;
   startDate: string;
   endDate?: string;
@@ -115,16 +130,64 @@ export interface Notification {
   entityType?: "offer" | "project" | "customer";
 }
 
+export type CompanyId = "all" | "gruppe" | "stalbygg" | "hybridbygg" | "industri" | "tak" | "montasje";
+
+export interface Company {
+  id: CompanyId;
+  name: string;
+  shortName: string;
+  color: string;
+  logo?: string;
+}
+
+export interface PipelinePhaseData {
+  phase: OfferPhase;
+  count: number;
+  totalValue: number;
+  weightedValue: number;
+  offers: Offer[];
+}
+
+export interface DisciplineStats {
+  name: string;
+  totalValue: number;
+  offerCount: number;
+  projectCount: number;
+  avgMargin: number;
+}
+
+export interface TeamMemberStats {
+  userId: string;
+  name: string;
+  avatar?: string;
+  offerCount: number;
+  wonCount: number;
+  totalValue: number;
+  wonValue: number;
+  winRate: number;
+}
+
 export interface DashboardMetrics {
   totalOffers: number;
   activeOffers: number;
   wonOffers: number;
   lostOffers: number;
   totalValue: number;
+  weightedValue: number;
   averageProbability: number;
   offersByPhase: Record<OfferPhase, number>;
+  pipeline: PipelinePhaseData[];
+  offerReserve: number;
+  winRate: number;
+  revenueForecast30Days: number;
+  revenueForecast90Days: number;
+  topDisciplines: DisciplineStats[];
+  activeProjects: Project[];
+  topCustomers: Customer[];
+  teamPerformance: TeamMemberStats[];
   recentOffers: Offer[];
   recentProjects: Project[];
+  recentActivities: Notification[];
 }
 
 // API Response types
@@ -167,4 +230,24 @@ export type SortDirection = "asc" | "desc";
 export interface SortConfig {
   field: string;
   direction: SortDirection;
+}
+
+// Search types
+export type SearchEntityType = "customer" | "project" | "offer" | "contact";
+
+export interface SearchResult {
+  id: string;
+  type: SearchEntityType;
+  title: string;
+  subtitle?: string;
+  metadata?: string;
+  entity: Customer | Project | Offer | Contact;
+}
+
+export interface SearchResults {
+  customers: Customer[];
+  projects: Project[];
+  offers: Offer[];
+  contacts: Contact[];
+  total: number;
 }
