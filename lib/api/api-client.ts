@@ -14,6 +14,7 @@ export interface TokenProvider {
 export interface ApiClientConfig {
   baseUrl?: string;
   tokenProvider: TokenProvider;
+  headersProvider?: () => Promise<Record<string, string>>;
 }
 
 /**
@@ -30,9 +31,14 @@ export function createApiClient(config: ApiClientConfig) {
     securityWorker: async (): Promise<RequestParams | void> => {
       const token = await config.tokenProvider();
       if (token) {
+        const extraHeaders = config.headersProvider
+          ? await config.headersProvider()
+          : {};
+
         return {
           headers: {
             Authorization: `Bearer ${token}`,
+            ...extraHeaders,
           },
         };
       }

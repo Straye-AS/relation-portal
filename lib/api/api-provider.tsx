@@ -10,6 +10,7 @@
 import { createContext, useContext, useMemo, type ReactNode } from "react";
 import { createApiClient, type HttpClient } from "./api-client";
 import { useAuth } from "@/hooks/useAuth";
+import { useCompanyStore } from "@/store/company-store";
 
 // Import generated API modules
 import { Activities } from "@/lib/.generated/Activities";
@@ -73,7 +74,15 @@ export function ApiProvider({ children }: ApiProviderProps) {
       return null;
     };
 
-    const http = createApiClient({ tokenProvider });
+    const http = createApiClient({
+      tokenProvider,
+      headersProvider: async () => {
+        const selectedCompanyId = useCompanyStore.getState().selectedCompanyId;
+        return {
+          "X-Company-ID": selectedCompanyId,
+        };
+      },
+    });
 
     // Create instances of all API modules
     return {

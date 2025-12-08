@@ -20,6 +20,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Eye,
   LayoutGrid,
@@ -42,10 +43,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { NewBadge } from "@/components/ui/new-badge";
 
 type ViewMode = "list" | "card";
 
 export default function CustomersPage() {
+  const router = useRouter();
   const { data, isLoading } = useCustomers();
   const [viewMode, setViewMode] = useState<ViewMode>("list");
 
@@ -128,7 +131,11 @@ export default function CustomersPage() {
                   </TableHeader>
                   <TableBody>
                     {customers.map((customer) => (
-                      <TableRow key={customer.id}>
+                      <TableRow
+                        key={customer.id}
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => router.push(`/customers/${customer.id}`)}
+                      >
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <Avatar className="h-9 w-9">
@@ -142,7 +149,10 @@ export default function CustomersPage() {
                               </AvatarFallback>
                             </Avatar>
                             <div className="font-medium">
-                              <div>{customer.name}</div>
+                              <div>
+                                {customer.name}
+                                <NewBadge createdAt={customer.createdAt} />
+                              </div>
                               <div className="text-xs text-muted-foreground">
                                 Org: {customer.orgNumber ?? "-"}
                               </div>
@@ -196,7 +206,11 @@ export default function CustomersPage() {
                         <TableCell className="text-right">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" className="h-8 w-8 p-0">
+                              <Button
+                                variant="ghost"
+                                className="h-8 w-8 p-0"
+                                onClick={(e) => e.stopPropagation()}
+                              >
                                 <span className="sr-only">Åpne meny</span>
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
@@ -246,6 +260,7 @@ export default function CustomersPage() {
                             className="decoration-primary underline-offset-4 hover:underline"
                           >
                             {customer.name}
+                            <NewBadge createdAt={customer.createdAt} />
                           </Link>
                         </CardTitle>
                         <CardDescription>{customer.orgNumber}</CardDescription>

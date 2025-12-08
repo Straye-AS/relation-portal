@@ -7,7 +7,6 @@
  * Uses the generated API client for backend communication.
  */
 
-import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useApi } from "@/lib/api/api-provider";
 import { useAuth } from "@/hooks/useAuth";
@@ -18,27 +17,17 @@ import { useAuth } from "@/hooks/useAuth";
 export function useSearch(query: string) {
   const api = useApi();
   const { isAuthenticated } = useAuth();
-  const [debouncedQuery, setDebouncedQuery] = useState(query);
 
-  // Debounce the search query
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedQuery(query);
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [query]);
-
-  const isSearching = debouncedQuery.trim().length > 0;
+  const isSearching = query.trim().length > 0;
 
   return useQuery({
-    queryKey: ["search", debouncedQuery],
+    queryKey: ["search", query],
     queryFn: async () => {
       if (!isSearching) {
         return { results: [], total: 0 };
       }
       const response = await api.search.searchList({
-        q: debouncedQuery,
+        q: query,
       });
       return response.data;
     },

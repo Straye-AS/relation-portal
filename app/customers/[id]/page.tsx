@@ -3,6 +3,8 @@
 import { AppLayout } from "@/components/layout/app-layout";
 import { useCustomer, useCustomerContacts } from "@/hooks/useCustomers";
 import { useOffers } from "@/hooks/useOffers";
+import { OfferStatusBadge } from "@/components/offers/offer-status-badge";
+import { ProjectStatusBadge } from "@/components/projects/project-status-badge";
 import { useProjects } from "@/hooks/useProjects";
 import type {
   DomainOfferDTO,
@@ -31,6 +33,7 @@ import {
 import { use } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useRouter } from "next/navigation";
 
 // Local interface for contact to satisfy TS and expected usage
 interface CustomerContact {
@@ -46,6 +49,7 @@ export default function CustomerDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const router = useRouter();
   const resolvedParams = use(params);
   const { data: customer, isLoading: isLoadingCustomer } = useCustomer(
     resolvedParams.id
@@ -406,20 +410,13 @@ export default function CustomerDetailPage({
                     {customerProjects.map((project: DomainProjectDTO) => (
                       <div
                         key={project.id}
-                        className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-muted/50"
+                        className="flex cursor-pointer items-center justify-between rounded-lg border p-4 transition-colors hover:bg-muted/50"
+                        onClick={() => router.push(`/projects/${project.id}`)}
                       >
                         <div className="grid gap-1">
                           <div className="flex items-center gap-2">
                             <h3 className="font-semibold">{project.name}</h3>
-                            <Badge
-                              variant={
-                                project.status === "active"
-                                  ? "default"
-                                  : "secondary"
-                              }
-                            >
-                              {project.status}
-                            </Badge>
+                            <ProjectStatusBadge status={project.status ?? ""} />
                           </div>
                           <p className="text-sm text-muted-foreground">
                             Leder: {project.managerName || "Ikke tildelt"}
@@ -433,15 +430,6 @@ export default function CustomerDetailPage({
                               maximumFractionDigits: 0,
                             }).format(project.budget || 0)}
                           </div>
-                          <Link href={`/projects/${project.id}`}>
-                            <Button
-                              variant="link"
-                              size="sm"
-                              className="h-auto p-0 text-xs"
-                            >
-                              Vis prosjekt
-                            </Button>
-                          </Link>
                         </div>
                       </div>
                     ))}
@@ -469,12 +457,13 @@ export default function CustomerDetailPage({
                     {customerOffers.map((offer: DomainOfferDTO) => (
                       <div
                         key={offer.id}
-                        className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-muted/50"
+                        className="flex cursor-pointer items-center justify-between rounded-lg border p-4 transition-colors hover:bg-muted/50"
+                        onClick={() => router.push(`/offers/${offer.id}`)}
                       >
                         <div className="grid gap-1">
                           <div className="flex items-center gap-2">
                             <h3 className="font-semibold">{offer.title}</h3>
-                            <Badge variant="outline">{offer.phase}</Badge>
+                            <OfferStatusBadge phase={offer.phase || "draft"} />
                           </div>
                           <p className="text-sm text-muted-foreground">
                             Ansvarlig:{" "}
@@ -489,15 +478,6 @@ export default function CustomerDetailPage({
                               maximumFractionDigits: 0,
                             }).format(offer.value || 0)}
                           </div>
-                          <Link href={`/offers/${offer.id}`}>
-                            <Button
-                              variant="link"
-                              size="sm"
-                              className="h-auto p-0 text-xs"
-                            >
-                              Vis tilbud
-                            </Button>
-                          </Link>
                         </div>
                       </div>
                     ))}

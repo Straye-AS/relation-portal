@@ -13,21 +13,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
-import { Plus, Eye } from "lucide-react";
+import { Plus } from "lucide-react";
 import { format } from "date-fns";
 import { nb } from "date-fns/locale";
 
-const statusColors: Record<string, string> = {
-  Planning: "bg-yellow-500",
-  Active: "bg-green-500",
-  OnHold: "bg-orange-500",
-  Completed: "bg-blue-500",
-  Cancelled: "bg-red-500",
-};
+import { ProjectStatusBadge } from "@/components/projects/project-status-badge";
+import { NewBadge } from "@/components/ui/new-badge";
+import { useRouter } from "next/navigation";
 
 export default function ProjectsPage() {
+  const router = useRouter();
   const { data: rawProjects, isLoading } = useProjects();
   const projects = rawProjects as DomainProjectDTO[] | undefined;
 
@@ -70,7 +66,6 @@ export default function ProjectsPage() {
                   <TableHead>Budsjett</TableHead>
                   <TableHead>Brukt</TableHead>
                   <TableHead>Startdato</TableHead>
-                  <TableHead className="text-right">Handling</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -80,20 +75,18 @@ export default function ProjectsPage() {
                   const spentPercentage =
                     budget > 0 ? (spent / budget) * 100 : 0;
                   return (
-                    <TableRow key={project.id}>
+                    <TableRow
+                      key={project.id}
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => router.push(`/projects/${project.id}`)}
+                    >
                       <TableCell className="font-medium">
                         {project.name}
+                        <NewBadge createdAt={project.createdAt} />
                       </TableCell>
                       <TableCell>{project.customerName}</TableCell>
                       <TableCell>
-                        <Badge
-                          className={
-                            statusColors[project.status ?? ""] ?? "bg-gray-500"
-                          }
-                          variant="secondary"
-                        >
-                          {project.status}
-                        </Badge>
+                        <ProjectStatusBadge status={project.status ?? ""} />
                       </TableCell>
                       <TableCell>{project.managerName}</TableCell>
                       <TableCell>
@@ -138,13 +131,6 @@ export default function ProjectsPage() {
                             locale: nb,
                           }
                         )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Link href={`/projects/${project.id}`}>
-                          <Button variant="ghost" size="sm">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </Link>
                       </TableCell>
                     </TableRow>
                   );

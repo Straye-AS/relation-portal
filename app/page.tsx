@@ -7,6 +7,8 @@ import { CardSkeleton } from "@/components/ui/card-skeleton";
 import { useCompanyStore } from "@/store/company-store";
 import { PipelineOverview } from "@/components/dashboard/pipeline-overview";
 import { OfferReserveCard } from "@/components/dashboard/offer-reserve-card";
+import { OfferStatsCard } from "@/components/dashboard/offer-stats-card";
+import { RecentOffersCard } from "@/components/dashboard/recent-offers-card";
 import { RevenueForecast } from "@/components/dashboard/revenue-forecast";
 import { TopDisciplines } from "@/components/dashboard/top-disciplines";
 import { TeamPerformance } from "@/components/dashboard/team-performance";
@@ -77,11 +79,19 @@ export default function DashboardPage() {
         />
 
         {/* Key Metrics Row */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <OfferReserveCard
             offerReserve={metrics.offerReserve ?? 0}
             winRate={metrics.winRate ?? 0}
             totalValue={metrics.totalValue ?? 0}
+            weightedValue={metrics.weightedValue ?? 0}
+            averageProbability={metrics.averageProbability ?? 0}
+          />
+          <OfferStatsCard
+            activeOffers={metrics.activeOffers ?? 0}
+            wonOffers={metrics.wonOffers ?? 0}
+            lostOffers={metrics.lostOffers ?? 0}
+            totalOffers={metrics.totalOffers ?? 0}
           />
           <RevenueForecast
             forecast30Days={metrics.revenueForecast30Days ?? 0}
@@ -111,7 +121,12 @@ export default function DashboardPage() {
 
         {/* Projects, Customers and Activity */}
         {/* TODO: Update these components to use Domain types */}
-        <div className="grid gap-4 pb-6 md:grid-cols-2 lg:grid-cols-3">
+        {/* Projects, Customers and Activity */}
+        {/* TODO: Update these components to use Domain types */}
+        <div className="grid gap-4 pb-6 md:grid-cols-2 lg:grid-cols-4">
+          <div className="col-span-1 lg:col-span-2">
+            <RecentOffersCard offers={metrics.recentOffers ?? []} />
+          </div>
           <ActiveProjectsCard
             projects={
               metrics.activeProjects as Parameters<
@@ -126,13 +141,15 @@ export default function DashboardPage() {
               >[0]["customers"]
             }
           />
-          <ActivityFeed
-            activities={
-              metrics.recentActivities as Parameters<
-                typeof ActivityFeed
-              >[0]["activities"]
-            }
-          />
+          <div className="col-span-1 lg:col-span-4">
+            <ActivityFeed
+              activities={
+                metrics.recentActivities as Parameters<
+                  typeof ActivityFeed
+                >[0]["activities"]
+              }
+            />
+          </div>
         </div>
       </motion.div>
     </AppLayout>

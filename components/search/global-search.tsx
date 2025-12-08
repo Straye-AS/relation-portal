@@ -81,27 +81,100 @@ interface SearchResultItem {
 
 export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
   const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const router = useRouter();
-  const { data, isLoading } = useSearch(query);
+  const { data, isLoading } = useSearch(debouncedQuery);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(query);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [query]);
 
   // Convert API response to usable format
   const results: SearchResultItem[] = useMemo(() => {
     if (!data) return [];
 
-    // Handle both array and single result responses
-    const rawResults = Array.isArray(data)
-      ? data
-      : ((data as { results?: unknown[] }).results ?? []);
+    // The API returns a categorized object
+    const response = data as {
+      customers?: any[];
+      projects?: any[];
+      offers?: any[];
+      deals?: any[];
+      contacts?: any[];
+    };
 
-    return (rawResults as Record<string, unknown>[]).map((item) => ({
-      id: (item.id as string) ?? "",
-      title: (item.title as string) ?? "",
-      subtitle: item.subtitle as string | undefined,
-      type: (item.type as string) ?? "unknown",
-      metadata: item.metadata as string | undefined,
-    }));
+    const mappedResults: SearchResultItem[] = [];
+
+    if (response.customers?.length) {
+      mappedResults.push(
+        ...response.customers.map((item) => ({
+          id: item.id,
+          title: item.name,
+          subtitle: item.orgNumber,
+          type: "customer",
+          metadata: item.status,
+        }))
+      );
+    }
+
+    if (response.projects?.length) {
+      mappedResults.push(
+        ...response.projects.map((item) => ({
+          id: item.id,
+          title: item.name || item.title,
+          subtitle: item.customerName,
+          type: "project",
+          metadata: item.status,
+        }))
+      );
+    }
+
+    if (response.offers?.length) {
+      mappedResults.push(
+        ...response.offers.map((item) => ({
+          id: item.id,
+          title: item.title,
+          subtitle: item.customerName,
+          type: "offer",
+          metadata: `${(item.value || 0).toLocaleString()} NOK`,
+        }))
+      );
+    }
+
+    if (response.deals?.length) {
+      mappedResults.push(
+        ...response.deals.map((item) => ({
+          id: item.id,
+          title: item.title,
+          subtitle: item.customerName,
+          type: "deal",
+          metadata: item.stage,
+        }))
+      );
+    }
+
+    if (response.contacts?.length) {
+      mappedResults.push(
+        ...response.contacts.map((item) => ({
+          id: item.id,
+          title:
+            `${item.firstName} ${item.lastName}`.trim() ||
+            item.name ||
+            item.email,
+          subtitle: item.email,
+          type: "contact",
+          metadata: item.phone,
+        }))
+      );
+    }
+
+    return mappedResults;
   }, [data]);
 
   // Group results by type

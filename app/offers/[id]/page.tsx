@@ -5,7 +5,7 @@ import { useOffer } from "@/hooks/useOffers";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CardSkeleton } from "@/components/ui/card-skeleton";
-import { Badge } from "@/components/ui/badge";
+import { OfferStatusBadge } from "@/components/offers/offer-status-badge";
 import {
   Table,
   TableBody,
@@ -107,7 +107,10 @@ export default function OfferDetailPage({
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Fase</p>
-                <Badge className="mt-1">{offer.phase}</Badge>
+                <OfferStatusBadge
+                  className="mt-1"
+                  phase={offer.phase || "draft"}
+                />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Status</p>
