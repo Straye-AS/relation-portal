@@ -83,7 +83,6 @@ export function useCurrentUser(): UseCurrentUserReturn {
       console.log("DEBUG: MSAL Event:", message.eventType);
       if (
         message.eventType === EventType.LOGIN_SUCCESS ||
-        message.eventType === EventType.ACQUIRE_TOKEN_SUCCESS ||
         message.eventType === EventType.SSO_SILENT_SUCCESS
       ) {
         console.log("DEBUG: Triggering refetch from event:", message.eventType);
