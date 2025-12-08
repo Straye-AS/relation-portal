@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useOffers, useOffer } from "@/hooks/useOffers";
@@ -14,9 +14,12 @@ const createWrapper = () => {
     },
   });
 
-  return ({ children }: { children: ReactNode }) => (
+  const Wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
+  Wrapper.displayName = "QueryClientWrapper";
+
+  return Wrapper;
 };
 
 describe("useOffers", () => {
@@ -29,7 +32,7 @@ describe("useOffers", () => {
 
     expect(result.current.data).toBeDefined();
     expect(Array.isArray(result.current.data)).toBe(true);
-    expect(result.current.data!.length).toBeGreaterThan(0);
+    expect(result.current.data!.data.length).toBeGreaterThan(0);
   });
 
   it("should have correct offer structure", async () => {
@@ -39,7 +42,7 @@ describe("useOffers", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    const firstOffer = result.current.data![0];
+    const firstOffer = result.current.data!.data[0];
     expect(firstOffer).toHaveProperty("id");
     expect(firstOffer).toHaveProperty("title");
     expect(firstOffer).toHaveProperty("customerId");
