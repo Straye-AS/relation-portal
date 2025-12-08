@@ -1,13 +1,51 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { dashboardApi } from "@/lib/api/client";
-import { CompanyId } from "@/types";
+/**
+ * Dashboard Hooks
+ *
+ * React Query hooks for fetching dashboard metrics and analytics.
+ * Uses the generated API client for backend communication.
+ */
 
-export function useDashboard(companyId?: CompanyId) {
+import { useQuery } from "@tanstack/react-query";
+import { useApi } from "@/lib/api/api-provider";
+import { useCompanyStore } from "@/store/company-store";
+import { useAuth } from "@/hooks/useAuth";
+
+/**
+ * Fetch dashboard metrics
+ */
+export function useDashboard() {
+  const api = useApi();
+  const { selectedCompanyId } = useCompanyStore();
+  const { isAuthenticated } = useAuth();
+
   return useQuery({
-    queryKey: ["dashboard", companyId],
-    queryFn: () => dashboardApi.getMetrics(companyId),
-    refetchInterval: 60000, // Refetch every minute
+    queryKey: ["dashboard", selectedCompanyId],
+    queryFn: async () => {
+      const response = await api.dashboard.metricsList();
+      return response.data;
+    },
+    enabled: isAuthenticated,
+    refetchInterval: 60000, // Refresh every minute
+    staleTime: 30000, // Consider fresh for 30 seconds
+  });
+}
+
+/**
+ * Fetch deals pipeline analytics
+ */
+export function usePipelineAnalytics() {
+  const api = useApi();
+  const { isAuthenticated } = useAuth();
+
+  return useQuery({
+    queryKey: ["deals", "analytics"],
+    queryFn: async () => {
+      const response = await api.deals.analyticsList({});
+      return response.data;
+    },
+    enabled: isAuthenticated,
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
 }

@@ -10,6 +10,14 @@ const montserrat = Montserrat({
   variable: "--font-montserrat",
 });
 
+import { Exo_2 } from "next/font/google";
+
+const exo2 = Exo_2({
+  subsets: ["latin"],
+  weight: ["400", "600", "700"], // Adding more weights for flexibility
+  variable: "--font-exo-2",
+});
+
 export const metadata: Metadata = {
   title: "Straye Relation - CRM for Straye Group",
   description:
@@ -49,7 +57,7 @@ export default function RootLayout({
           />
         )}
       </head>
-      <body className={montserrat.className}>
+      <body className={`${montserrat.className} ${exo2.variable}`}>
         <Providers>{children}</Providers>
       </body>
     </html>

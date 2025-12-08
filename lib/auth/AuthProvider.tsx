@@ -4,7 +4,6 @@ import { MsalProvider } from "@azure/msal-react";
 import { msalInstance } from "./msalInstance";
 import { ReactNode } from "react";
 import { LocalAuthProvider } from "./LocalAuthContext";
-import { isLocalAuthEnabled, getAuthModePreference } from "./localAuthConfig";
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -12,16 +11,15 @@ interface AuthProviderProps {
 
 /**
  * AuthProvider wraps the application with appropriate authentication context
- * Uses LocalAuthProvider in local development mode, MsalProvider in production
+ * Always includes both providers since useAuth hook unconditionally calls both
+ * useMsal() and useLocalAuth() - it decides which to use based on config
  */
 export function AuthProvider({ children }: AuthProviderProps) {
-  // Check if we should use local auth
-  const useLocalAuth = isLocalAuthEnabled() &&
-    (typeof window === "undefined" || getAuthModePreference() === "local");
-
-  if (useLocalAuth) {
-    return <LocalAuthProvider>{children}</LocalAuthProvider>;
-  }
-
-  return <MsalProvider instance={msalInstance}>{children}</MsalProvider>;
+  // Always wrap with both providers so useAuth can safely call both hooks
+  // The useAuth hook decides which auth mechanism to use based on config
+  return (
+    <MsalProvider instance={msalInstance}>
+      <LocalAuthProvider>{children}</LocalAuthProvider>
+    </MsalProvider>
+  );
 }

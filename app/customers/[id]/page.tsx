@@ -4,6 +4,10 @@ import { AppLayout } from "@/components/layout/app-layout";
 import { useCustomer } from "@/hooks/useCustomers";
 import { useOffers } from "@/hooks/useOffers";
 import { useProjects } from "@/hooks/useProjects";
+import type {
+  DomainOfferDTO,
+  DomainProjectDTO,
+} from "@/lib/.generated/data-contracts";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CardSkeleton } from "@/components/ui/card-skeleton";
@@ -22,11 +26,11 @@ export default function CustomerDetailPage({
   const { data: offers } = useOffers();
   const { data: projects } = useProjects();
 
-  const customerOffers = offers?.filter(
-    (o) => o.customerId === resolvedParams.id
+  const customerOffers = offers?.data?.filter(
+    (o: DomainOfferDTO) => o.customerId === resolvedParams.id
   );
   const customerProjects = projects?.filter(
-    (p) => p.customerId === resolvedParams.id
+    (p: DomainProjectDTO) => p.customerId === resolvedParams.id
   );
 
   if (isLoading) {
@@ -43,7 +47,7 @@ export default function CustomerDetailPage({
   if (!customer) {
     return (
       <AppLayout>
-        <div className="text-center py-12">
+        <div className="py-12 text-center">
           <p className="text-muted-foreground">Kunde ikke funnet</p>
           <Link href="/customers">
             <Button className="mt-4">Tilbake til kunder</Button>
@@ -65,7 +69,9 @@ export default function CustomerDetailPage({
             </Link>
             <div>
               <h1 className="text-3xl font-bold">{customer.name}</h1>
-              <p className="text-muted-foreground">Org.nr: {customer.orgNumber}</p>
+              <p className="text-muted-foreground">
+                Org.nr: {customer.orgNumber}
+              </p>
             </div>
           </div>
           <Button>
@@ -81,7 +87,7 @@ export default function CustomerDetailPage({
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-start gap-3">
-                <Mail className="h-5 w-5 mt-0.5 text-muted-foreground" />
+                <Mail className="mt-0.5 h-5 w-5 text-muted-foreground" />
                 <div>
                   <p className="text-sm text-muted-foreground">E-post</p>
                   <a
@@ -93,7 +99,7 @@ export default function CustomerDetailPage({
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <Phone className="h-5 w-5 mt-0.5 text-muted-foreground" />
+                <Phone className="mt-0.5 h-5 w-5 text-muted-foreground" />
                 <div>
                   <p className="text-sm text-muted-foreground">Telefon</p>
                   <a
@@ -106,7 +112,7 @@ export default function CustomerDetailPage({
               </div>
               {customer.address && (
                 <div className="flex items-start gap-3">
-                  <MapPin className="h-5 w-5 mt-0.5 text-muted-foreground" />
+                  <MapPin className="mt-0.5 h-5 w-5 text-muted-foreground" />
                   <div>
                     <p className="text-sm text-muted-foreground">Adresse</p>
                     <p className="font-medium">{customer.address}</p>
@@ -172,11 +178,11 @@ export default function CustomerDetailPage({
               <p className="text-muted-foreground">Ingen tilbud registrert</p>
             ) : (
               <div className="space-y-3">
-                {customerOffers.map((offer) => (
+                {customerOffers.map((offer: DomainOfferDTO) => (
                   <Link
                     key={offer.id}
                     href={`/offers/${offer.id}`}
-                    className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors"
+                    className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-muted/50"
                   >
                     <div>
                       <h3 className="font-semibold">{offer.title}</h3>
@@ -191,7 +197,7 @@ export default function CustomerDetailPage({
                           style: "currency",
                           currency: "NOK",
                           maximumFractionDigits: 0,
-                        }).format(offer.value)}
+                        }).format(offer.value ?? 0)}
                       </p>
                     </div>
                   </Link>
@@ -207,14 +213,16 @@ export default function CustomerDetailPage({
           </CardHeader>
           <CardContent>
             {!customerProjects || customerProjects.length === 0 ? (
-              <p className="text-muted-foreground">Ingen prosjekter registrert</p>
+              <p className="text-muted-foreground">
+                Ingen prosjekter registrert
+              </p>
             ) : (
               <div className="space-y-3">
-                {customerProjects.map((project) => (
+                {customerProjects.map((project: DomainProjectDTO) => (
                   <Link
                     key={project.id}
                     href={`/projects/${project.id}`}
-                    className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors"
+                    className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-muted/50"
                   >
                     <div>
                       <h3 className="font-semibold">{project.name}</h3>
@@ -229,7 +237,7 @@ export default function CustomerDetailPage({
                           style: "currency",
                           currency: "NOK",
                           maximumFractionDigits: 0,
-                        }).format(project.budget)}
+                        }).format(project.budget ?? 0)}
                       </p>
                     </div>
                   </Link>

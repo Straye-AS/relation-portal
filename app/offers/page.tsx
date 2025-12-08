@@ -17,6 +17,7 @@ import Link from "next/link";
 import { Plus, Eye } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { nb } from "date-fns/locale";
+import type { DomainOfferDTO } from "@/lib/.generated/data-contracts";
 
 const phaseColors: Record<string, string> = {
   Lead: "bg-gray-500",
@@ -29,7 +30,10 @@ const phaseColors: Record<string, string> = {
 };
 
 export default function OffersPage() {
-  const { data: offers, isLoading } = useOffers();
+  const { data, isLoading } = useOffers();
+
+  // Extract offers from paginated response
+  const offers: DomainOfferDTO[] = data?.data ?? [];
 
   return (
     <AppLayout>
@@ -51,15 +55,15 @@ export default function OffersPage() {
 
         {isLoading ? (
           <TableSkeleton rows={10} columns={6} />
-        ) : !offers || offers.length === 0 ? (
-          <div className="text-center py-12 border rounded-lg bg-muted/20">
+        ) : offers.length === 0 ? (
+          <div className="rounded-lg border bg-muted/20 py-12 text-center">
             <p className="text-muted-foreground">Ingen tilbud funnet</p>
             <Link href="/offers/new">
               <Button className="mt-4">Opprett ditt første tilbud</Button>
             </Link>
           </div>
         ) : (
-          <div className="border rounded-lg">
+          <div className="rounded-lg border">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -80,7 +84,9 @@ export default function OffersPage() {
                     <TableCell>{offer.customerName}</TableCell>
                     <TableCell>
                       <Badge
-                        className={phaseColors[offer.phase]}
+                        className={
+                          phaseColors[offer.phase ?? ""] ?? "bg-gray-500"
+                        }
                         variant="secondary"
                       >
                         {offer.phase}
@@ -91,25 +97,29 @@ export default function OffersPage() {
                         style: "currency",
                         currency: "NOK",
                         maximumFractionDigits: 0,
-                      }).format(offer.value)}
+                      }).format(offer.value ?? 0)}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <div className="w-full max-w-[100px] bg-muted rounded-full h-2">
+                        <div className="h-2 w-full max-w-[100px] rounded-full bg-muted">
                           <div
-                            className="bg-primary h-2 rounded-full"
-                            style={{ width: `${offer.probability}%` }}
+                            className="h-2 rounded-full bg-primary"
+                            style={{ width: `${offer.probability ?? 0}%` }}
                           />
                         </div>
-                        <span className="text-sm">{offer.probability}%</span>
+                        <span className="text-sm">
+                          {offer.probability ?? 0}%
+                        </span>
                       </div>
                     </TableCell>
-                    <TableCell>{offer.responsibleUserName}</TableCell>
+                    <TableCell>{offer.responsibleUserName ?? "-"}</TableCell>
                     <TableCell>
-                      {formatDistanceToNow(new Date(offer.updatedAt), {
-                        addSuffix: true,
-                        locale: nb,
-                      })}
+                      {offer.updatedAt
+                        ? formatDistanceToNow(new Date(offer.updatedAt), {
+                            addSuffix: true,
+                            locale: nb,
+                          })
+                        : "-"}
                     </TableCell>
                     <TableCell className="text-right">
                       <Link href={`/offers/${offer.id}`}>
@@ -122,6 +132,13 @@ export default function OffersPage() {
                 ))}
               </TableBody>
             </Table>
+          </div>
+        )}
+
+        {/* Pagination info */}
+        {data && (
+          <div className="text-center text-sm text-muted-foreground">
+            Viser {offers.length} av {data.total ?? offers.length} tilbud
           </div>
         )}
       </div>

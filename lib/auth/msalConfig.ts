@@ -49,7 +49,7 @@ export const msalConfig: Configuration = {
  * By default, MSAL.js will add OIDC scopes (openid, profile, email) to any login request.
  */
 export const loginRequest = {
-  scopes: ["User.Read", "openid", "profile", "email"],
+  scopes: [`api://${process.env.NEXT_PUBLIC_AZURE_CLIENT_ID}/access_as_user`],
 };
 
 /**

@@ -4,7 +4,7 @@ import { AppLayout } from "@/components/layout/app-layout";
 import { PageHeader } from "@/components/layout/page-header";
 import { useDashboard } from "@/hooks/useDashboard";
 import { CardSkeleton } from "@/components/ui/card-skeleton";
-import { useCompanyStore } from "@/store/useCompanyStore";
+import { useCompanyStore } from "@/store/company-store";
 import { PipelineOverview } from "@/components/dashboard/pipeline-overview";
 import { OfferReserveCard } from "@/components/dashboard/offer-reserve-card";
 import { RevenueForecast } from "@/components/dashboard/revenue-forecast";
@@ -16,10 +16,18 @@ import { QuickActions } from "@/components/dashboard/quick-actions";
 import { ActivityFeed } from "@/components/dashboard/activity-feed";
 import { motion } from "framer-motion";
 
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useEffect } from "react";
+
 export default function DashboardPage() {
-  const { selectedCompanyId, getSelectedCompany } = useCompanyStore();
-  const { data: metrics, isLoading } = useDashboard(selectedCompanyId);
-  const selectedCompany = getSelectedCompany();
+  const { userCompany } = useCompanyStore();
+  const { data: metrics, isLoading } = useDashboard();
+  const { refetch: refetchUser } = useCurrentUser();
+
+  // Validate auth on home page load
+  useEffect(() => {
+    refetchUser();
+  }, [refetchUser]);
 
   if (isLoading) {
     return (
@@ -38,7 +46,7 @@ export default function DashboardPage() {
     return (
       <AppLayout>
         <PageHeader title="Dashboard" />
-        <div className="text-center py-12">
+        <div className="py-12 text-center">
           <p className="text-muted-foreground">Kunne ikke laste dashboard</p>
         </div>
       </AppLayout>
@@ -49,7 +57,7 @@ export default function DashboardPage() {
     <AppLayout>
       <PageHeader
         title="Dashboard"
-        subtitle={`Oversikt for ${selectedCompany.name}`}
+        subtitle={userCompany ? `Oversikt for ${userCompany.name}` : "Oversikt"}
       />
 
       <motion.div
@@ -59,33 +67,72 @@ export default function DashboardPage() {
         className="space-y-6"
       >
         {/* Pipeline Overview */}
-        <PipelineOverview pipeline={metrics.pipeline} />
+        {/* TODO: Update PipelineOverview component to use DomainPipelinePhaseData[] */}
+        <PipelineOverview
+          pipeline={
+            metrics.pipeline as Parameters<
+              typeof PipelineOverview
+            >[0]["pipeline"]
+          }
+        />
 
         {/* Key Metrics Row */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <OfferReserveCard
-            offerReserve={metrics.offerReserve}
-            winRate={metrics.winRate}
-            totalValue={metrics.totalValue}
+            offerReserve={metrics.offerReserve ?? 0}
+            winRate={metrics.winRate ?? 0}
+            totalValue={metrics.totalValue ?? 0}
           />
           <RevenueForecast
-            forecast30Days={metrics.revenueForecast30Days}
-            forecast90Days={metrics.revenueForecast90Days}
+            forecast30Days={metrics.revenueForecast30Days ?? 0}
+            forecast90Days={metrics.revenueForecast90Days ?? 0}
           />
           <QuickActions />
         </div>
 
         {/* Disciplines and Team Performance */}
+        {/* TODO: Update these components to use Domain types */}
         <div className="grid gap-4 md:grid-cols-2">
-          <TopDisciplines disciplines={metrics.topDisciplines} />
-          <TeamPerformance teamStats={metrics.teamPerformance} />
+          <TopDisciplines
+            disciplines={
+              metrics.topDisciplines as Parameters<
+                typeof TopDisciplines
+              >[0]["disciplines"]
+            }
+          />
+          <TeamPerformance
+            teamStats={
+              metrics.teamPerformance as Parameters<
+                typeof TeamPerformance
+              >[0]["teamStats"]
+            }
+          />
         </div>
 
         {/* Projects, Customers and Activity */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 pb-6">
-          <ActiveProjectsCard projects={metrics.activeProjects} />
-          <TopCustomersCard customers={metrics.topCustomers} />
-          <ActivityFeed activities={metrics.recentActivities} />
+        {/* TODO: Update these components to use Domain types */}
+        <div className="grid gap-4 pb-6 md:grid-cols-2 lg:grid-cols-3">
+          <ActiveProjectsCard
+            projects={
+              metrics.activeProjects as Parameters<
+                typeof ActiveProjectsCard
+              >[0]["projects"]
+            }
+          />
+          <TopCustomersCard
+            customers={
+              metrics.topCustomers as Parameters<
+                typeof TopCustomersCard
+              >[0]["customers"]
+            }
+          />
+          <ActivityFeed
+            activities={
+              metrics.recentActivities as Parameters<
+                typeof ActivityFeed
+              >[0]["activities"]
+            }
+          />
         </div>
       </motion.div>
     </AppLayout>

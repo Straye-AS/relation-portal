@@ -8,7 +8,7 @@ import { CardSkeleton } from "@/components/ui/card-skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import Link from "next/link";
-import { ArrowLeft, Edit, ExternalLink, Users } from "lucide-react";
+import { ArrowLeft, Edit, Users } from "lucide-react";
 import { format } from "date-fns";
 import { nb } from "date-fns/locale";
 import { use } from "react";
@@ -35,7 +35,7 @@ export default function ProjectDetailPage({
   if (!project) {
     return (
       <AppLayout>
-        <div className="text-center py-12">
+        <div className="py-12 text-center">
           <p className="text-muted-foreground">Prosjekt ikke funnet</p>
           <Link href="/projects">
             <Button className="mt-4">Tilbake til prosjekter</Button>
@@ -45,8 +45,10 @@ export default function ProjectDetailPage({
     );
   }
 
-  const spentPercentage = (project.spent / project.budget) * 100;
-  const remaining = project.budget - project.spent;
+  const budget = project.budget ?? 0;
+  const spent = project.spent ?? 0;
+  const spentPercentage = budget > 0 ? (spent / budget) * 100 : 0;
+  const remaining = budget - spent;
 
   return (
     <AppLayout>
@@ -62,14 +64,18 @@ export default function ProjectDetailPage({
               <h1 className="text-3xl font-bold">{project.name}</h1>
               <p className="text-muted-foreground">
                 Startet{" "}
-                {format(new Date(project.startDate), "dd. MMMM yyyy", {
-                  locale: nb,
-                })}
+                {format(
+                  new Date(project.startDate ?? new Date().toISOString()),
+                  "dd. MMMM yyyy",
+                  {
+                    locale: nb,
+                  }
+                )}
               </p>
             </div>
           </div>
           <div className="flex gap-2">
-            {project.teamsChannelUrl && (
+            {/* {project.teamsChannelUrl && (
               <Button variant="outline" asChild>
                 <a
                   href={project.teamsChannelUrl}
@@ -80,7 +86,7 @@ export default function ProjectDetailPage({
                   Åpne i Teams
                 </a>
               </Button>
-            )}
+            )} */}
             <Button>
               <Edit className="mr-2 h-4 w-4" />
               Rediger
@@ -114,9 +120,13 @@ export default function ProjectDetailPage({
               <div>
                 <p className="text-sm text-muted-foreground">Periode</p>
                 <p className="font-medium">
-                  {format(new Date(project.startDate), "dd.MM.yyyy", {
-                    locale: nb,
-                  })}{" "}
+                  {format(
+                    new Date(project.startDate ?? new Date().toISOString()),
+                    "dd.MM.yyyy",
+                    {
+                      locale: nb,
+                    }
+                  )}{" "}
                   -{" "}
                   {project.endDate
                     ? format(new Date(project.endDate), "dd.MM.yyyy", {
@@ -127,11 +137,13 @@ export default function ProjectDetailPage({
               </div>
               {project.teamMembers && project.teamMembers.length > 0 && (
                 <div>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    <Users className="inline h-4 w-4 mr-1" />
+                  <p className="mb-2 text-sm text-muted-foreground">
+                    <Users className="mr-1 inline h-4 w-4" />
                     Teammedlemmer
                   </p>
-                  <p className="font-medium">{project.teamMembers.length} personer</p>
+                  <p className="font-medium">
+                    {project.teamMembers.length} personer
+                  </p>
                 </div>
               )}
             </CardContent>
@@ -149,20 +161,20 @@ export default function ProjectDetailPage({
                     style: "currency",
                     currency: "NOK",
                     maximumFractionDigits: 0,
-                  }).format(project.budget)}
+                  }).format(budget)}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground mb-2">
+                <p className="mb-2 text-sm text-muted-foreground">
                   Brukt ({spentPercentage.toFixed(1)}%)
                 </p>
                 <Progress value={spentPercentage} className="mb-2" />
-                <p className="font-bold text-lg">
+                <p className="text-lg font-bold">
                   {new Intl.NumberFormat("nb-NO", {
                     style: "currency",
                     currency: "NOK",
                     maximumFractionDigits: 0,
-                  }).format(project.spent)}
+                  }).format(spent)}
                 </p>
               </div>
               <div>
@@ -202,7 +214,7 @@ export default function ProjectDetailPage({
             <CardContent>
               <Link
                 href={`/offers/${project.offerId}`}
-                className="text-primary hover:underline font-medium"
+                className="font-medium text-primary hover:underline"
               >
                 Se tilbudet dette prosjektet er basert på →
               </Link>
@@ -210,13 +222,13 @@ export default function ProjectDetailPage({
           </Card>
         )}
 
-        {project.teamsChannelId && (
+        {/* {project.teamsChannelId && (
           <Card>
             <CardHeader>
               <CardTitle>Microsoft Teams</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground mb-3">
+              <p className="mb-3 text-sm text-muted-foreground">
                 Dette prosjektet har en dedikert Teams-kanal for samarbeid
               </p>
               {project.teamsChannelUrl && (
@@ -233,7 +245,7 @@ export default function ProjectDetailPage({
               )}
             </CardContent>
           </Card>
-        )}
+        )} */}
       </div>
     </AppLayout>
   );

@@ -1,17 +1,17 @@
 "use client";
 
 import { AppLayout } from "@/components/layout/app-layout";
+import { useNotifications } from "@/hooks/useNotifications";
 import {
-  useNotifications,
   useMarkNotificationAsRead,
   useMarkAllNotificationsAsRead,
-  useDeleteNotification,
-} from "@/hooks/useNotifications";
+} from "@/hooks/useNotificationMutations";
+import type { DomainNotificationDTO } from "@/lib/.generated/data-contracts";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { CardSkeleton } from "@/components/ui/card-skeleton";
 import { Badge } from "@/components/ui/badge";
-import { CheckCheck, Trash2, FileText, FolderKanban, Users, Info } from "lucide-react";
+import { CheckCheck, FileText, FolderKanban, Users, Info } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { nb } from "date-fns/locale";
 import Link from "next/link";
@@ -24,10 +24,10 @@ const notificationIcons = {
 };
 
 export default function NotificationsPage() {
-  const { data: notifications, isLoading } = useNotifications();
+  const { data: rawNotifications, isLoading } = useNotifications();
+  const notifications = rawNotifications as DomainNotificationDTO[] | undefined;
   const markAsReadMutation = useMarkNotificationAsRead();
   const markAllAsReadMutation = useMarkAllNotificationsAsRead();
-  const deleteMutation = useDeleteNotification();
 
   const handleMarkAsRead = (id: string) => {
     markAsReadMutation.mutate(id);
@@ -35,10 +35,6 @@ export default function NotificationsPage() {
 
   const handleMarkAllAsRead = () => {
     markAllAsReadMutation.mutate();
-  };
-
-  const handleDelete = (id: string) => {
-    deleteMutation.mutate(id);
   };
 
   const unreadNotifications = notifications?.filter((n) => !n.read) || [];
@@ -80,20 +76,24 @@ export default function NotificationsPage() {
         ) : (
           <div className="space-y-3">
             {notifications.map((notification) => {
-              const Icon = notificationIcons[notification.type];
+              const Icon =
+                notificationIcons[
+                  (notification.type as keyof typeof notificationIcons) ??
+                    "system"
+                ];
               const isUnread = !notification.read;
 
               const content = (
                 <Card
                   className={`p-4 transition-all ${
                     isUnread
-                      ? "bg-primary/5 border-primary/50"
+                      ? "border-primary/50 bg-primary/5"
                       : "hover:bg-muted/50"
                   }`}
                 >
                   <div className="flex items-start gap-4">
                     <div
-                      className={`p-2 rounded-full ${
+                      className={`rounded-full p-2 ${
                         isUnread ? "bg-primary/20" : "bg-muted"
                       }`}
                     >
@@ -104,10 +104,10 @@ export default function NotificationsPage() {
                       />
                     </div>
 
-                    <div className="flex-1 min-w-0">
+                    <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
+                          <div className="mb-1 flex items-center gap-2">
                             <h3
                               className={`font-semibold ${
                                 isUnread ? "text-primary" : ""
@@ -124,9 +124,12 @@ export default function NotificationsPage() {
                           <p className="text-sm text-muted-foreground">
                             {notification.message}
                           </p>
-                          <p className="text-xs text-muted-foreground mt-2">
+                          <p className="mt-2 text-xs text-muted-foreground">
                             {formatDistanceToNow(
-                              new Date(notification.createdAt),
+                              new Date(
+                                notification.createdAt ??
+                                  new Date().toISOString()
+                              ),
                               {
                                 addSuffix: true,
                                 locale: nb,
@@ -142,24 +145,15 @@ export default function NotificationsPage() {
                               size="sm"
                               onClick={(e) => {
                                 e.preventDefault();
-                                handleMarkAsRead(notification.id);
+                                if (notification.id) {
+                                  handleMarkAsRead(notification.id);
+                                }
                               }}
                               disabled={markAsReadMutation.isPending}
                             >
                               <CheckCheck className="h-4 w-4" />
                             </Button>
                           )}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              handleDelete(notification.id);
-                            }}
-                            disabled={deleteMutation.isPending}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
                         </div>
                       </div>
                     </div>
@@ -180,7 +174,7 @@ export default function NotificationsPage() {
                     key={notification.id}
                     href={href}
                     onClick={() => {
-                      if (isUnread) {
+                      if (isUnread && notification.id) {
                         handleMarkAsRead(notification.id);
                       }
                     }}

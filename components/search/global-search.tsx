@@ -1,362 +1,338 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useSearch } from "@/hooks/useSearch";
-import { useCompanyStore } from "@/store/useCompanyStore";
-import { Customer, Project, Offer, Contact } from "@/types";
 import {
-    Building2,
-    Briefcase,
-    FileText,
-    User,
-    Search,
-    Clock,
-    Loader2,
+  Building2,
+  Briefcase,
+  FileText,
+  User,
+  Search,
+  Clock,
+  Loader2,
+  DollarSign,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { formatCurrency } from "@/lib/utils";
 
 interface GlobalSearchProps {
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-const phaseLabels: Record<string, string> = {
-    draft: "Kladd",
-    in_progress: "I gang",
-    sent: "Sendt",
-    won: "Vunnet",
-    lost: "Tapt",
-    expired: "Utløpt",
+// Map search result types to display information
+const typeConfig: Record<
+  string,
+  {
+    label: string;
+    labelPlural: string;
+    icon: typeof Building2;
+    color: string;
+    route: string;
+  }
+> = {
+  customer: {
+    label: "Kunde",
+    labelPlural: "Kunder",
+    icon: Building2,
+    color: "blue",
+    route: "/customers",
+  },
+  project: {
+    label: "Prosjekt",
+    labelPlural: "Prosjekter",
+    icon: Briefcase,
+    color: "green",
+    route: "/projects",
+  },
+  offer: {
+    label: "Tilbud",
+    labelPlural: "Tilbud",
+    icon: FileText,
+    color: "purple",
+    route: "/offers",
+  },
+  deal: {
+    label: "Salg",
+    labelPlural: "Salg",
+    icon: DollarSign,
+    color: "amber",
+    route: "/deals",
+  },
+  contact: {
+    label: "Kontakt",
+    labelPlural: "Kontakter",
+    icon: User,
+    color: "orange",
+    route: "/contacts",
+  },
 };
 
-const statusLabels: Record<string, string> = {
-    planning: "Planlegger",
-    active: "Aktiv",
-    on_hold: "På vent",
-    completed: "Ferdig",
-    cancelled: "Kansellert",
-};
+interface SearchResultItem {
+  id: string;
+  title: string;
+  subtitle?: string;
+  type: string;
+  metadata?: string;
+}
 
 export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
-    const [query, setQuery] = useState("");
-    const [selectedIndex, setSelectedIndex] = useState(0);
-    const router = useRouter();
-    const { selectedCompanyId } = useCompanyStore();
-    const { data, isLoading } = useSearch(query, selectedCompanyId);
-    const inputRef = useRef<HTMLInputElement>(null);
+  const [query, setQuery] = useState("");
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const router = useRouter();
+  const { data, isLoading } = useSearch(query);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-    // Flatten all results for keyboard navigation
-    const allResults = data ? [
-        ...data.customers.map(c => ({ type: "customer" as const, data: c })),
-        ...data.projects.map(p => ({ type: "project" as const, data: p })),
-        ...data.offers.map(o => ({ type: "offer" as const, data: o })),
-        ...data.contacts.map(c => ({ type: "contact" as const, data: c })),
-    ] : [];
+  // Convert API response to usable format
+  const results: SearchResultItem[] = useMemo(() => {
+    if (!data) return [];
 
-    // Reset selection when results change
-    useEffect(() => {
-        setSelectedIndex(0);
-    }, [data]);
+    // Handle both array and single result responses
+    const rawResults = Array.isArray(data)
+      ? data
+      : ((data as { results?: unknown[] }).results ?? []);
 
-    // Focus input when dialog opens
-    useEffect(() => {
-        if (open) {
-            setQuery("");
-            setSelectedIndex(0);
-            setTimeout(() => {
-                inputRef.current?.focus();
-            }, 0);
-        }
-    }, [open]);
+    return (rawResults as Record<string, unknown>[]).map((item) => ({
+      id: (item.id as string) ?? "",
+      title: (item.title as string) ?? "",
+      subtitle: item.subtitle as string | undefined,
+      type: (item.type as string) ?? "unknown",
+      metadata: item.metadata as string | undefined,
+    }));
+  }, [data]);
 
-    const handleSelectResult = useCallback((result: typeof allResults[0]) => {
-        const { type, data } = result;
-        let path = "";
+  // Group results by type
+  const groupedResults = useMemo(() => {
+    const groups: Record<string, SearchResultItem[]> = {};
 
-        switch (type) {
-            case "customer":
-                path = `/customers/${data.id}`;
-                break;
-            case "project":
-                path = `/projects/${data.id}`;
-                break;
-            case "offer":
-                path = `/offers/${data.id}`;
-                break;
-            case "contact":
-                // Navigate to the customer page
-                path = data.customerId ? `/customers/${data.customerId}` : "#";
-                break;
-        }
+    for (const result of results) {
+      const type = result.type || "other";
+      if (!groups[type]) {
+        groups[type] = [];
+      }
+      groups[type].push(result);
+    }
 
-        if (path !== "#") {
-            router.push(path);
-            onOpenChange(false);
-        }
-    }, [router, onOpenChange]);
+    return groups;
+  }, [results]);
 
-    // Handle keyboard navigation
-    const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-        if (e.key === "ArrowDown") {
-            e.preventDefault();
-            setSelectedIndex(prev => Math.min(prev + 1, allResults.length - 1));
-        } else if (e.key === "ArrowUp") {
-            e.preventDefault();
-            setSelectedIndex(prev => Math.max(prev - 1, 0));
-        } else if (e.key === "Enter" && allResults[selectedIndex]) {
-            e.preventDefault();
-            handleSelectResult(allResults[selectedIndex]);
-        }
-    }, [allResults, selectedIndex, handleSelectResult]);
+  // Flatten all results for keyboard navigation
+  const allResults = results;
 
-    const renderCustomer = (customer: Customer, index: number) => (
-        <motion.div
-            key={`customer-${customer.id}`}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.02 }}
-            onClick={() => handleSelectResult({ type: "customer", data: customer })}
-            className={`flex items-center gap-3 px-4 py-3 cursor-pointer rounded-lg transition-colors ${allResults.findIndex(r => r.type === "customer" && r.data.id === customer.id) === selectedIndex
-                ? "bg-primary/10"
-                : "hover:bg-muted"
-                }`}
-        >
-            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900">
-                <Building2 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-            </div>
-            <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm truncate">{customer.name}</p>
-                <p className="text-xs text-muted-foreground truncate">
-                    {customer.orgNumber} • {customer.email}
-                </p>
-            </div>
-            {customer.activeOffers && customer.activeOffers > 0 && (
-                <Badge variant="outline" className="text-xs">
-                    {customer.activeOffers} tilbud
-                </Badge>
-            )}
-        </motion.div>
-    );
+  // Reset selection when results change
+  useEffect(() => {
+    setSelectedIndex(0);
+  }, [data]);
 
-    const renderProject = (project: Project, index: number) => (
-        <motion.div
-            key={`project-${project.id}`}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.02 }}
-            onClick={() => handleSelectResult({ type: "project", data: project })}
-            className={`flex items-center gap-3 px-4 py-3 cursor-pointer rounded-lg transition-colors ${allResults.findIndex(r => r.type === "project" && r.data.id === project.id) === selectedIndex
-                ? "bg-primary/10"
-                : "hover:bg-muted"
-                }`}
-        >
-            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-green-100 dark:bg-green-900">
-                <Briefcase className="h-5 w-5 text-green-600 dark:text-green-400" />
-            </div>
-            <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm truncate">{project.name}</p>
-                <p className="text-xs text-muted-foreground truncate">
-                    {project.customerName} • {statusLabels[project.status]}
-                </p>
-            </div>
-            <div className="text-right">
-                <p className="text-xs font-semibold">{formatCurrency(project.budget)}</p>
-            </div>
-        </motion.div>
-    );
+  // Focus input when dialog opens
+  useEffect(() => {
+    if (open) {
+      setQuery("");
+      setSelectedIndex(0);
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 0);
+    }
+  }, [open]);
 
-    const renderOffer = (offer: Offer, index: number) => (
-        <motion.div
-            key={`offer-${offer.id}`}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.02 }}
-            onClick={() => handleSelectResult({ type: "offer", data: offer })}
-            className={`flex items-center gap-3 px-4 py-3 cursor-pointer rounded-lg transition-colors ${allResults.findIndex(r => r.type === "offer" && r.data.id === offer.id) === selectedIndex
-                ? "bg-primary/10"
-                : "hover:bg-muted"
-                }`}
-        >
-            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900">
-                <FileText className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-            </div>
-            <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm truncate">{offer.title}</p>
-                <p className="text-xs text-muted-foreground truncate">
-                    {offer.customerName} • {phaseLabels[offer.phase]}
-                </p>
-            </div>
-            <div className="text-right">
-                <p className="text-xs font-semibold">{formatCurrency(offer.value)}</p>
-                <p className="text-xs text-muted-foreground">{offer.probability}%</p>
-            </div>
-        </motion.div>
-    );
+  const handleSelectResult = useCallback(
+    (result: SearchResultItem) => {
+      const config = typeConfig[result.type];
+      if (config) {
+        router.push(`${config.route}/${result.id}`);
+        onOpenChange(false);
+      }
+    },
+    [router, onOpenChange]
+  );
 
-    const renderContact = (contact: Contact, index: number) => (
-        <motion.div
-            key={`contact-${contact.id}`}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.02 }}
-            onClick={() => handleSelectResult({ type: "contact", data: contact })}
-            className={`flex items-center gap-3 px-4 py-3 cursor-pointer rounded-lg transition-colors ${allResults.findIndex(r => r.type === "contact" && r.data.id === contact.id) === selectedIndex
-                ? "bg-primary/10"
-                : "hover:bg-muted"
-                }`}
-        >
-            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900">
-                <User className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-            </div>
-            <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm truncate">{contact.name}</p>
-                <p className="text-xs text-muted-foreground truncate">
-                    {contact.role} • {contact.customerName}
-                </p>
-            </div>
-            <div className="text-right">
-                <p className="text-xs text-muted-foreground truncate">{contact.email}</p>
-            </div>
-        </motion.div>
-    );
+  // Handle keyboard navigation
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setSelectedIndex((prev) => Math.min(prev + 1, allResults.length - 1));
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setSelectedIndex((prev) => Math.max(prev - 1, 0));
+      } else if (e.key === "Enter" && allResults[selectedIndex]) {
+        e.preventDefault();
+        handleSelectResult(allResults[selectedIndex]);
+      }
+    },
+    [allResults, selectedIndex, handleSelectResult]
+  );
 
-    const hasResults = data && data.total > 0;
-    const isSearchingMode = query.trim().length > 0;
+  const getIconColor = (colorName: string) => {
+    const colors: Record<string, { bg: string; text: string }> = {
+      blue: {
+        bg: "bg-blue-100 dark:bg-blue-900",
+        text: "text-blue-600 dark:text-blue-400",
+      },
+      green: {
+        bg: "bg-green-100 dark:bg-green-900",
+        text: "text-green-600 dark:text-green-400",
+      },
+      purple: {
+        bg: "bg-purple-100 dark:bg-purple-900",
+        text: "text-purple-600 dark:text-purple-400",
+      },
+      orange: {
+        bg: "bg-orange-100 dark:bg-orange-900",
+        text: "text-orange-600 dark:text-orange-400",
+      },
+      amber: {
+        bg: "bg-amber-100 dark:bg-amber-900",
+        text: "text-amber-600 dark:text-amber-400",
+      },
+    };
+    return colors[colorName] || colors.blue;
+  };
+
+  const renderResult = (result: SearchResultItem, globalIndex: number) => {
+    const config = typeConfig[result.type] || typeConfig.customer;
+    const Icon = config.icon;
+    const colors = getIconColor(config.color);
+    const isSelected = globalIndex === selectedIndex;
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-2xl p-0 gap-0">
-                <DialogTitle className="sr-only">Global søk</DialogTitle>
-                <div className="flex items-center border-b px-4">
-                    <Search className="h-5 w-5 text-muted-foreground mr-2" />
-                    <Input
-                        ref={inputRef}
-                        placeholder="Søk etter kunder, prosjekter, tilbud eller kontakter..."
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                    />
-                    {isLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground ml-2" />}
-                </div>
-
-                <div className="max-h-[60vh] overflow-y-auto p-2">
-                    {!isSearchingMode && (
-                        <div className="px-4 py-2 flex items-center gap-2 text-xs text-muted-foreground">
-                            <Clock className="h-3 w-3" />
-                            Nylig besøkte
-                        </div>
-                    )}
-
-                    {!hasResults && !isLoading && isSearchingMode && (
-                        <div className="text-center py-12">
-                            <p className="text-sm text-muted-foreground">Ingen resultater funnet</p>
-                            <p className="text-xs text-muted-foreground mt-1">
-                                Prøv et annet søkeord eller sjekk selskapsfilter
-                            </p>
-                        </div>
-                    )}
-
-                    {!hasResults && !isLoading && !isSearchingMode && (
-                        <div className="text-center py-12">
-                            <p className="text-sm text-muted-foreground">Ingen nylige elementer</p>
-                        </div>
-                    )}
-
-                    <AnimatePresence mode="wait">
-                        {data && (
-                            <div className="space-y-4">
-                                {data.customers.length > 0 && (
-                                    <div>
-                                        <div className="px-4 py-2 flex items-center justify-between">
-                                            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                                                Kunder
-                                            </h3>
-                                            <Badge variant="secondary" className="text-xs">
-                                                {data.customers.length}
-                                            </Badge>
-                                        </div>
-                                        <div className="space-y-1">
-                                            {data.customers.map((customer, idx) => renderCustomer(customer, idx))}
-                                        </div>
-                                    </div>
-                                )}
-
-                                {data.projects.length > 0 && (
-                                    <div>
-                                        <div className="px-4 py-2 flex items-center justify-between">
-                                            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                                                Prosjekter
-                                            </h3>
-                                            <Badge variant="secondary" className="text-xs">
-                                                {data.projects.length}
-                                            </Badge>
-                                        </div>
-                                        <div className="space-y-1">
-                                            {data.projects.map((project, idx) => renderProject(project, idx))}
-                                        </div>
-                                    </div>
-                                )}
-
-                                {data.offers.length > 0 && (
-                                    <div>
-                                        <div className="px-4 py-2 flex items-center justify-between">
-                                            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                                                Tilbud
-                                            </h3>
-                                            <Badge variant="secondary" className="text-xs">
-                                                {data.offers.length}
-                                            </Badge>
-                                        </div>
-                                        <div className="space-y-1">
-                                            {data.offers.map((offer, idx) => renderOffer(offer, idx))}
-                                        </div>
-                                    </div>
-                                )}
-
-                                {data.contacts.length > 0 && (
-                                    <div>
-                                        <div className="px-4 py-2 flex items-center justify-between">
-                                            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                                                Kontakter
-                                            </h3>
-                                            <Badge variant="secondary" className="text-xs">
-                                                {data.contacts.length}
-                                            </Badge>
-                                        </div>
-                                        <div className="space-y-1">
-                                            {data.contacts.map((contact, idx) => renderContact(contact, idx))}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </AnimatePresence>
-                </div>
-
-                <div className="border-t px-4 py-2 flex items-center justify-between text-xs text-muted-foreground">
-                    <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-1">
-                            <kbd className="px-2 py-1 bg-muted rounded text-xs">↑↓</kbd>
-                            <span>Naviger</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <kbd className="px-2 py-1 bg-muted rounded text-xs">↵</kbd>
-                            <span>Åpne</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <kbd className="px-2 py-1 bg-muted rounded text-xs">Esc</kbd>
-                            <span>Lukk</span>
-                        </div>
-                    </div>
-                </div>
-            </DialogContent>
-        </Dialog>
+      <motion.div
+        key={`${result.type}-${result.id}`}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: globalIndex * 0.02 }}
+        onClick={() => handleSelectResult(result)}
+        className={`flex cursor-pointer items-center gap-3 rounded-lg px-4 py-3 transition-colors ${
+          isSelected ? "bg-primary/10" : "hover:bg-muted"
+        }`}
+      >
+        <div
+          className={`flex h-10 w-10 items-center justify-center rounded-full ${colors.bg}`}
+        >
+          <Icon className={`h-5 w-5 ${colors.text}`} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold">{result.title}</p>
+          {result.subtitle && (
+            <p className="truncate text-xs text-muted-foreground">
+              {result.subtitle}
+            </p>
+          )}
+        </div>
+        {result.metadata && (
+          <div className="text-right">
+            <p className="truncate text-xs text-muted-foreground">
+              {result.metadata}
+            </p>
+          </div>
+        )}
+      </motion.div>
     );
-}
+  };
 
+  const hasResults = results.length > 0;
+  const isSearchingMode = query.trim().length > 0;
+
+  // Calculate global index for each result
+  let globalIndex = 0;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl gap-0 p-0">
+        <DialogTitle className="sr-only">Global søk</DialogTitle>
+        <div className="flex items-center border-b px-4">
+          <Search className="mr-2 h-5 w-5 text-muted-foreground" />
+          <Input
+            ref={inputRef}
+            placeholder="Søk etter kunder, prosjekter, tilbud eller kontakter..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={handleKeyDown}
+            className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+          />
+          {isLoading && (
+            <Loader2 className="ml-2 h-4 w-4 animate-spin text-muted-foreground" />
+          )}
+        </div>
+
+        <div className="max-h-[60vh] overflow-y-auto p-2">
+          {!isSearchingMode && (
+            <div className="flex items-center gap-2 px-4 py-2 text-xs text-muted-foreground">
+              <Clock className="h-3 w-3" />
+              Begynn å skrive for å søke
+            </div>
+          )}
+
+          {!hasResults && !isLoading && isSearchingMode && (
+            <div className="py-12 text-center">
+              <p className="text-sm text-muted-foreground">
+                Ingen resultater funnet
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Prøv et annet søkeord
+              </p>
+            </div>
+          )}
+
+          <AnimatePresence mode="wait">
+            {hasResults && (
+              <div className="space-y-4">
+                {Object.entries(groupedResults).map(([type, items]) => {
+                  const config = typeConfig[type] || {
+                    labelPlural: type,
+                    label: type,
+                  };
+
+                  return (
+                    <div key={type}>
+                      <div className="flex items-center justify-between px-4 py-2">
+                        <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                          {config.labelPlural}
+                        </h3>
+                        <Badge variant="secondary" className="text-xs">
+                          {items.length}
+                        </Badge>
+                      </div>
+                      <div className="space-y-1">
+                        {items.map((item) => {
+                          const currentIndex = globalIndex;
+                          globalIndex++;
+                          return renderResult(item, currentIndex);
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        <div className="flex items-center justify-between border-t px-4 py-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1">
+              <kbd className="rounded bg-muted px-2 py-1 text-xs">↑↓</kbd>
+              <span>Naviger</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <kbd className="rounded bg-muted px-2 py-1 text-xs">↵</kbd>
+              <span>Åpne</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <kbd className="rounded bg-muted px-2 py-1 text-xs">Esc</kbd>
+              <span>Lukk</span>
+            </div>
+          </div>
+          {hasResults && (
+            <span>
+              {results.length} resultat{results.length !== 1 ? "er" : ""}
+            </span>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}

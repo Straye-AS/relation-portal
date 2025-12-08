@@ -42,7 +42,7 @@ export default function OfferDetailPage({
   if (!offer) {
     return (
       <AppLayout>
-        <div className="text-center py-12">
+        <div className="py-12 text-center">
           <p className="text-muted-foreground">Tilbud ikke funnet</p>
           <Link href="/offers">
             <Button className="mt-4">Tilbake til tilbud</Button>
@@ -52,8 +52,12 @@ export default function OfferDetailPage({
     );
   }
 
-  const totalCost = offer.items.reduce((sum, item) => sum + item.cost, 0);
-  const totalRevenue = offer.items.reduce((sum, item) => sum + item.revenue, 0);
+  const items = offer.items ?? [];
+  const totalCost = items.reduce((sum, item) => sum + (item.cost ?? 0), 0);
+  const totalRevenue = items.reduce(
+    (sum, item) => sum + (item.revenue ?? 0),
+    0
+  );
   const overallMargin = ((totalRevenue - totalCost) / totalRevenue) * 100;
 
   return (
@@ -70,10 +74,13 @@ export default function OfferDetailPage({
               <h1 className="text-3xl font-bold">{offer.title}</h1>
               <p className="text-muted-foreground">
                 Opprettet{" "}
-                {formatDistanceToNow(new Date(offer.createdAt), {
-                  addSuffix: true,
-                  locale: nb,
-                })}
+                {formatDistanceToNow(
+                  new Date(offer.createdAt ?? new Date().toISOString()),
+                  {
+                    addSuffix: true,
+                    locale: nb,
+                  }
+                )}
               </p>
             </div>
           </div>
@@ -112,14 +119,14 @@ export default function OfferDetailPage({
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Sannsynlighet</p>
-                <div className="flex items-center gap-2 mt-1">
-                  <div className="w-full bg-muted rounded-full h-2">
+                <div className="mt-1 flex items-center gap-2">
+                  <div className="h-2 w-full rounded-full bg-muted">
                     <div
-                      className="bg-primary h-2 rounded-full transition-all"
-                      style={{ width: `${offer.probability}%` }}
+                      className="h-2 rounded-full bg-primary transition-all"
+                      style={{ width: `${offer.probability ?? 0}%` }}
                     />
                   </div>
-                  <span className="font-medium">{offer.probability}%</span>
+                  <span className="font-medium">{offer.probability ?? 0}%</span>
                 </div>
               </div>
             </CardContent>
@@ -137,7 +144,7 @@ export default function OfferDetailPage({
                     style: "currency",
                     currency: "NOK",
                     maximumFractionDigits: 0,
-                  }).format(offer.value)}
+                  }).format(offer.value ?? 0)}
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -199,7 +206,7 @@ export default function OfferDetailPage({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {offer.items.map((item) => (
+                {items.map((item) => (
                   <TableRow key={item.id}>
                     <TableCell className="font-medium">
                       {item.discipline}
@@ -212,17 +219,17 @@ export default function OfferDetailPage({
                         style: "currency",
                         currency: "NOK",
                         maximumFractionDigits: 0,
-                      }).format(item.cost)}
+                      }).format(item.cost ?? 0)}
                     </TableCell>
                     <TableCell className="text-right">
                       {new Intl.NumberFormat("nb-NO", {
                         style: "currency",
                         currency: "NOK",
                         maximumFractionDigits: 0,
-                      }).format(item.revenue)}
+                      }).format(item.revenue ?? 0)}
                     </TableCell>
                     <TableCell className="text-right font-semibold">
-                      {item.margin.toFixed(1)}%
+                      {(item.margin ?? 0).toFixed(1)}%
                     </TableCell>
                   </TableRow>
                 ))}

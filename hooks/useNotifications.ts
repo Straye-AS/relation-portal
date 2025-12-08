@@ -1,67 +1,83 @@
 "use client";
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { notificationsApi } from "@/lib/api/client";
+/**
+ * Notifications Hooks
+ *
+ * React Query hooks for notification operations.
+ * Uses the generated API client for backend communication.
+ */
+
+import { useQuery } from "@tanstack/react-query";
+import { useApi } from "@/lib/api/api-provider";
 import { useNotificationStore } from "@/store/useNotificationStore";
 import { useEffect } from "react";
+import type { DomainNotificationDTO } from "@/lib/.generated/data-contracts";
+import { useAuth } from "@/hooks/useAuth";
 
+/**
+ * Fetch all notifications with polling
+ */
 export function useNotifications() {
-  const query = useQuery({
-    queryKey: ["notifications"],
-    queryFn: notificationsApi.getAll,
-    refetchInterval: 30000, // Refetch every 30 seconds
-  });
-
+  const api = useApi();
   const setNotifications = useNotificationStore(
     (state) => state.setNotifications
   );
+  const { isAuthenticated } = useAuth();
 
+  const query = useQuery({
+    queryKey: ["notifications"],
+    queryFn: async () => {
+      const response = await api.notifications.notificationsList({});
+
+      return response.data?.data || response.data || [];
+    },
+    enabled: isAuthenticated,
+    refetchInterval: 30000, // Poll every 30 seconds
+  });
+
+  // Sync with store
   useEffect(() => {
-    if (query.data) {
-      setNotifications(query.data);
+    if (query.data && Array.isArray(query.data)) {
+      // Adapt the data structure for the store
+      const notifications = query.data.map((n: DomainNotificationDTO) => ({
+        id: n.id ?? "",
+        type: (n.type ?? "system") as
+          | "offer"
+          | "project"
+          | "customer"
+          | "system",
+        title: n.title ?? "",
+        message: n.message ?? "",
+        read: n.read ?? false,
+        createdAt: n.createdAt ?? "",
+        entityId: n.entityId,
+        entityType: n.entityType as
+          | "offer"
+          | "project"
+          | "customer"
+          | undefined,
+      }));
+      setNotifications(notifications);
     }
   }, [query.data, setNotifications]);
 
   return query;
 }
 
-export function useMarkNotificationAsRead() {
-  const queryClient = useQueryClient();
-  const markAsRead = useNotificationStore((state) => state.markAsRead);
+/**
+ * Get unread notification count
+ */
+export function useNotificationCount() {
+  const api = useApi();
+  const { isAuthenticated } = useAuth();
 
-  return useMutation({
-    mutationFn: notificationsApi.markAsRead,
-    onSuccess: (_, id) => {
-      markAsRead(id);
-      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+  return useQuery({
+    queryKey: ["notifications", "count"],
+    queryFn: async () => {
+      const response = await api.notifications.countList();
+      return response.data;
     },
-  });
-}
-
-export function useMarkAllNotificationsAsRead() {
-  const queryClient = useQueryClient();
-  const markAllAsRead = useNotificationStore((state) => state.markAllAsRead);
-
-  return useMutation({
-    mutationFn: notificationsApi.markAllAsRead,
-    onSuccess: () => {
-      markAllAsRead();
-      queryClient.invalidateQueries({ queryKey: ["notifications"] });
-    },
-  });
-}
-
-export function useDeleteNotification() {
-  const queryClient = useQueryClient();
-  const removeNotification = useNotificationStore(
-    (state) => state.removeNotification
-  );
-
-  return useMutation({
-    mutationFn: notificationsApi.delete,
-    onSuccess: (_, id) => {
-      removeNotification(id);
-      queryClient.invalidateQueries({ queryKey: ["notifications"] });
-    },
+    enabled: isAuthenticated,
+    refetchInterval: 30000, // Poll every 30 seconds
   });
 }

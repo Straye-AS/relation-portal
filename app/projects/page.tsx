@@ -2,6 +2,7 @@
 
 import { AppLayout } from "@/components/layout/app-layout";
 import { useProjects } from "@/hooks/useProjects";
+import type { DomainProjectDTO } from "@/lib/.generated/data-contracts";
 import { Button } from "@/components/ui/button";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
 import {
@@ -27,7 +28,8 @@ const statusColors: Record<string, string> = {
 };
 
 export default function ProjectsPage() {
-  const { data: projects, isLoading } = useProjects();
+  const { data: rawProjects, isLoading } = useProjects();
+  const projects = rawProjects as DomainProjectDTO[] | undefined;
 
   return (
     <AppLayout>
@@ -50,14 +52,14 @@ export default function ProjectsPage() {
         {isLoading ? (
           <TableSkeleton rows={10} columns={7} />
         ) : !projects || projects.length === 0 ? (
-          <div className="text-center py-12 border rounded-lg bg-muted/20">
+          <div className="rounded-lg border bg-muted/20 py-12 text-center">
             <p className="text-muted-foreground">Ingen prosjekter funnet</p>
             <Link href="/projects/new">
               <Button className="mt-4">Opprett ditt første prosjekt</Button>
             </Link>
           </div>
         ) : (
-          <div className="border rounded-lg">
+          <div className="rounded-lg border">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -72,9 +74,11 @@ export default function ProjectsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {projects.map((project) => {
+                {projects?.map((project) => {
+                  const budget = project.budget ?? 0;
+                  const spent = project.spent ?? 0;
                   const spentPercentage =
-                    (project.spent / project.budget) * 100;
+                    budget > 0 ? (spent / budget) * 100 : 0;
                   return (
                     <TableRow key={project.id}>
                       <TableCell className="font-medium">
@@ -83,7 +87,9 @@ export default function ProjectsPage() {
                       <TableCell>{project.customerName}</TableCell>
                       <TableCell>
                         <Badge
-                          className={statusColors[project.status]}
+                          className={
+                            statusColors[project.status ?? ""] ?? "bg-gray-500"
+                          }
                           variant="secondary"
                         >
                           {project.status}
@@ -95,7 +101,7 @@ export default function ProjectsPage() {
                           style: "currency",
                           currency: "NOK",
                           maximumFractionDigits: 0,
-                        }).format(project.budget)}
+                        }).format(budget)}
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col gap-1">
@@ -104,9 +110,9 @@ export default function ProjectsPage() {
                               style: "currency",
                               currency: "NOK",
                               maximumFractionDigits: 0,
-                            }).format(project.spent)}
+                            }).format(spent)}
                           </span>
-                          <div className="w-full max-w-[100px] bg-muted rounded-full h-2">
+                          <div className="h-2 w-full max-w-[100px] rounded-full bg-muted">
                             <div
                               className={`h-2 rounded-full ${
                                 spentPercentage > 90
@@ -123,9 +129,15 @@ export default function ProjectsPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {format(new Date(project.startDate), "dd.MM.yyyy", {
-                          locale: nb,
-                        })}
+                        {format(
+                          new Date(
+                            project.startDate ?? new Date().toISOString()
+                          ),
+                          "dd.MM.yyyy",
+                          {
+                            locale: nb,
+                          }
+                        )}
                       </TableCell>
                       <TableCell className="text-right">
                         <Link href={`/projects/${project.id}`}>

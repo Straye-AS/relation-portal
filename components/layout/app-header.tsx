@@ -30,13 +30,17 @@ export function AppHeader() {
   const [searchOpen, setSearchOpen] = useState(false);
 
   // Keyboard shortcut: Cmd+K (Mac) or Ctrl+K (Windows/Linux)
-  useKeyboardShortcut("k", () => setSearchOpen(true), { ctrl: true, meta: true });
+  useKeyboardShortcut("k", () => setSearchOpen(true), {
+    ctrl: true,
+    meta: true,
+  });
 
-  const userInitials = user?.name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase() || "?";
+  const userInitials =
+    user?.name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase() || "?";
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -44,7 +48,7 @@ export function AppHeader() {
         <Button
           variant="ghost"
           size="icon"
-          className="md:hidden mr-2"
+          className="mr-2 md:hidden"
           onClick={toggleSidebar}
         >
           <Menu className="h-5 w-5" />
@@ -68,19 +72,21 @@ export function AppHeader() {
               className="hidden dark:block"
               priority
             />
-            <span className="font-semibold text-lg hidden sm:inline text-muted-foreground">Relation</span>
+            <span className="hidden font-logo text-xl font-bold uppercase tracking-wider text-foreground sm:inline">
+              Relation
+            </span>
           </Link>
         </div>
 
         <div className="flex flex-1 items-center justify-end space-x-2">
           <Button
             variant="outline"
-            className="gap-2 text-muted-foreground hidden sm:flex"
+            className="hidden gap-2 text-muted-foreground sm:flex"
             onClick={() => setSearchOpen(true)}
           >
             <Search className="h-4 w-4" />
             <span className="hidden md:inline">Søk...</span>
-            <kbd className="hidden md:inline pointer-events-none ml-auto h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100">
+            <kbd className="pointer-events-none ml-auto hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 md:inline">
               <span className="text-xs">⌘</span>K
             </kbd>
           </Button>
@@ -102,7 +108,7 @@ export function AppHeader() {
               {unreadCount > 0 && (
                 <Badge
                   variant="destructive"
-                  className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs"
+                  className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center p-0 text-xs"
                 >
                   {unreadCount}
                 </Badge>
@@ -123,7 +129,9 @@ export function AppHeader() {
             <DropdownMenuContent className="w-56" align="end" forceMount>
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">{user?.name}</p>
+                  <p className="text-sm font-medium leading-none">
+                    {user?.name}
+                  </p>
                   <p className="text-xs leading-none text-muted-foreground">
                     {user?.email}
                   </p>
