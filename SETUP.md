@@ -3,6 +3,7 @@
 ## ✅ What Has Been Built
 
 ### 🏗️ Architecture
+
 - **Next.js 15** with App Router
 - **TypeScript** with strict mode
 - **Microsoft Entra ID (MSAL)** authentication
@@ -13,6 +14,7 @@
 ### 📱 Pages & Features
 
 #### 1. Dashboard (`/`)
+
 - Key metrics cards (Total value, Active offers, Won offers, Probability)
 - Bar chart showing offers by phase
 - Pie chart showing offer distribution
@@ -21,6 +23,7 @@
 - Real-time data refresh
 
 #### 2. Offers Module (`/offers`)
+
 - **List view** with sortable table
 - **Detail view** (`/offers/[id]`) with:
   - Offer information card
@@ -30,6 +33,7 @@
   - Phase and probability visualization
 
 #### 3. Customers Module (`/customers`)
+
 - **List view** with customer information
 - **Detail view** (`/customers/[id]`) with:
   - Contact information
@@ -38,6 +42,7 @@
   - Related projects list
 
 #### 4. Projects Module (`/projects`)
+
 - **List view** with project status
 - **Detail view** (`/projects/[id]`) with:
   - Project information
@@ -46,6 +51,7 @@
   - Related offer link
 
 #### 5. Notifications (`/notifications`)
+
 - Event feed for all activities
 - Mark as read/unread functionality
 - Delete notifications
@@ -53,13 +59,16 @@
 - Real-time unread count in header
 
 #### 6. Settings (`/settings`)
+
 - Theme toggle (Light/Dark/System)
 - Language selection (Norwegian/English)
 - Notification preferences
 - User preferences stored locally
 
 ### 🎨 UI Components
+
 All components use **shadcn/ui** with TailwindCSS:
+
 - `Button`, `Card`, `Badge`, `Table`
 - `Dialog`, `Dropdown`, `Select`, `Switch`
 - `Skeleton`, `LoadingSpinner`, `Progress`
@@ -67,6 +76,7 @@ All components use **shadcn/ui** with TailwindCSS:
 - Theme toggle with next-themes
 
 ### 🔐 Authentication
+
 - Microsoft Entra ID login
 - MSAL browser integration
 - `useAuth` hook for user state
@@ -74,6 +84,7 @@ All components use **shadcn/ui** with TailwindCSS:
 - Automatic redirect to login
 
 ### 📊 Data Layer
+
 - **Mock API** in `lib/api/client.ts`
 - **Mock data** for:
   - 6 offers with disciplines
@@ -87,6 +98,7 @@ All components use **shadcn/ui** with TailwindCSS:
   - `useNotifications`, `useDashboard`
 
 ### 🧪 Testing
+
 - **Vitest** configuration
 - Example tests for:
   - `useOffers` hook
@@ -95,6 +107,7 @@ All components use **shadcn/ui** with TailwindCSS:
 - Test setup with React Testing Library
 
 ### 🛠️ Developer Experience
+
 - **ESLint** with TypeScript rules
 - **Prettier** with Tailwind plugin
 - **Husky** pre-commit hooks
@@ -102,6 +115,7 @@ All components use **shadcn/ui** with TailwindCSS:
 - Strict TypeScript with no `any`
 
 ### 🐳 Docker & Deployment
+
 - **Dockerfile** with multi-stage build
 - **docker-compose.yml** for local development
 - **GitHub Actions** CI/CD pipeline:
@@ -111,6 +125,7 @@ All components use **shadcn/ui** with TailwindCSS:
   - Deploy to Azure Container Apps
 
 ### 🌐 Internationalization
+
 - Norwegian translations (default)
 - English translations
 - Translation files in `/locales`
@@ -119,22 +134,27 @@ All components use **shadcn/ui** with TailwindCSS:
 ## 🚀 Getting Started
 
 ### 1. Install Dependencies
+
 ```bash
 pnpm install
 ```
 
 ### 2. Configure Environment
+
 Copy `.env.example` to `.env.local` and fill in your values:
+
 ```bash
 cp .env.example .env.local
 ```
 
 Required environment variables:
+
 - `NEXT_PUBLIC_AZURE_CLIENT_ID` - Your Azure AD app client ID
 - `NEXT_PUBLIC_AZURE_TENANT_ID` - Your Azure AD tenant ID
 - `NEXT_PUBLIC_AZURE_REDIRECT_URI` - Redirect URI (e.g., http://localhost:3000)
 
 ### 3. Run Development Server
+
 ```bash
 pnpm dev
 ```
@@ -142,11 +162,13 @@ pnpm dev
 The application will be available at http://localhost:3000
 
 ### 4. Run Tests
+
 ```bash
 pnpm test
 ```
 
 ### 5. Build for Production
+
 ```bash
 pnpm build
 pnpm start
@@ -155,15 +177,17 @@ pnpm start
 ## 🔧 Azure Entra ID Setup
 
 ### 1. Register Application
+
 1. Go to Azure Portal → Azure Active Directory → App registrations
 2. Click "New registration"
 3. Name: "Straye Relation"
 4. Supported account types: "Accounts in this organizational directory only"
-5. Redirect URI: 
+5. Redirect URI:
    - Type: Single-page application (SPA)
    - URI: `http://localhost:3000` (for dev) or your production URL
 
 ### 2. Configure API Permissions
+
 1. Go to "API permissions"
 2. Add permissions:
    - Microsoft Graph → Delegated permissions
@@ -171,6 +195,7 @@ pnpm start
 3. Grant admin consent
 
 ### 3. Get Client ID and Tenant ID
+
 1. Copy "Application (client) ID" → `NEXT_PUBLIC_AZURE_CLIENT_ID`
 2. Copy "Directory (tenant) ID" → `NEXT_PUBLIC_AZURE_TENANT_ID`
 
@@ -255,6 +280,7 @@ When the .NET 8 backend is ready:
 ## 📝 Next Steps
 
 ### Immediate Tasks
+
 1. ✅ Set up Azure AD app registration
 2. ✅ Configure environment variables
 3. ✅ Run `pnpm install`
@@ -262,6 +288,7 @@ When the .NET 8 backend is ready:
 5. ✅ Review mock data
 
 ### Future Enhancements
+
 - [ ] Implement offer creation/edit forms
 - [ ] Add customer creation/edit forms
 - [ ] Add project creation/edit forms
@@ -274,6 +301,7 @@ When the .NET 8 backend is ready:
 - [ ] Integrate with Microsoft Teams Graph API
 
 ### Backend Integration Checklist
+
 - [ ] Set up .NET 8 backend API
 - [ ] Configure Azure PostgreSQL database
 - [ ] Implement OpenAPI/Swagger
@@ -311,6 +339,7 @@ When the .NET 8 backend is ready:
 ## 🐛 Troubleshooting
 
 ### Build Errors
+
 ```bash
 # Clear cache and rebuild
 rm -rf .next node_modules
@@ -319,11 +348,13 @@ pnpm build
 ```
 
 ### MSAL Errors
+
 - Check redirect URI matches exactly in Azure AD
 - Ensure client ID and tenant ID are correct
 - Clear browser cache and try again
 
 ### Docker Issues
+
 ```bash
 # Rebuild Docker image
 docker-compose down
@@ -333,6 +364,7 @@ docker-compose up --build
 ## 📞 Support
 
 For questions or issues:
+
 - Check the README.md
 - Review the code comments
 - Contact the development team

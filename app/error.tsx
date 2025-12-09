@@ -22,7 +22,7 @@ export default function Error({
           <AlertCircle className="h-8 w-8 text-destructive" />
           <div>
             <h2 className="text-lg font-semibold">Something went wrong!</h2>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="mt-1 text-sm text-muted-foreground">
               {error.message || "An unexpected error occurred"}
             </p>
           </div>

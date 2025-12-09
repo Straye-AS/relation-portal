@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
@@ -13,9 +13,24 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Trash2, Plus, ChevronsUpDown, Check } from "lucide-react";
+import { Loader2, ChevronsUpDown, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type {
   DomainCreateOfferRequest,
@@ -32,14 +47,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
+import { COMPANIES } from "@/lib/api/types";
+import { Slider } from "@/components/ui/slider";
+
+// ... imports
 
 const offerSchema = z.object({
   title: z
@@ -47,6 +58,7 @@ const offerSchema = z.object({
     .min(2, "Tittel må være minst 2 tegn")
     .max(200, "Tittel kan ikke være mer enn 200 tegn"),
   customerId: z.string().min(1, "Du må velge en kunde"),
+  companyId: z.string().optional(), // Make optional so existing usage doesn't break if we handle it in submit
   description: z.string().optional(),
   probability: z.coerce
     .number()
@@ -56,22 +68,31 @@ const offerSchema = z.object({
   items: z
     .array(
       z.object({
-        description: z.string().min(1, "Beskrivelse er påkrevd"),
-        quantity: z.coerce.number().min(0.01, "Antall må være større enn 0"),
-        unitPrice: z.coerce.number().min(0, "Pris kan ikke være negativ"),
+        description: z.string(),
+        quantity: z.coerce.number(),
+        unitPrice: z.coerce.number(),
       })
     )
-    .min(1, "Du må legge til minst én vare/tjeneste"),
+    .optional(),
 });
 
 type OfferFormValues = z.infer<typeof offerSchema>;
 
 interface OfferFormProps {
-  onSubmit: (data: DomainCreateOfferRequest) => Promise<void>;
+  onSubmit: (
+    data: DomainCreateOfferRequest & { companyId?: string }
+  ) => Promise<void>;
   isLoading: boolean;
+  initialData?: Partial<OfferFormValues> & { companyId?: string };
+  showCompanySelect?: boolean;
 }
 
-export function OfferForm({ onSubmit, isLoading }: OfferFormProps) {
+export function OfferForm({
+  onSubmit,
+  isLoading,
+  initialData,
+  showCompanySelect,
+}: OfferFormProps) {
   const { data: customers } = useAllCustomers();
   const { user } = useCurrentUser();
   const [openCustomerCombobox, setOpenCustomerCombobox] = useState(false);
@@ -79,53 +100,35 @@ export function OfferForm({ onSubmit, isLoading }: OfferFormProps) {
   const form = useForm<OfferFormValues>({
     resolver: zodResolver(offerSchema),
     defaultValues: {
-      title: "",
-      customerId: "",
-      description: "",
-      probability: 50,
-      items: [{ description: "", quantity: 1, unitPrice: 0 }],
+      title: initialData?.title ?? "",
+      customerId: initialData?.customerId ?? "",
+      companyId: initialData?.companyId ?? user?.company?.id ?? "",
+      description: initialData?.description ?? "",
+      probability: initialData?.probability ?? 50,
+      items: initialData?.items ?? [],
     },
     mode: "onChange",
-  });
-
-  const { fields, append, remove } = useFieldArray({
-    control: form.control,
-    name: "items",
   });
 
   const handleSubmit = async (values: OfferFormValues) => {
     // Construct the payload with default enum values
     const payload: DomainCreateOfferRequest = {
       ...values,
-      phase: DomainOfferPhase.OfferPhaseDraft, // "draft"
-      status: DomainOfferStatus.OfferStatusActive, // "active"
-      companyId: user?.company?.id as any, // Get company ID from user
+      phase: DomainOfferPhase.OfferPhaseInProgress, // Start as InProgress by default
+      status: DomainOfferStatus.OfferStatusActive,
+      companyId: (values.companyId || user?.company?.id) as any,
       responsibleUserId: user?.id ?? "",
-      items: values.items.map((item) => ({
-        description: item.description,
-        quantity: item.quantity,
-        // API expects 'revenue' (total) and 'cost', and 'discipline'
-        revenue: item.unitPrice * item.quantity,
-        cost: 0,
-        discipline: "General",
-      })),
+      items: [],
     };
 
-    // Note: If companyId/responsibleUserId are handled by backend context, we might pass dummy or let the hook handle it.
-    // Assuming the mutation hook or api client might interpret it, or user data is loaded.
-    // For now we pass from user object.
-
     await onSubmit(payload);
-    form.reset();
+    if (!initialData) {
+      form.reset();
+    }
   };
 
   // Border styling helper (same as CustomerForm)
-  const getInputClass = (
-    fieldName:
-      | keyof OfferFormValues
-      | `items.${number}.${keyof OfferFormValues["items"][number]}`,
-    hasError: boolean
-  ) => {
+  const getInputClass = (fieldName: string, hasError: boolean) => {
     // Check if dirty or has value for top-level fields
     // For nested (items), dirtyFields structure is nested.
     const hasValue = !!form.getValues(fieldName as any);
@@ -161,6 +164,39 @@ export function OfferForm({ onSubmit, isLoading }: OfferFormProps) {
               </FormItem>
             )}
           />
+
+          {showCompanySelect && (
+            <FormField
+              control={form.control}
+              name="companyId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Selskap</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                    value={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Velg selskap" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {Object.values(COMPANIES)
+                        .filter((c) => c.id !== "all")
+                        .map((company) => (
+                          <SelectItem key={company.id} value={company.id}>
+                            {company.name}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
 
           <FormField
             control={form.control}
@@ -239,29 +275,22 @@ export function OfferForm({ onSubmit, isLoading }: OfferFormProps) {
             <FormField
               control={form.control}
               name="probability"
-              render={({ field, fieldState }) => (
+              render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Sannsynlighet (%)</FormLabel>
+                  <FormLabel>Sannsynlighet: {field.value}%</FormLabel>
                   <FormControl>
-                    <Input
-                      type="number"
-                      min={0}
-                      max={100}
-                      {...field}
-                      className={getInputClass(
-                        "probability",
-                        !!fieldState.error
-                      )}
+                    <Slider
+                      min={10}
+                      max={90}
+                      step={10}
+                      defaultValue={[field.value ?? 50]}
+                      onValueChange={(vals) => field.onChange(vals[0])}
                     />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            {/* Can add Value field here calculated read-only or manual override? 
-                For now let it be calculated sum of items later or just hidden. 
-                Request didn't specify manual total value override, usually sum of items.
-            */}
           </div>
 
           <FormField
@@ -281,105 +310,6 @@ export function OfferForm({ onSubmit, isLoading }: OfferFormProps) {
               </FormItem>
             )}
           />
-        </div>
-
-        {/* Line Items */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-medium">Varelinjer</h3>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() =>
-                append({ description: "", quantity: 1, unitPrice: 0 })
-              }
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Legg til vare
-            </Button>
-          </div>
-
-          <div className="space-y-4">
-            {fields.map((field, index) => (
-              <div key={field.id} className="flex items-start gap-4">
-                <FormField
-                  control={form.control}
-                  name={`items.${index}.description`}
-                  render={({ field: subField, fieldState }) => (
-                    <FormItem className="flex-1">
-                      <FormControl>
-                        <Input
-                          placeholder="Beskrivelse"
-                          {...subField}
-                          className={getInputClass(
-                            `items.${index}.description`,
-                            !!fieldState.error
-                          )}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name={`items.${index}.quantity`}
-                  render={({ field: subField, fieldState }) => (
-                    <FormItem className="w-24">
-                      <FormControl>
-                        <Input
-                          type="number"
-                          placeholder="Antall"
-                          min={0}
-                          {...subField}
-                          className={getInputClass(
-                            `items.${index}.quantity`,
-                            !!fieldState.error
-                          )}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name={`items.${index}.unitPrice`}
-                  render={({ field: subField, fieldState }) => (
-                    <FormItem className="w-32">
-                      <FormControl>
-                        <Input
-                          type="number"
-                          placeholder="Pris"
-                          min={0}
-                          {...subField}
-                          className={getInputClass(
-                            `items.${index}.unitPrice`,
-                            !!fieldState.error
-                          )}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="mt-0.5 text-muted-foreground hover:text-destructive"
-                  onClick={() => remove(index)}
-                  disabled={fields.length === 1} // Prevent removing last item
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
-          </div>
-          <FormMessage>
-            {form.formState.errors.items?.root?.message}
-          </FormMessage>
         </div>
 
         <div className="flex justify-end pt-4" style={{ marginTop: "auto" }}>

@@ -127,9 +127,7 @@ export const projectsApi = {
     return mockProjects.find((project) => project.id === id);
   },
 
-  create: async (
-    project: Omit<Project, "id" | "createdAt" | "updatedAt">
-  ) => {
+  create: async (project: Omit<Project, "id" | "createdAt" | "updatedAt">) => {
     await delay(500);
     const newProject: Project = {
       ...project,
@@ -192,7 +190,10 @@ export const notificationsApi = {
 
 // Search API
 export const searchApi = {
-  search: async (query: string, companyId?: CompanyId): Promise<SearchResults> => {
+  search: async (
+    query: string,
+    companyId?: CompanyId
+  ): Promise<SearchResults> => {
     await delay(200);
 
     if (!query || query.trim().length === 0) {
@@ -208,51 +209,66 @@ export const searchApi = {
     const searchTerm = query.toLowerCase().trim();
 
     // Filter by company if specified
-    const filterByCompany = <T extends { companyId?: CompanyId }>(items: T[]) => {
+    const filterByCompany = <T extends { companyId?: CompanyId }>(
+      items: T[]
+    ) => {
       if (!companyId || companyId === "all") return items;
-      return items.filter(item => item.companyId === companyId);
+      return items.filter((item) => item.companyId === companyId);
     };
 
     // Search customers
-    const customers = mockCustomers.filter(c =>
-      c.name.toLowerCase().includes(searchTerm) ||
-      c.orgNumber.includes(searchTerm) ||
-      c.email.toLowerCase().includes(searchTerm) ||
-      c.contactPerson?.toLowerCase().includes(searchTerm)
-    ).slice(0, 7);
+    const customers = mockCustomers
+      .filter(
+        (c) =>
+          c.name.toLowerCase().includes(searchTerm) ||
+          c.orgNumber.includes(searchTerm) ||
+          c.email.toLowerCase().includes(searchTerm) ||
+          c.contactPerson?.toLowerCase().includes(searchTerm)
+      )
+      .slice(0, 7);
 
     // Search projects (filter by company)
     const allProjects = filterByCompany(mockProjects);
-    const projects = allProjects.filter(p =>
-      p.name.toLowerCase().includes(searchTerm) ||
-      p.customerName?.toLowerCase().includes(searchTerm) ||
-      p.description?.toLowerCase().includes(searchTerm)
-    ).slice(0, 7);
+    const projects = allProjects
+      .filter(
+        (p) =>
+          p.name.toLowerCase().includes(searchTerm) ||
+          p.customerName?.toLowerCase().includes(searchTerm) ||
+          p.description?.toLowerCase().includes(searchTerm)
+      )
+      .slice(0, 7);
 
     // Search offers (filter by company)
     const allOffers = filterByCompany(mockOffers);
-    const offers = allOffers.filter(o =>
-      o.title.toLowerCase().includes(searchTerm) ||
-      o.customerName?.toLowerCase().includes(searchTerm) ||
-      o.responsibleUserName?.toLowerCase().includes(searchTerm) ||
-      o.description?.toLowerCase().includes(searchTerm)
-    ).slice(0, 7);
+    const offers = allOffers
+      .filter(
+        (o) =>
+          o.title.toLowerCase().includes(searchTerm) ||
+          o.customerName?.toLowerCase().includes(searchTerm) ||
+          o.responsibleUserName?.toLowerCase().includes(searchTerm) ||
+          o.description?.toLowerCase().includes(searchTerm)
+      )
+      .slice(0, 7);
 
     // Search contacts
-    const contacts = mockContacts.filter(c =>
-      c.name.toLowerCase().includes(searchTerm) ||
-      c.email.toLowerCase().includes(searchTerm) ||
-      c.phone.includes(searchTerm) ||
-      c.customerName?.toLowerCase().includes(searchTerm) ||
-      c.role?.toLowerCase().includes(searchTerm)
-    ).slice(0, 7);
+    const contacts = mockContacts
+      .filter(
+        (c) =>
+          c.name.toLowerCase().includes(searchTerm) ||
+          c.email.toLowerCase().includes(searchTerm) ||
+          c.phone.includes(searchTerm) ||
+          c.customerName?.toLowerCase().includes(searchTerm) ||
+          c.role?.toLowerCase().includes(searchTerm)
+      )
+      .slice(0, 7);
 
     return {
       customers,
       projects,
       offers,
       contacts,
-      total: customers.length + projects.length + offers.length + contacts.length,
+      total:
+        customers.length + projects.length + offers.length + contacts.length,
     };
   },
 
@@ -260,26 +276,40 @@ export const searchApi = {
     await delay(200);
 
     // Filter by company if specified
-    const filterByCompany = <T extends { companyId?: CompanyId }>(items: T[]) => {
+    const filterByCompany = <T extends { companyId?: CompanyId }>(
+      items: T[]
+    ) => {
       if (!companyId || companyId === "all") return items;
-      return items.filter(item => item.companyId === companyId);
+      return items.filter((item) => item.companyId === companyId);
     };
 
     // Return recent items (sorted by updatedAt)
     const recentCustomers = mockCustomers
-      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+      .sort(
+        (a, b) =>
+          new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+      )
       .slice(0, 3);
 
     const recentProjects = filterByCompany(mockProjects)
-      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+      .sort(
+        (a, b) =>
+          new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+      )
       .slice(0, 3);
 
     const recentOffers = filterByCompany(mockOffers)
-      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+      .sort(
+        (a, b) =>
+          new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+      )
       .slice(0, 3);
 
     const recentContacts = mockContacts
-      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+      .sort(
+        (a, b) =>
+          new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+      )
       .slice(0, 3);
 
     return {
@@ -287,7 +317,11 @@ export const searchApi = {
       projects: recentProjects,
       offers: recentOffers,
       contacts: recentContacts,
-      total: recentCustomers.length + recentProjects.length + recentOffers.length + recentContacts.length,
+      total:
+        recentCustomers.length +
+        recentProjects.length +
+        recentOffers.length +
+        recentContacts.length,
     };
   },
 };
@@ -298,13 +332,15 @@ export const dashboardApi = {
     await delay(600);
 
     // Filter by company if specified
-    const offers = companyId && companyId !== "all"
-      ? mockOffers.filter(o => o.companyId === companyId)
-      : mockOffers;
+    const offers =
+      companyId && companyId !== "all"
+        ? mockOffers.filter((o) => o.companyId === companyId)
+        : mockOffers;
 
-    const projects = companyId && companyId !== "all"
-      ? mockProjects.filter(p => p.companyId === companyId)
-      : mockProjects;
+    const projects =
+      companyId && companyId !== "all"
+        ? mockProjects.filter((p) => p.companyId === companyId)
+        : mockProjects;
 
     const activeOffers = offers.filter((o) => o.status === "active");
     const wonOffers = offers.filter((o) => o.phase === "won");
@@ -328,7 +364,14 @@ export const dashboardApi = {
     );
 
     // Pipeline data
-    const phases: OfferPhase[] = ["draft", "in_progress", "sent", "won", "lost", "expired"];
+    const phases: OfferPhase[] = [
+      "draft",
+      "in_progress",
+      "sent",
+      "won",
+      "lost",
+      "expired",
+    ];
     const pipeline: PipelinePhaseData[] = phases.map((phase) => {
       const phaseOffers = offers.filter((o) => o.phase === phase);
       return {
@@ -362,12 +405,13 @@ export const dashboardApi = {
     const topDisciplines = Array.from(disciplineMap.values())
       .sort((a, b) => b.totalValue - a.totalValue)
       .slice(0, 5)
-      .map(d => ({
+      .map((d) => ({
         ...d,
-        avgMargin: offers
-          .flatMap(o => o.items)
-          .filter(i => i.discipline === d.name)
-          .reduce((sum, i) => sum + i.margin, 0) / d.offerCount
+        avgMargin:
+          offers
+            .flatMap((o) => o.items)
+            .filter((i) => i.discipline === d.name)
+            .reduce((sum, i) => sum + i.margin, 0) / d.offerCount,
       }));
 
     // Team performance
@@ -391,9 +435,9 @@ export const dashboardApi = {
       userMap.set(offer.responsibleUserId, existing);
     });
     const teamPerformance = Array.from(userMap.values())
-      .map(u => ({
+      .map((u) => ({
         ...u,
-        winRate: u.offerCount > 0 ? (u.wonCount / u.offerCount) * 100 : 0
+        winRate: u.offerCount > 0 ? (u.wonCount / u.offerCount) * 100 : 0,
       }))
       .sort((a, b) => b.totalValue - a.totalValue)
       .slice(0, 5);
@@ -402,11 +446,18 @@ export const dashboardApi = {
     const customerMap = new Map<string, Customer>();
     offers.forEach((offer) => {
       if (offer.customerId) {
-        const existing = customerMap.get(offer.customerId) || mockCustomers.find(c => c.id === offer.customerId);
+        const existing =
+          customerMap.get(offer.customerId) ||
+          mockCustomers.find((c) => c.id === offer.customerId);
         if (existing) {
           const totalValue = (existing.totalValue || 0) + offer.value;
-          const activeOffers = (existing.activeOffers || 0) + (offer.status === "active" ? 1 : 0);
-          customerMap.set(offer.customerId, { ...existing, totalValue, activeOffers });
+          const activeOffers =
+            (existing.activeOffers || 0) + (offer.status === "active" ? 1 : 0);
+          customerMap.set(offer.customerId, {
+            ...existing,
+            totalValue,
+            activeOffers,
+          });
         }
       }
     });
@@ -416,12 +467,15 @@ export const dashboardApi = {
 
     // Active projects
     const activeProjects = projects
-      .filter(p => p.status === "active" || p.status === "planning")
+      .filter((p) => p.status === "active" || p.status === "planning")
       .slice(0, 5);
 
     // Calculate win rate
     const totalDecidedOffers = wonOffers.length + lostOffers.length;
-    const winRate = totalDecidedOffers > 0 ? (wonOffers.length / totalDecidedOffers) * 100 : 0;
+    const winRate =
+      totalDecidedOffers > 0
+        ? (wonOffers.length / totalDecidedOffers) * 100
+        : 0;
 
     // Revenue forecast (simplified)
     //const now = new Date();
@@ -429,11 +483,13 @@ export const dashboardApi = {
     //const ninetyDaysFromNow = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
 
     const revenueForecast30Days = activeOffers
-      .filter(o => o.phase === "sent" || o.phase === "in_progress")
+      .filter((o) => o.phase === "sent" || o.phase === "in_progress")
       .reduce((sum, o) => sum + (o.value * o.probability) / 100, 0);
 
-    const revenueForecast90Days = activeOffers
-      .reduce((sum, o) => sum + (o.value * o.probability) / 100, 0);
+    const revenueForecast90Days = activeOffers.reduce(
+      (sum, o) => sum + (o.value * o.probability) / 100,
+      0
+    );
 
     return {
       totalOffers: offers.length,
@@ -453,12 +509,18 @@ export const dashboardApi = {
       activeProjects,
       topCustomers,
       teamPerformance,
-      recentOffers: offers.slice(0, 5).sort((a, b) =>
-        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-      ),
-      recentProjects: projects.slice(0, 5).sort((a, b) =>
-        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-      ),
+      recentOffers: offers
+        .slice(0, 5)
+        .sort(
+          (a, b) =>
+            new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+        ),
+      recentProjects: projects
+        .slice(0, 5)
+        .sort(
+          (a, b) =>
+            new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+        ),
       recentActivities: mockNotifications.slice(0, 10),
     };
   },

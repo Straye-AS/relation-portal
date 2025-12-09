@@ -28,12 +28,14 @@ Intern CRM og tilbudshåndtering for Straye Group.
 ## 🛠️ Installasjon
 
 1. Klon repository:
+
 ```bash
 git clone <repository-url>
 cd straye-relation
 ```
 
 2. Installer avhengigheter:
+
 ```bash
 # Using npm (recommended)
 npm install
@@ -46,6 +48,7 @@ yarn install
 ```
 
 3. Kopier `.env.local.example` til `.env.local`:
+
 ```bash
 cp .env.local.example .env.local
 ```
@@ -53,12 +56,14 @@ cp .env.local.example .env.local
 4. Konfigurer miljøvariabler i `.env.local`:
 
 **For lokal utvikling (anbefalt for å komme raskt i gang):**
+
 ```env
 # Bruk lokal test-bruker (ingen Microsoft-konto nødvendig)
 NEXT_PUBLIC_USE_LOCAL_AUTH=true
 ```
 
 **For produksjonslignende testing med Microsoft:**
+
 ```env
 NEXT_PUBLIC_USE_LOCAL_AUTH=false
 NEXT_PUBLIC_AZURE_CLIENT_ID=your-client-id
@@ -164,6 +169,7 @@ NEXT_PUBLIC_USE_LOCAL_AUTH=true
 Dette gir deg tilgang til en testutvikler uten innlogging via Microsoft. Se [LOCAL_AUTH.md](./LOCAL_AUTH.md) for fullstendig dokumentasjon.
 
 **Quick start:**
+
 1. Sett `NEXT_PUBLIC_USE_LOCAL_AUTH=true` i `.env.local`
 2. Start dev-serveren
 3. Klikk "Logg inn som testutvikler" på login-siden
@@ -184,6 +190,7 @@ Støtte for norsk (standard) og engelsk. Språkinnstillinger kan endres i innsti
 Applikasjonen er konfigurert for deployment til Azure Container Apps via GitHub Actions.
 
 **GitHub Secrets som må konfigureres:**
+
 - `ACR_REGISTRY`: Azure Container Registry URL
 - `ACR_USERNAME`: ACR brukernavn
 - `ACR_PASSWORD`: ACR passord
@@ -196,6 +203,7 @@ Applikasjonen er konfigurert for deployment til Azure Container Apps via GitHub 
 ### CI/CD Pipeline
 
 GitHub Actions workflow kjører automatisk ved push til `main` eller `develop`:
+
 1. Lint og test
 2. Build
 3. Bygg og push Docker image

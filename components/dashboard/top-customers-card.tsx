@@ -7,49 +7,68 @@ import { Building2 } from "lucide-react";
 import Link from "next/link";
 import { formatCurrency } from "@/lib/utils";
 
+interface TopCustomer extends Partial<Customer> {
+  offerCount?: number;
+  economicValue?: number;
+}
+
 interface TopCustomersCardProps {
-    customers: Customer[];
+  customers: TopCustomer[];
 }
 
 export function TopCustomersCard({ customers }: TopCustomersCardProps) {
-    return (
-        <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Topp Kunder</CardTitle>
-                <Building2 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-                <div className="space-y-3">
-                    {customers.length === 0 && (
-                        <p className="text-sm text-muted-foreground text-center py-4">
-                            Ingen kunder
-                        </p>
-                    )}
-                    {customers.map((customer, index) => (
-                        <Link
-                            key={customer.id}
-                            href={`/customers/${customer.id}`}
-                            className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors"
-                        >
-                            <div className="flex items-center gap-3 flex-1 min-w-0">
-                                <Badge variant="outline" className="text-xs">
-                                    {index + 1}
-                                </Badge>
-                                <div className="min-w-0 flex-1">
-                                    <h3 className="font-semibold text-sm truncate">{customer.name}</h3>
-                                    <p className="text-xs text-muted-foreground">
-                                        {customer.activeOffers || 0} aktive tilbud
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="text-right ml-4">
-                                <p className="text-sm font-bold">{formatCurrency(customer.totalValue || 0)}</p>
-                            </div>
-                        </Link>
-                    ))}
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">Topp Kunder</CardTitle>
+        <Building2 className="h-4 w-4 text-muted-foreground" />
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-3">
+          {customers.length === 0 && (
+            <p className="py-4 text-center text-sm text-muted-foreground">
+              Ingen kunder
+            </p>
+          )}
+          {customers
+            .sort((a, b) => {
+              const valA = a.economicValue ?? a.totalValue ?? 0;
+              const valB = b.economicValue ?? b.totalValue ?? 0;
+              return valB - valA;
+            })
+            .map((customer, index) => (
+              <Link
+                key={customer.id}
+                href={`/customers/${customer.id}`}
+                className="flex h-[88px] items-center justify-between rounded-lg border p-3 transition-colors hover:bg-muted/50"
+              >
+                <div className="flex min-w-0 flex-1 items-center gap-3">
+                  <Badge variant="outline" className="text-xs">
+                    {index + 1}
+                  </Badge>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="truncate text-sm font-semibold">
+                      {customer.name}
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      {customer.offerCount ?? customer.activeOffers ?? 0} tilbud
+                    </p>
+                  </div>
                 </div>
-            </CardContent>
-        </Card>
-    );
+                <div className="ml-4 text-right">
+                  <p className="text-sm font-bold">
+                    {formatCurrency(
+                      customer.economicValue ?? customer.totalValue ?? 0
+                    )}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Vunnede prosjekter
+                  </p>
+                </div>
+              </Link>
+            ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
-

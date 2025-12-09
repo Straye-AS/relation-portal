@@ -1,6 +1,7 @@
 # Why React 18 Instead of React 19?
 
 ## TL;DR
+
 **MSAL (Microsoft Authentication Library) doesn't fully support React 19 yet.**
 
 We're using React 18.3.1 (latest stable) to ensure authentication works perfectly.
@@ -37,29 +38,32 @@ React 18.3.1 is not outdated - it's the **stable LTS version** with:
 
 ### Performance & Features
 
-| Feature | React 18.3.1 | React 19 |
-|---------|--------------|----------|
-| Server Components | ✅ Yes (Next.js) | ✅ Yes |
-| Concurrent Rendering | ✅ Yes | ✅ Yes |
-| Automatic Batching | ✅ Yes | ✅ Yes |
-| Suspense | ✅ Yes | ✅ Yes |
-| MSAL Support | ✅ Full Support | ⚠️ Not Yet |
-| Next.js 15 Support | ✅ Full Support | ✅ Full Support |
+| Feature              | React 18.3.1     | React 19        |
+| -------------------- | ---------------- | --------------- |
+| Server Components    | ✅ Yes (Next.js) | ✅ Yes          |
+| Concurrent Rendering | ✅ Yes           | ✅ Yes          |
+| Automatic Batching   | ✅ Yes           | ✅ Yes          |
+| Suspense             | ✅ Yes           | ✅ Yes          |
+| MSAL Support         | ✅ Full Support  | ⚠️ Not Yet      |
+| Next.js 15 Support   | ✅ Full Support  | ✅ Full Support |
 
 ### When Will We Upgrade to React 19?
 
 We'll upgrade when:
+
 1. ✅ Microsoft releases MSAL with React 19 support
 2. ✅ MSAL is tested and stable with React 19
 3. ✅ Other dependencies update their peer dependencies
 
 **Track progress here:**
+
 - [MSAL React GitHub Issues](https://github.com/AzureAD/microsoft-authentication-library-for-js/issues)
 - Watch for `@azure/msal-react@3.x.x` or newer versions with React 19 support
 
 ## Current Setup
 
 ### package.json Dependencies
+
 ```json
 {
   "dependencies": {
@@ -103,11 +107,13 @@ No code changes should be needed - just dependency updates!
 ## Verification Commands
 
 ### Check Installed Versions
+
 ```bash
 npm ls react react-dom @azure/msal-react
 ```
 
 Expected output:
+
 ```
 straye-relation@1.0.0
 ├── react@18.3.1
@@ -116,6 +122,7 @@ straye-relation@1.0.0
 ```
 
 ### Check for Peer Dependency Issues
+
 ```bash
 npm ls --depth=0
 ```
@@ -125,24 +132,31 @@ Should show **no warnings** about peer dependencies.
 ## FAQ
 
 ### Q: Is React 18 outdated?
+
 **A:** No! React 18.3.1 is the current LTS (Long Term Support) version. It's actively maintained and used by most production apps.
 
 ### Q: Are we missing React 19 features?
+
 **A:** Not really. Most React 19 improvements are internal. The features we need (Server Components, Suspense, etc.) are already in React 18 via Next.js.
 
 ### Q: Will Next.js 15 work with React 18?
+
 **A:** Yes! Next.js 15 fully supports both React 18 and React 19. We're using the stable combination.
 
 ### Q: Can we use React 19 features?
+
 **A:** We already have them! Next.js provides Server Components, async components, and other modern patterns that work with React 18.
 
 ### Q: When will MSAL support React 19?
+
 **A:** Unknown. Typically takes 3-6 months after a major React release. Watch the MSAL GitHub repo for updates.
 
 ### Q: Is authentication affected?
+
 **A:** No! MSAL works perfectly with React 18. That's exactly why we're using it.
 
 ### Q: Do we lose performance?
+
 **A:** No! React 18 has the same performance benefits. React 19 mainly improves compiler optimizations which Next.js already provides.
 
 ## Testing
@@ -168,7 +182,7 @@ npm test -- useAuth.test.ts
 5. ✅ No missing functionality
 6. ✅ Easy upgrade path when ready
 
-**We're not compromising - we're being pragmatic.** 
+**We're not compromising - we're being pragmatic.**
 
 When MSAL supports React 19, we'll upgrade immediately. Until then, React 18.3.1 gives us everything we need with zero authentication issues.
 

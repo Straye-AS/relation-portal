@@ -4,19 +4,17 @@ import { AppLayout } from "@/components/layout/app-layout";
 import { useOffers } from "@/hooks/useOffers";
 import { Button } from "@/components/ui/button";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
+import { OfferRow } from "@/components/offers/offer-row";
 import {
   Table,
   TableBody,
-  TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { OfferStatusBadge } from "@/components/offers/offer-status-badge";
-import { formatDistanceToNow } from "date-fns";
-import { nb } from "date-fns/locale";
+
 import type { DomainOfferDTO } from "@/lib/.generated/data-contracts";
-import { Input } from "@/components/ui/input";
+
 import {
   Select,
   SelectContent,
@@ -24,15 +22,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, X } from "lucide-react";
-import { DomainOfferPhase } from "@/lib/.generated/data-contracts";
+import { X, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import {
+  DomainOfferPhase,
+  DomainOfferStatus,
+} from "@/lib/.generated/data-contracts";
 import { AddOfferModal } from "@/components/offers/add-offer-modal";
 import { useState, useMemo } from "react";
-import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { DomainOfferStatus } from "@/lib/.generated/data-contracts";
-import { NewBadge } from "@/components/ui/new-badge";
-import { useRouter } from "next/navigation";
+
+import { COMPANIES } from "@/lib/api/types";
 
 type SortDirection = "asc" | "desc" | null;
 
@@ -42,14 +41,12 @@ interface SortConfig {
 }
 
 export default function OffersPage() {
-  const router = useRouter();
   const { data, isLoading } = useOffers();
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
 
   // Filter States
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [phaseFilter, setPhaseFilter] = useState<string>("all");
+  const [companyFilter, setCompanyFilter] = useState<string>("all");
 
   // Extract offers from paginated response
   const offers = useMemo<DomainOfferDTO[]>(
@@ -59,38 +56,30 @@ export default function OffersPage() {
 
   const filteredOffers = useMemo(() => {
     return offers.filter((offer) => {
-      // 1. Status Filter
-      if (statusFilter !== "all" && offer.status !== statusFilter) return false;
+      // 0. Exclude Drafts (Drafts are treated as requests/inquiries)
+      if (offer.phase === DomainOfferPhase.OfferPhaseDraft) return false;
+
+      // 1. Status Filter (Always show Active only)
+      if (offer.status !== DomainOfferStatus.OfferStatusActive) return false;
 
       // 2. Phase Filter
       if (phaseFilter !== "all" && offer.phase !== phaseFilter) return false;
 
-      // 3. Search Filter (Title or Customer Name)
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-        const titleMatch = offer.title?.toLowerCase().includes(query);
-        const customerMatch = offer.customerName?.toLowerCase().includes(query);
-        if (!titleMatch && !customerMatch) return false;
-      }
+      // 3. Company Filter
+      if (companyFilter !== "all" && offer.companyId !== companyFilter)
+        return false;
 
       return true;
     });
-  }, [offers, statusFilter, phaseFilter, searchQuery]);
+  }, [offers, phaseFilter, companyFilter]);
 
   const sortedOffers = useMemo(() => {
     // Sort the FILTERED list
     const sorted = [...filteredOffers];
 
-    // Default Sort: Status (Active first) -> UpdatedAt (Desc)
+    // Default Sort: UpdatedAt (Desc)
     if (!sortConfig) {
       return sorted.sort((a, b) => {
-        // Priority 1: Active status first
-        const isActiveA = a.status === DomainOfferStatus.OfferStatusActive;
-        const isActiveB = b.status === DomainOfferStatus.OfferStatusActive;
-        if (isActiveA && !isActiveB) return -1;
-        if (!isActiveA && isActiveB) return 1;
-
-        // Priority 2: UpdatedAt Desc (Newest first)
         const dateA = new Date(a.updatedAt ?? 0).getTime();
         const dateB = new Date(b.updatedAt ?? 0).getTime();
         return dateB - dateA;
@@ -182,30 +171,24 @@ export default function OffersPage() {
 
         {/* Filters Bar */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-          <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Søk etter tittel eller kunde..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Status" />
+          <Select value={companyFilter} onValueChange={setCompanyFilter}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Selskap" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Alle statuser</SelectItem>
-              <SelectItem value={DomainOfferStatus.OfferStatusActive}>
-                Aktiv
-              </SelectItem>
-              <SelectItem value={DomainOfferStatus.OfferStatusInactive}>
-                Inaktiv
-              </SelectItem>
-              <SelectItem value={DomainOfferStatus.OfferStatusArchived}>
-                Arkivert
-              </SelectItem>
+              {Object.values(COMPANIES).map((company) => (
+                <SelectItem key={company.id} value={company.id}>
+                  <div className="flex items-center gap-2">
+                    {company.id !== "all" && (
+                      <div
+                        className="h-2 w-2 rounded-full"
+                        style={{ backgroundColor: company.color }}
+                      />
+                    )}
+                    <span>{company.name}</span>
+                  </div>
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <Select value={phaseFilter} onValueChange={setPhaseFilter}>
@@ -214,9 +197,6 @@ export default function OffersPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Alle faser</SelectItem>
-              <SelectItem value={DomainOfferPhase.OfferPhaseDraft}>
-                Utkast
-              </SelectItem>
               <SelectItem value={DomainOfferPhase.OfferPhaseSent}>
                 Sendt
               </SelectItem>
@@ -226,17 +206,13 @@ export default function OffersPage() {
               <SelectItem value={DomainOfferPhase.OfferPhaseLost}>
                 Tapt
               </SelectItem>
-              <SelectItem value={DomainOfferPhase.OfferPhaseExpired}>
-                Utløpt
-              </SelectItem>
             </SelectContent>
           </Select>
-          {(searchQuery || statusFilter !== "all" || phaseFilter !== "all") && (
+          {(companyFilter !== "all" || phaseFilter !== "all") && (
             <Button
               variant="ghost"
               onClick={() => {
-                setSearchQuery("");
-                setStatusFilter("all");
+                setCompanyFilter("all");
                 setPhaseFilter("all");
               }}
               className="px-2 lg:px-3"
@@ -248,7 +224,7 @@ export default function OffersPage() {
         </div>
 
         {isLoading ? (
-          <TableSkeleton rows={10} columns={6} />
+          <TableSkeleton rows={10} columns={8} />
         ) : filteredOffers.length === 0 ? ( // Check filtered length for "No results"
           <div className="rounded-lg border bg-muted/20 py-12 text-center">
             {offers.length === 0 ? (
@@ -275,8 +251,12 @@ export default function OffersPage() {
                   <TableHead>
                     <SortHeader label="Kunde" sortKey="customerName" />
                   </TableHead>
+                  <TableHead>Selskap</TableHead>
                   <TableHead>
                     <SortHeader label="Fase" sortKey="phase" />
+                  </TableHead>
+                  <TableHead>
+                    <SortHeader label="Frist" sortKey="dueDate" />
                   </TableHead>
                   <TableHead>
                     <SortHeader label="Verdi" sortKey="value" />
@@ -285,61 +265,13 @@ export default function OffersPage() {
                     <SortHeader label="Sannsynlighet" sortKey="probability" />
                   </TableHead>
                   <TableHead>
-                    <SortHeader
-                      label="Ansvarlig"
-                      sortKey="responsibleUserName"
-                    />
-                  </TableHead>
-                  <TableHead>
                     <SortHeader label="Oppdatert" sortKey="updatedAt" />
                   </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {sortedOffers.map((offer) => (
-                  <TableRow
-                    key={offer.id}
-                    className="cursor-pointer hover:bg-muted/50"
-                    onClick={() => router.push(`/offers/${offer.id}`)}
-                  >
-                    <TableCell className="font-medium">
-                      {offer.title}
-                      <NewBadge createdAt={offer.createdAt} />
-                    </TableCell>
-                    <TableCell>{offer.customerName}</TableCell>
-                    <TableCell>
-                      <OfferStatusBadge phase={offer.phase || "draft"} />
-                    </TableCell>
-                    <TableCell>
-                      {new Intl.NumberFormat("nb-NO", {
-                        style: "currency",
-                        currency: "NOK",
-                        maximumFractionDigits: 0,
-                      }).format(offer.value ?? 0)}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <div className="h-2 w-full max-w-[100px] rounded-full bg-muted">
-                          <div
-                            className="h-2 rounded-full bg-primary"
-                            style={{ width: `${offer.probability ?? 0}%` }}
-                          />
-                        </div>
-                        <span className="text-sm">
-                          {offer.probability ?? 0}%
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>{offer.responsibleUserName ?? "-"}</TableCell>
-                    <TableCell>
-                      {offer.updatedAt
-                        ? formatDistanceToNow(new Date(offer.updatedAt), {
-                            addSuffix: true,
-                            locale: nb,
-                          })
-                        : "-"}
-                    </TableCell>
-                  </TableRow>
+                  <OfferRow key={offer.id} offer={offer} />
                 ))}
               </TableBody>
             </Table>

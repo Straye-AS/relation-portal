@@ -87,7 +87,7 @@
     --sidebar-foreground: 0 0% 98%;
     --sidebar-primary: 210 50% 60%;
     /* Straye light blue */
-    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-primary-foreground: 210 55% 25%;
     --sidebar-accent: 210 45% 35%;
     /* Darker blue for hover */
     --sidebar-accent-foreground: 0 0% 98%;
@@ -154,5 +154,39 @@
 
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  /* Chrome, Edge, and Safari */
+  *::-webkit-scrollbar {
+    width: 8px; /* Slightly wider than 6px for usability, but still sleek */
+    height: 8px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 9999px;
+    border: 2px solid transparent; /* Creates padding effect around the thumb */
+    background-clip: content-box; /* Ensures the background doesn't fill the border area */
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--muted-foreground) / 0.5);
+  }
+
+  /* Corner styling for when both scrollbars are visible */
+  *::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  /* Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
   }
 }

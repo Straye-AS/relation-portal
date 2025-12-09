@@ -33,7 +33,19 @@ export function CompanySelector() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" className="gap-2">
+        <Button
+          variant="outline"
+          className="gap-2"
+          style={
+            selectedCompany
+              ? {
+                  backgroundColor: `${selectedCompany.color}15`,
+                  color: selectedCompany.color,
+                  borderColor: `${selectedCompany.color}40`,
+                }
+              : undefined
+          }
+        >
           <Building2 className="h-4 w-4" />
           <span className="hidden md:inline">{selectedCompany?.shortName}</span>
           <span className="md:hidden">{selectedCompany?.shortName}</span>

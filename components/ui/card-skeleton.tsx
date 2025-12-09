@@ -6,7 +6,7 @@ export function CardSkeleton() {
     <Card>
       <CardHeader>
         <Skeleton className="h-6 w-32" />
-        <Skeleton className="h-4 w-48 mt-2" />
+        <Skeleton className="mt-2 h-4 w-48" />
       </CardHeader>
       <CardContent>
         <div className="space-y-2">

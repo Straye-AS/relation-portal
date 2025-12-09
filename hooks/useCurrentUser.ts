@@ -81,7 +81,6 @@ export function useCurrentUser(): UseCurrentUserReturn {
     const callbackId = instance.addEventCallback((message) => {
       if (
         message.eventType === EventType.LOGIN_SUCCESS ||
-        message.eventType === EventType.ACQUIRE_TOKEN_SUCCESS ||
         message.eventType === EventType.SSO_SILENT_SUCCESS
       ) {
         refetch();
@@ -99,7 +98,8 @@ export function useCurrentUser(): UseCurrentUserReturn {
   useEffect(() => {
     if (backendUser) {
       // Set super admin status
-      setCanViewAllCompanies(backendUser.isSuperAdmin ?? false);
+      // Allow all users to switch companies regardless of super admin status
+      setCanViewAllCompanies(true);
 
       // Set user's company
       if (backendUser.company?.id) {

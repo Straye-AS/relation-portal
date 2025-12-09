@@ -1,86 +1,104 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Notification } from "@/types";
-import { Bell, FileText, Briefcase, Building2, AlertCircle } from "lucide-react";
+import { Activity } from "@/lib/api/types";
+import {
+  Bell,
+  Phone,
+  Mail,
+  CheckSquare,
+  FileText,
+  AlertCircle,
+  Calendar,
+} from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { nb } from "date-fns/locale";
 import Link from "next/link";
 
 interface ActivityFeedProps {
-    activities: Notification[];
+  activities: Activity[];
 }
 
 const typeIcons: Record<string, React.ReactNode> = {
-    offer: <FileText className="h-4 w-4" />,
-    project: <Briefcase className="h-4 w-4" />,
-    customer: <Building2 className="h-4 w-4" />,
-    system: <AlertCircle className="h-4 w-4" />,
+  meeting: <Calendar className="h-4 w-4" />,
+  call: <Phone className="h-4 w-4" />,
+  email: <Mail className="h-4 w-4" />,
+  task: <CheckSquare className="h-4 w-4" />,
+  note: <FileText className="h-4 w-4" />,
+  system: <AlertCircle className="h-4 w-4" />,
 };
 
 const typeColors: Record<string, string> = {
-    offer: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300",
-    project: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
-    customer: "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300",
-    system: "bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300",
+  meeting:
+    "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300",
+  call: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300",
+  email: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
+  task: "bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300",
+  note: "bg-gray-100 text-gray-700 dark:bg-gray-900 dark:text-gray-300",
+  system: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
 };
 
 export function ActivityFeed({ activities }: ActivityFeedProps) {
-    return (
-        <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Siste aktivitet</CardTitle>
-                <Bell className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-                <div className="space-y-3 max-h-96 overflow-y-auto">
-                    {activities.length === 0 && (
-                        <p className="text-sm text-muted-foreground text-center py-4">
-                            Ingen aktivitet
-                        </p>
+  return (
+    <Card className="flex h-full flex-col">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">Siste aktivitet</CardTitle>
+        <Bell className="h-4 w-4 text-muted-foreground" />
+      </CardHeader>
+      <CardContent className="flex min-h-0 flex-1 flex-col">
+        <div className="flex-1 space-y-3 overflow-y-auto pr-2">
+          {activities.length === 0 && (
+            <p className="py-4 text-center text-sm text-muted-foreground">
+              Ingen aktivitet
+            </p>
+          )}
+          {activities.map((activity) => (
+            <div
+              key={activity.id}
+              className="flex h-[88px] items-center gap-3 rounded-lg border p-3 transition-colors hover:bg-muted/50"
+            >
+              <div
+                className={`rounded-full p-2 ${typeColors[activity.activityType || "system"] || typeColors.system}`}
+              >
+                {typeIcons[activity.activityType || "system"] ||
+                  typeIcons.system}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <h3 className="truncate text-sm font-semibold">
+                    {activity.title}
+                  </h3>
+                </div>
+                <p className="line-clamp-2 text-xs text-muted-foreground">
+                  {activity.body || "Ingen beskrivelse"}
+                </p>
+                <div className="mt-1 flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground">
+                    {activity.creatorName && `${activity.creatorName} • `}
+                    {formatDistanceToNow(
+                      new Date(
+                        activity.createdAt || activity.occurredAt || new Date()
+                      ),
+                      {
+                        addSuffix: true,
+                        locale: nb,
+                      }
                     )}
-                    {activities.map((activity) => (
-                        <div
-                            key={activity.id}
-                            className={`flex items-start gap-3 p-3 rounded-lg border ${activity.read ? "opacity-60" : ""
-                                } hover:bg-muted/50 transition-colors`}
-                        >
-                            <div className={`p-2 rounded-full ${typeColors[activity.type]}`}>
-                                {typeIcons[activity.type]}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2">
-                                    <h3 className="font-semibold text-sm truncate">{activity.title}</h3>
-                                    {!activity.read && (
-                                        <Badge variant="default" className="text-xs">
-                                            Ny
-                                        </Badge>
-                                    )}
-                                </div>
-                                <p className="text-xs text-muted-foreground line-clamp-2">
-                                    {activity.message}
-                                </p>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                    {formatDistanceToNow(new Date(activity.createdAt), {
-                                        addSuffix: true,
-                                        locale: nb,
-                                    })}
-                                </p>
-                            </div>
-                        </div>
-                    ))}
+                  </p>
                 </div>
-                <div className="mt-4 pt-3 border-t">
-                    <Link
-                        href="/notifications"
-                        className="text-sm text-primary hover:underline font-medium"
-                    >
-                        Se alle varsler →
-                    </Link>
-                </div>
-            </CardContent>
-        </Card>
-    );
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="mt-4 shrink-0 border-t pt-3">
+          <Link
+            href="/notifications"
+            className="text-sm font-medium text-primary hover:underline"
+          >
+            Se alle aktiviteter →
+          </Link>
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
-

@@ -8,24 +8,46 @@ import { useCompanyStore } from "@/store/company-store";
 import { PipelineOverview } from "@/components/dashboard/pipeline-overview";
 import { OfferReserveCard } from "@/components/dashboard/offer-reserve-card";
 import { OfferStatsCard } from "@/components/dashboard/offer-stats-card";
+import { ProjectOrderReserveCard } from "@/components/dashboard/project-order-reserve-card";
 import { RecentOffersCard } from "@/components/dashboard/recent-offers-card";
-import { RevenueForecast } from "@/components/dashboard/revenue-forecast";
-import { TopDisciplines } from "@/components/dashboard/top-disciplines";
-import { TeamPerformance } from "@/components/dashboard/team-performance";
-import { ActiveProjectsCard } from "@/components/dashboard/active-projects-card";
+import { RecentProjectsCard } from "@/components/dashboard/recent-projects-card";
 import { TopCustomersCard } from "@/components/dashboard/top-customers-card";
 import { QuickActions } from "@/components/dashboard/quick-actions";
 import { ActivityFeed } from "@/components/dashboard/activity-feed";
 import { motion } from "framer-motion";
 
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { useEffect } from "react";
+import { useEffect, useState, useMemo } from "react";
+import { phaseLabels } from "@/components/dashboard/pipeline-overview";
+import { OfferListModal } from "@/components/dashboard/offer-list-modal";
+import { useOffers } from "@/hooks/useOffers";
+
+import {
+  DomainOfferPhase,
+  Offer as DomainOfferDTO,
+  DashboardMetrics,
+} from "@/lib/api/types";
 
 export default function DashboardPage() {
   const { userCompany } = useCompanyStore();
-  const { data: metrics, isLoading } = useDashboard();
+  const { data: rawMetrics, isLoading } = useDashboard();
+  const metrics = rawMetrics as unknown as DashboardMetrics;
   const { refetch: refetchUser } = useCurrentUser();
+  const [selectedPhase, setSelectedPhase] = useState<string | null>(null);
 
+  // Fetch offers for the selected phase
+  const { data: offersData } = useOffers(
+    { phase: selectedPhase as DomainOfferPhase },
+    { enabled: !!selectedPhase }
+  );
+
+  const phaseOffers = useMemo<DomainOfferDTO[]>(
+    () => offersData?.data ?? [],
+    [offersData?.data]
+  );
+
+  // Fetch projects for order reserve calculation
+  // "Ordrereserve" = Sum(budget - spent) for all "won" (active/planning) projects
   // Validate auth on home page load
   useEffect(() => {
     refetchUser();
@@ -76,64 +98,72 @@ export default function DashboardPage() {
               typeof PipelineOverview
             >[0]["pipeline"]
           }
+          onPhaseClick={setSelectedPhase}
         />
 
         {/* Key Metrics Row */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <OfferReserveCard
-            offerReserve={metrics.offerReserve ?? 0}
-            winRate={metrics.winRate ?? 0}
+          {(() => {
+            // Recalculate offer metrics excluding drafts
+            // Offer Reserve = Active Offers (InProgress + Sent)
+            const activePhases = [
+              DomainOfferPhase.OfferPhaseInProgress,
+              DomainOfferPhase.OfferPhaseSent,
+            ];
+            // Safely filter pipeline (metrics.pipeline might not be populated in all cases, check types)
+            const activePipeline = (metrics.pipeline || []).filter((p) =>
+              activePhases.includes(p.phase as DomainOfferPhase)
+            );
+
+            const cleanTotalValue = activePipeline.reduce(
+              (sum, p) => sum + p.totalValue,
+              0
+            );
+            const cleanWeightedValue = activePipeline.reduce(
+              (sum, p) => sum + p.weightedValue,
+              0
+            );
+            const cleanProb =
+              cleanTotalValue > 0
+                ? (cleanWeightedValue / cleanTotalValue) * 100
+                : 0;
+
+            return (
+              <OfferReserveCard
+                offerReserve={cleanTotalValue}
+                winRate={(metrics.winRateMetrics?.winRate ?? 0) * 100}
+                economicWinRate={
+                  (metrics.winRateMetrics?.economicWinRate ?? 0) * 100
+                }
+                totalValue={cleanTotalValue}
+                weightedValue={cleanWeightedValue}
+                averageProbability={cleanProb}
+                wonCount={metrics.winRateMetrics?.wonCount}
+                lostCount={metrics.winRateMetrics?.lostCount}
+              />
+            );
+          })()}
+          <ProjectOrderReserveCard
+            amount={metrics.orderReserve ?? 0}
             totalValue={metrics.totalValue ?? 0}
-            weightedValue={metrics.weightedValue ?? 0}
-            averageProbability={metrics.averageProbability ?? 0}
+            invoicedAmount={metrics.totalInvoiced ?? 0}
           />
-          <OfferStatsCard
-            activeOffers={metrics.activeOffers ?? 0}
-            wonOffers={metrics.wonOffers ?? 0}
-            lostOffers={metrics.lostOffers ?? 0}
-            totalOffers={metrics.totalOffers ?? 0}
-          />
-          <RevenueForecast
-            forecast30Days={metrics.revenueForecast30Days ?? 0}
-            forecast90Days={metrics.revenueForecast90Days ?? 0}
-          />
+          <OfferStatsCard data={metrics} />
           <QuickActions />
         </div>
 
-        {/* Disciplines and Team Performance */}
-        {/* TODO: Update these components to use Domain types */}
-        <div className="grid gap-4 md:grid-cols-2">
-          <TopDisciplines
-            disciplines={
-              metrics.topDisciplines as Parameters<
-                typeof TopDisciplines
-              >[0]["disciplines"]
-            }
-          />
-          <TeamPerformance
-            teamStats={
-              metrics.teamPerformance as Parameters<
-                typeof TeamPerformance
-              >[0]["teamStats"]
-            }
-          />
-        </div>
-
         {/* Projects, Customers and Activity */}
         {/* TODO: Update these components to use Domain types */}
         {/* Projects, Customers and Activity */}
         {/* TODO: Update these components to use Domain types */}
-        <div className="grid gap-4 pb-6 md:grid-cols-2 lg:grid-cols-4">
-          <div className="col-span-1 lg:col-span-2">
-            <RecentOffersCard offers={metrics.recentOffers ?? []} />
-          </div>
-          <ActiveProjectsCard
-            projects={
-              metrics.activeProjects as Parameters<
-                typeof ActiveProjectsCard
-              >[0]["projects"]
-            }
+        <div className="grid gap-4 pb-6 md:grid-cols-2">
+          <RecentOffersCard
+            offers={(metrics.recentOffers ?? []).filter(
+              (o: DomainOfferDTO) =>
+                o.phase !== DomainOfferPhase.OfferPhaseDraft
+            )}
           />
+          <RecentProjectsCard projects={metrics.recentProjects ?? []} />
           <TopCustomersCard
             customers={
               metrics.topCustomers as Parameters<
@@ -141,17 +171,22 @@ export default function DashboardPage() {
               >[0]["customers"]
             }
           />
-          <div className="col-span-1 lg:col-span-4">
-            <ActivityFeed
-              activities={
-                metrics.recentActivities as Parameters<
-                  typeof ActivityFeed
-                >[0]["activities"]
-              }
-            />
-          </div>
+          <ActivityFeed
+            activities={
+              metrics.recentActivities as Parameters<
+                typeof ActivityFeed
+              >[0]["activities"]
+            }
+          />
         </div>
       </motion.div>
+
+      <OfferListModal
+        isOpen={!!selectedPhase}
+        onClose={() => setSelectedPhase(null)}
+        title={selectedPhase ? phaseLabels[selectedPhase] || selectedPhase : ""}
+        offers={phaseOffers}
+      />
     </AppLayout>
   );
 }

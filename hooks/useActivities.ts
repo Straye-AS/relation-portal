@@ -12,6 +12,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useApi } from "@/lib/api/api-provider";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { useCompanyStore } from "@/store/company-store";
 import type {
   DomainCreateActivityRequest,
   DomainUpdateActivityRequest,
@@ -26,9 +27,10 @@ import type {
 export function useActivities(params?: Partial<ActivitiesListParams>) {
   const api = useApi();
   const { isAuthenticated } = useAuth();
+  const { selectedCompanyId } = useCompanyStore();
 
   return useQuery({
-    queryKey: ["activities", params],
+    queryKey: ["activities", params, selectedCompanyId],
     queryFn: async () => {
       const response = await api.activities.activitiesList(params ?? {});
       return response.data;
@@ -43,9 +45,10 @@ export function useActivities(params?: Partial<ActivitiesListParams>) {
 export function useMyTasks(params?: Partial<MyTasksListParams>) {
   const api = useApi();
   const { isAuthenticated } = useAuth();
+  const { selectedCompanyId } = useCompanyStore();
 
   return useQuery({
-    queryKey: ["activities", "my-tasks", params],
+    queryKey: ["activities", "my-tasks", params, selectedCompanyId],
     queryFn: async () => {
       const response = await api.activities.myTasksList(params ?? {});
       return response.data;
@@ -61,9 +64,10 @@ export function useMyTasks(params?: Partial<MyTasksListParams>) {
 export function useUpcomingActivities(params?: Partial<UpcomingListParams>) {
   const api = useApi();
   const { isAuthenticated } = useAuth();
+  const { selectedCompanyId } = useCompanyStore();
 
   return useQuery({
-    queryKey: ["activities", "upcoming", params],
+    queryKey: ["activities", "upcoming", params, selectedCompanyId],
     queryFn: async () => {
       const response = await api.activities.upcomingList(params ?? {});
       return response.data;
@@ -79,9 +83,10 @@ export function useUpcomingActivities(params?: Partial<UpcomingListParams>) {
 export function useActivityStats() {
   const api = useApi();
   const { isAuthenticated } = useAuth();
+  const { selectedCompanyId } = useCompanyStore();
 
   return useQuery({
-    queryKey: ["activities", "stats"],
+    queryKey: ["activities", "stats", selectedCompanyId],
     queryFn: async () => {
       const response = await api.activities.statsList();
       return response.data;
@@ -96,9 +101,10 @@ export function useActivityStats() {
 export function useActivity(id: string) {
   const api = useApi();
   const { isAuthenticated } = useAuth();
+  const { selectedCompanyId } = useCompanyStore();
 
   return useQuery({
-    queryKey: ["activities", id],
+    queryKey: ["activities", id, selectedCompanyId],
     queryFn: async () => {
       const response = await api.activities.activitiesDetail({ id });
       return response.data;

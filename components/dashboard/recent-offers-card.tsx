@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { format } from "date-fns";
 import { nb } from "date-fns/locale";
+import { FileText } from "lucide-react";
+import { phaseLabels, phaseColors } from "./pipeline-overview";
 
 interface RecentOffersCardProps {
   offers: DomainOfferDTO[];
@@ -14,25 +16,28 @@ interface RecentOffersCardProps {
 
 export function RecentOffersCard({ offers }: RecentOffersCardProps) {
   return (
-    <Card className="col-span-full">
-      <CardHeader>
+    <Card className="h-full">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">Siste tilbud</CardTitle>
+        <FileText className="h-4 w-4 text-muted-foreground" />
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
+        <div className="space-y-4 pt-4">
           {offers.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Ingen tilbud funnet</p>
+            <p className="py-4 text-center text-sm text-muted-foreground">
+              Ingen tilbud funnet
+            </p>
           ) : (
             <div className="divide-y">
               {offers.map((offer) => (
                 <div
                   key={offer.id}
-                  className="grid grid-cols-12 gap-4 rounded-lg px-2 py-3 text-sm transition-colors hover:bg-muted/50"
+                  className="grid grid-cols-12 items-center gap-4 rounded-lg px-2 py-3 text-sm transition-colors hover:bg-muted/50"
                 >
-                  <div className="col-span-4 flex flex-col justify-center">
+                  <div className="col-span-12 flex min-w-0 flex-col justify-center sm:col-span-5">
                     <Link
                       href={`/offers/${offer.id}`}
-                      className="truncate font-medium hover:underline"
+                      className="block truncate font-medium hover:underline"
                     >
                       {offer.title}
                     </Link>
@@ -40,15 +45,20 @@ export function RecentOffersCard({ offers }: RecentOffersCardProps) {
                       {offer.customerName}
                     </span>
                   </div>
-                  <div className="col-span-3 flex items-center">
-                    <Badge variant="outline" className="max-w-full truncate">
-                      {offer.phase}
+                  <div className="col-span-6 flex items-center sm:col-span-3">
+                    <Badge
+                      variant="outline"
+                      className={`max-w-full truncate border ${offer.phase ? phaseColors[offer.phase] : ""}`}
+                    >
+                      {offer.phase
+                        ? phaseLabels[offer.phase] || offer.phase
+                        : "-"}
                     </Badge>
                   </div>
-                  <div className="col-span-3 flex items-center font-medium">
+                  <div className="col-span-3 flex items-center justify-end font-medium sm:col-span-2">
                     {formatCurrency(offer.value ?? 0)}
                   </div>
-                  <div className="col-span-2 flex items-center justify-end text-xs text-muted-foreground">
+                  <div className="col-span-3 flex items-center justify-end text-xs text-muted-foreground sm:col-span-2">
                     {offer.updatedAt
                       ? format(new Date(offer.updatedAt), "d. MMM", {
                           locale: nb,

@@ -1,37 +1,45 @@
 "use client";
 
 import { useAuth } from "@/hooks/useAuth";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { AppHeader } from "./app-header";
 import { AppSidebar } from "./app-sidebar";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Button } from "@/components/ui/button";
 import { useNotifications } from "@/hooks/useNotifications";
 import { AuthModeToggle } from "@/components/auth/auth-mode-toggle";
-import { isLocalAuthEnabled, getAuthModePreference } from "@/lib/auth/localAuthConfig";
+import {
+  isLocalAuthEnabled,
+  getAuthModePreference,
+} from "@/lib/auth/localAuthConfig";
 import Image from "next/image";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading, login } = useAuth();
+
+  // Ensure user data is loaded and company store is updated
+  useCurrentUser();
 
   // Load notifications in background
   useNotifications();
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex min-h-screen items-center justify-center">
         <LoadingSpinner size="lg" />
       </div>
     );
   }
 
   if (!isAuthenticated) {
-    const isLocalMode = isLocalAuthEnabled() &&
+    const isLocalMode =
+      isLocalAuthEnabled() &&
       (typeof window === "undefined" || getAuthModePreference() === "local");
 
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-muted/40">
-        <div className="w-full max-w-md p-8 space-y-6 bg-card rounded-lg shadow-lg">
-          <div className="text-center space-y-4">
+      <div className="flex min-h-screen flex-col items-center justify-center bg-muted/40">
+        <div className="w-full max-w-md space-y-6 rounded-lg bg-card p-8 shadow-lg">
+          <div className="space-y-4 text-center">
             <div className="flex justify-center">
               <Image
                 src="/straye-logo-blue.png"
@@ -59,10 +67,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
 
           <Button onClick={login} className="w-full" size="lg">
-            {isLocalMode ? "Logg inn som testutvikler" : "Logg inn med Microsoft"}
+            {isLocalMode
+              ? "Logg inn som testutvikler"
+              : "Logg inn med Microsoft"}
           </Button>
 
-          <p className="text-xs text-center text-muted-foreground">
+          <p className="text-center text-xs text-muted-foreground">
             Kun for ansatte i Straye Gruppen AS
           </p>
 
@@ -74,12 +84,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex flex-col h-screen">
-      <AppHeader />
-      <div className="flex flex-1 overflow-hidden">
-        <AppSidebar />
+    <div className="flex h-screen overflow-hidden">
+      <AppSidebar />
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <AppHeader />
         <main className="flex-1 overflow-y-auto bg-background">
-          <div className="container mx-auto py-3">{children}</div>
+          <div className="mx-auto w-full max-w-[1920px] px-4 py-3 md:px-8">
+            {children}
+          </div>
         </main>
       </div>
     </div>

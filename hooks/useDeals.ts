@@ -12,6 +12,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useApi } from "@/lib/api/api-provider";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { useCompanyStore } from "@/store/company-store";
 import type {
   DomainCreateDealRequest,
   DomainUpdateDealRequest,
@@ -25,9 +26,10 @@ import type {
 export function useDeals(params?: Partial<DealsListParams>) {
   const api = useApi();
   const { isAuthenticated } = useAuth();
+  const { selectedCompanyId } = useCompanyStore();
 
   return useQuery({
-    queryKey: ["deals", params],
+    queryKey: ["deals", params, selectedCompanyId],
     queryFn: async () => {
       const response = await api.deals.dealsList(params ?? {});
       return response.data;
@@ -42,9 +44,10 @@ export function useDeals(params?: Partial<DealsListParams>) {
 export function useDeal(id: string) {
   const api = useApi();
   const { isAuthenticated } = useAuth();
+  const { selectedCompanyId } = useCompanyStore();
 
   return useQuery({
-    queryKey: ["deals", id],
+    queryKey: ["deals", id, selectedCompanyId],
     queryFn: async () => {
       const response = await api.deals.dealsDetail({ id });
       return response.data;
@@ -59,9 +62,10 @@ export function useDeal(id: string) {
 export function useDealPipeline() {
   const api = useApi();
   const { isAuthenticated } = useAuth();
+  const { selectedCompanyId } = useCompanyStore();
 
   return useQuery({
-    queryKey: ["deals", "pipeline"],
+    queryKey: ["deals", "pipeline", selectedCompanyId],
     queryFn: async () => {
       const response = await api.deals.pipelineList();
       return response.data;
@@ -77,9 +81,10 @@ export function useDealPipeline() {
 export function useDealStats() {
   const api = useApi();
   const { isAuthenticated } = useAuth();
+  const { selectedCompanyId } = useCompanyStore();
 
   return useQuery({
-    queryKey: ["deals", "stats"],
+    queryKey: ["deals", "stats", selectedCompanyId],
     queryFn: async () => {
       const response = await api.deals.statsList();
       return response.data;
@@ -94,9 +99,10 @@ export function useDealStats() {
 export function useDealForecast(params?: { months?: number }) {
   const api = useApi();
   const { isAuthenticated } = useAuth();
+  const { selectedCompanyId } = useCompanyStore();
 
   return useQuery({
-    queryKey: ["deals", "forecast", params],
+    queryKey: ["deals", "forecast", params, selectedCompanyId],
     queryFn: async () => {
       const response = await api.deals.forecastList({ months: params?.months });
       return response.data;
@@ -112,9 +118,10 @@ export function useDealForecast(params?: { months?: number }) {
 export function useDealHistory(id: string) {
   const api = useApi();
   const { isAuthenticated } = useAuth();
+  const { selectedCompanyId } = useCompanyStore();
 
   return useQuery({
-    queryKey: ["deals", id, "history"],
+    queryKey: ["deals", id, "history", selectedCompanyId],
     queryFn: async () => {
       const response = await api.deals.historyList({ id });
       return response.data;

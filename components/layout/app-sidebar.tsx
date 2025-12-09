@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/store/useUIStore";
@@ -14,6 +15,7 @@ import {
   Bell,
   ChevronLeft,
   ChevronRight,
+  FileQuestion,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import {
@@ -22,6 +24,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useOffers } from "@/hooks/useOffers";
+import { DomainOfferPhase } from "@/lib/.generated/data-contracts";
 
 const navigation = [
   {
@@ -30,19 +34,24 @@ const navigation = [
     icon: LayoutDashboard,
   },
   {
+    name: "Forespørsler",
+    href: "/requests",
+    icon: FileQuestion,
+  },
+  {
     name: "Tilbud",
     href: "/offers",
     icon: FileText,
   },
   {
-    name: "Kunder",
-    href: "/customers",
-    icon: Users,
-  },
-  {
     name: "Prosjekter",
     href: "/projects",
     icon: FolderKanban,
+  },
+  {
+    name: "Kunder",
+    href: "/customers",
+    icon: Users,
   },
   {
     name: "Varsler",
@@ -59,6 +68,10 @@ const navigation = [
 export function AppSidebar() {
   const pathname = usePathname();
   const { sidebarCollapsed, toggleSidebarCollapse } = useUIStore();
+  const { data: offersData } = useOffers({
+    phase: DomainOfferPhase.OfferPhaseDraft,
+  });
+  const requestCount = offersData?.data?.length ?? 0;
 
   return (
     <motion.aside
@@ -67,11 +80,41 @@ export function AppSidebar() {
         width: sidebarCollapsed ? "4rem" : "16rem",
       }}
       transition={{ duration: 0.3, ease: "easeInOut" }}
-      className="hidden md:flex md:flex-shrink-0 relative"
+      className="relative hidden md:flex md:flex-shrink-0"
     >
-      <div className="flex flex-col w-full border-r bg-sidebar-background">
-        <div className="flex flex-col flex-grow pb-4 overflow-y-auto">
-          <nav className="flex-1 px-2 space-y-1 mt-5">
+      <div className="bg-sidebar-background flex w-full flex-col border-r">
+        <div className="flex h-14 items-center border-b px-4">
+          <Link
+            href="/"
+            className="flex items-center space-x-3 overflow-hidden"
+          >
+            <div className="flex-shrink-0">
+              <Image
+                src="/straye-logo-blue.png"
+                alt="Straye"
+                width={32}
+                height={32}
+                className="dark:hidden"
+                priority
+              />
+              <Image
+                src="/straye-logo-white.png"
+                alt="Straye"
+                width={32}
+                height={32}
+                className="hidden dark:block"
+                priority
+              />
+            </div>
+            {!sidebarCollapsed && (
+              <span className="whitespace-nowrap font-logo text-xl font-bold uppercase tracking-wider text-sidebar-foreground">
+                Relation
+              </span>
+            )}
+          </Link>
+        </div>
+        <div className="flex flex-grow flex-col overflow-y-auto pb-4">
+          <nav className="mt-5 flex-1 space-y-1 px-2">
             <TooltipProvider delayDuration={300}>
               {navigation.map((item) => {
                 const isActive =
@@ -83,30 +126,47 @@ export function AppSidebar() {
                     key={item.name}
                     href={item.href}
                     className={cn(
-                      "group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors",
+                      "group relative flex items-center rounded-md px-2 py-2 text-sm font-medium transition-colors",
                       isActive
-                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                        ? "bg-sidebar-primary text-sidebar-primary-foreground"
                         : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                       sidebarCollapsed && "justify-center"
                     )}
                   >
                     <item.icon
                       className={cn(
-                        "flex-shrink-0 h-5 w-5",
+                        "h-5 w-5 flex-shrink-0",
                         !sidebarCollapsed && "mr-3",
-                        isActive ? "text-sidebar-accent-foreground" : "text-sidebar-foreground"
+                        isActive
+                          ? "text-sidebar-primary-foreground"
+                          : "text-sidebar-foreground"
                       )}
                     />
-                    {!sidebarCollapsed && <span>{item.name}</span>}
+                    {!sidebarCollapsed && (
+                      <span className="flex flex-1 items-center justify-between">
+                        {item.name}
+                        {item.name === "Forespørsler" && requestCount > 0 && (
+                          <span className="ml-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-orange-500 px-1.5 text-[10px] font-bold text-white">
+                            {requestCount > 5 ? "5+" : requestCount}
+                          </span>
+                        )}
+                      </span>
+                    )}
+                    {/* Badge for collapsed state */}
+                    {sidebarCollapsed &&
+                      item.name === "Forespørsler" &&
+                      requestCount > 0 && (
+                        <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-orange-500 text-[9px] font-bold text-white">
+                          !
+                        </span>
+                      )}
                   </Link>
                 );
 
                 if (sidebarCollapsed) {
                   return (
                     <Tooltip key={item.name}>
-                      <TooltipTrigger asChild>
-                        {navItem}
-                      </TooltipTrigger>
+                      <TooltipTrigger asChild>{navItem}</TooltipTrigger>
                       <TooltipContent side="right">
                         <p>{item.name}</p>
                       </TooltipContent>
@@ -120,7 +180,7 @@ export function AppSidebar() {
           </nav>
 
           {/* Toggle button at bottom */}
-          <div className="px-2 mt-auto">
+          <div className="mt-auto px-2">
             <Button
               variant="ghost"
               size="sm"
@@ -134,7 +194,7 @@ export function AppSidebar() {
                 <ChevronRight className="h-5 w-5" />
               ) : (
                 <>
-                  <ChevronLeft className="h-5 w-5 mr-2" />
+                  <ChevronLeft className="mr-2 h-5 w-5" />
                   <span className="text-xs">Skjul meny</span>
                 </>
               )}

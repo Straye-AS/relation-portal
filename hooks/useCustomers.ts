@@ -11,6 +11,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useApi } from "@/lib/api/api-provider";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { useCompanyStore } from "@/store/company-store";
 import type {
   DomainCreateCustomerRequest,
   DomainUpdateCustomerRequest,
@@ -23,9 +24,10 @@ import type {
 export function useCustomers(params?: Partial<CustomersListParams>) {
   const api = useApi();
   const { isAuthenticated } = useAuth();
+  const { selectedCompanyId } = useCompanyStore();
 
   return useQuery({
-    queryKey: ["customers", params],
+    queryKey: ["customers", params, selectedCompanyId],
     queryFn: async () => {
       const response = await api.customers.customersList(params ?? {});
       return response.data;
@@ -40,9 +42,10 @@ export function useCustomers(params?: Partial<CustomersListParams>) {
 export function useAllCustomers() {
   const api = useApi();
   const { isAuthenticated } = useAuth();
+  const { selectedCompanyId } = useCompanyStore();
 
   return useQuery({
-    queryKey: ["customers", "all"],
+    queryKey: ["customers", "all", selectedCompanyId],
     queryFn: async () => {
       // Fetch with large page size to get all
       const response = await api.customers.customersList({ pageSize: 1000 });
@@ -59,9 +62,10 @@ export function useAllCustomers() {
 export function useCustomer(id: string) {
   const api = useApi();
   const { isAuthenticated } = useAuth();
+  const { selectedCompanyId } = useCompanyStore();
 
   return useQuery({
-    queryKey: ["customers", id],
+    queryKey: ["customers", id, selectedCompanyId],
     queryFn: async () => {
       const response = await api.customers.customersDetail({ id });
       return response.data;
@@ -76,9 +80,10 @@ export function useCustomer(id: string) {
 export function useCustomerWithDetails(id: string) {
   const api = useApi();
   const { isAuthenticated } = useAuth();
+  const { selectedCompanyId } = useCompanyStore();
 
   return useQuery({
-    queryKey: ["customers", id, "details"],
+    queryKey: ["customers", id, "details", selectedCompanyId],
     queryFn: async () => {
       const response = await api.customers.customersDetail({ id });
       return response.data;
@@ -93,9 +98,10 @@ export function useCustomerWithDetails(id: string) {
 export function useCustomerContacts(customerId: string) {
   const api = useApi();
   const { isAuthenticated } = useAuth();
+  const { selectedCompanyId } = useCompanyStore();
 
   return useQuery({
-    queryKey: ["customers", customerId, "contacts"],
+    queryKey: ["customers", customerId, "contacts", selectedCompanyId],
     queryFn: async () => {
       const response = await api.customers.contactsList({ id: customerId });
       return response.data;

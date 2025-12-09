@@ -1,31 +1,44 @@
 "use client";
 
 import { AppLayout } from "@/components/layout/app-layout";
-import { useProjects } from "@/hooks/useProjects";
+import { useProjects, useDeleteProject } from "@/hooks/useProjects";
 import type { DomainProjectDTO } from "@/lib/.generated/data-contracts";
 import { Button } from "@/components/ui/button";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import Link from "next/link";
 import { Plus } from "lucide-react";
-import { format } from "date-fns";
-import { nb } from "date-fns/locale";
 
-import { ProjectStatusBadge } from "@/components/projects/project-status-badge";
-import { NewBadge } from "@/components/ui/new-badge";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { DeleteConfirmationModal } from "@/components/ui/delete-confirmation-modal";
+
+import { ProjectListTable } from "@/components/projects/project-list-table";
 
 export default function ProjectsPage() {
   const router = useRouter();
   const { data: rawProjects, isLoading } = useProjects();
+  const deleteProject = useDeleteProject();
   const projects = rawProjects as DomainProjectDTO[] | undefined;
+
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [projectToDelete, setProjectToDelete] =
+    useState<DomainProjectDTO | null>(null);
+
+  const handleDeleteClick = (
+    project: DomainProjectDTO,
+    e: React.MouseEvent
+  ) => {
+    e.stopPropagation();
+    setProjectToDelete(project);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (projectToDelete?.id) {
+      await deleteProject.mutateAsync(projectToDelete.id);
+      setProjectToDelete(null);
+    }
+  };
 
   return (
     <AppLayout>
@@ -55,90 +68,25 @@ export default function ProjectsPage() {
             </Link>
           </div>
         ) : (
-          <div className="rounded-lg border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Navn</TableHead>
-                  <TableHead>Kunde</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Prosjektleder</TableHead>
-                  <TableHead>Budsjett</TableHead>
-                  <TableHead>Brukt</TableHead>
-                  <TableHead>Startdato</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {projects?.map((project) => {
-                  const budget = project.budget ?? 0;
-                  const spent = project.spent ?? 0;
-                  const spentPercentage =
-                    budget > 0 ? (spent / budget) * 100 : 0;
-                  return (
-                    <TableRow
-                      key={project.id}
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => router.push(`/projects/${project.id}`)}
-                    >
-                      <TableCell className="font-medium">
-                        {project.name}
-                        <NewBadge createdAt={project.createdAt} />
-                      </TableCell>
-                      <TableCell>{project.customerName}</TableCell>
-                      <TableCell>
-                        <ProjectStatusBadge status={project.status ?? ""} />
-                      </TableCell>
-                      <TableCell>{project.managerName}</TableCell>
-                      <TableCell>
-                        {new Intl.NumberFormat("nb-NO", {
-                          style: "currency",
-                          currency: "NOK",
-                          maximumFractionDigits: 0,
-                        }).format(budget)}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-col gap-1">
-                          <span className="text-sm">
-                            {new Intl.NumberFormat("nb-NO", {
-                              style: "currency",
-                              currency: "NOK",
-                              maximumFractionDigits: 0,
-                            }).format(spent)}
-                          </span>
-                          <div className="h-2 w-full max-w-[100px] rounded-full bg-muted">
-                            <div
-                              className={`h-2 rounded-full ${
-                                spentPercentage > 90
-                                  ? "bg-red-500"
-                                  : spentPercentage > 75
-                                    ? "bg-orange-500"
-                                    : "bg-green-500"
-                              }`}
-                              style={{
-                                width: `${Math.min(spentPercentage, 100)}%`,
-                              }}
-                            />
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {format(
-                          new Date(
-                            project.startDate ?? new Date().toISOString()
-                          ),
-                          "dd.MM.yyyy",
-                          {
-                            locale: nb,
-                          }
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
+          <ProjectListTable
+            projects={projects}
+            onProjectClick={(project) => router.push(`/projects/${project.id}`)}
+            onDeleteClick={handleDeleteClick}
+          />
         )}
+
+        <DeleteConfirmationModal
+          isOpen={isDeleteModalOpen}
+          onClose={() => {
+            setIsDeleteModalOpen(false);
+            setProjectToDelete(null);
+          }}
+          onConfirm={handleDeleteConfirm}
+          title="Slett prosjekt"
+          description="Er du sikker på at du vil slette dette prosjektet? Dette vil fjerne prosjektet, alle relaterte timer og data permanent."
+          itemTitle={projectToDelete?.name}
+          isLoading={deleteProject.isPending}
+        />
       </div>
     </AppLayout>
   );

@@ -44,7 +44,7 @@ export function AppHeader() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 items-center">
+      <div className="mx-auto flex h-14 w-full max-w-[1920px] items-center px-4 md:px-8">
         <Button
           variant="ghost"
           size="icon"
@@ -54,7 +54,7 @@ export function AppHeader() {
           <Menu className="h-5 w-5" />
         </Button>
 
-        <div className="mr-4 flex">
+        <div className="mr-4 flex md:hidden">
           <Link href="/" className="flex items-center space-x-3">
             <Image
               src="/straye-logo-blue.png"

@@ -11,6 +11,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useApi } from "@/lib/api/api-provider";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { useCompanyStore } from "@/store/company-store";
 import type {
   DomainCreateProjectRequest,
   DomainUpdateProjectRequest,
@@ -23,9 +24,10 @@ import type {
 export function useProjects(params?: Partial<ProjectsListParams>) {
   const api = useApi();
   const { isAuthenticated } = useAuth();
+  const { selectedCompanyId } = useCompanyStore();
 
   return useQuery({
-    queryKey: ["projects", params],
+    queryKey: ["projects", params, selectedCompanyId],
     queryFn: async () => {
       const response = await api.projects.projectsList(params ?? {});
 
@@ -41,9 +43,10 @@ export function useProjects(params?: Partial<ProjectsListParams>) {
 export function useProject(id: string) {
   const api = useApi();
   const { isAuthenticated } = useAuth();
+  const { selectedCompanyId } = useCompanyStore();
 
   return useQuery({
-    queryKey: ["projects", id],
+    queryKey: ["projects", id, selectedCompanyId],
     queryFn: async () => {
       const response = await api.projects.projectsDetail({ id });
       return response.data;
@@ -58,9 +61,10 @@ export function useProject(id: string) {
 export function useProjectBudget(projectId: string) {
   const api = useApi();
   const { isAuthenticated } = useAuth();
+  const { selectedCompanyId } = useCompanyStore();
 
   return useQuery({
-    queryKey: ["projects", projectId, "budget"],
+    queryKey: ["projects", projectId, "budget", selectedCompanyId],
     queryFn: async () => {
       const response = await api.projects.budgetList({ id: projectId });
       return response.data;

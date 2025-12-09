@@ -17,7 +17,7 @@ export type {
   DomainOfferDetailDTO as OfferDetail,
   DomainProjectDTO as Project,
   DomainActivityDTO as Activity,
-  DomainBudgetDimensionDTO as BudgetDimension,
+  DomainBudgetItemDTO as BudgetDimension,
   DomainNotificationDTO as Notification,
   DomainAuthUserDTO as AuthUser,
   DomainFileDTO as FileInfo,
@@ -42,8 +42,15 @@ export type {
   DomainLoseDealRequest as LoseDealRequest,
   DomainAcceptOfferRequest as AcceptOfferRequest,
   DomainRejectOfferRequest as RejectOfferRequest,
+  DomainUpdateOfferTitleRequest,
+  DomainUpdateOfferValueRequest,
+  DomainUpdateOfferProbabilityRequest,
+  DomainUpdateOfferResponsibleRequest,
+  DomainUpdateOfferProjectRequest,
+} from "@/lib/.generated/data-contracts";
 
-  // Enums
+// Re-export Enums (as values)
+export {
   DomainCompanyID,
   DomainCustomerStatus,
   DomainCustomerTier,
@@ -228,6 +235,13 @@ export const ACTIVITY_TYPE_LABELS: Record<ActivityType, string> = {
   follow_up: "Oppfølging",
 };
 
+export const ACTIVITY_STATUS_LABELS: Record<ActivityStatus, string> = {
+  planned: "Planlagt",
+  in_progress: "Pågår",
+  completed: "Fullført",
+  cancelled: "Kansellert",
+};
+
 export const LOSS_REASON_LABELS: Record<LossReasonCategory, string> = {
   price: "Pris",
   timing: "Timing",
@@ -265,4 +279,32 @@ export type SortDirection = "asc" | "desc";
 export interface SortConfig {
   field: string;
   direction: SortDirection;
+}
+
+export interface DashboardMetrics {
+  totalOfferCount: number;
+  offerReserve: number;
+  weightedOfferReserve: number;
+  averageProbability: number;
+  pipeline: {
+    phase: string;
+    count: number;
+    totalValue: number;
+    weightedValue: number;
+  }[];
+  winRateMetrics: {
+    wonCount: number;
+    lostCount: number;
+    wonValue: number;
+    lostValue: number;
+    winRate: number;
+    economicWinRate: number;
+  };
+  orderReserve: number;
+  totalInvoiced: number;
+  totalValue: number;
+  recentOffers: any[];
+  recentProjects: any[];
+  recentActivities: any[];
+  topCustomers: any[];
 }

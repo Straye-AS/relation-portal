@@ -1,7 +1,13 @@
 "use client";
 
 import { AppLayout } from "@/components/layout/app-layout";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -20,7 +26,7 @@ export default function SettingsPage() {
 
   return (
     <AppLayout>
-      <div className="space-y-6 max-w-4xl">
+      <div className="max-w-4xl space-y-6">
         <div>
           <h1 className="text-3xl font-bold">Innstillinger</h1>
           <p className="text-muted-foreground">
@@ -38,13 +44,13 @@ export default function SettingsPage() {
           <CardContent className="space-y-6">
             <div>
               <Label className="text-base">Tema</Label>
-              <p className="text-sm text-muted-foreground mb-4">
+              <p className="mb-4 text-sm text-muted-foreground">
                 Velg fargetema for applikasjonen
               </p>
               <div className="grid grid-cols-3 gap-4">
                 <Button
                   variant={theme === "light" ? "default" : "outline"}
-                  className="h-24 flex flex-col gap-2"
+                  className="flex h-24 flex-col gap-2"
                   onClick={() => setTheme("light")}
                 >
                   <Sun className="h-6 w-6" />
@@ -52,7 +58,7 @@ export default function SettingsPage() {
                 </Button>
                 <Button
                   variant={theme === "dark" ? "default" : "outline"}
-                  className="h-24 flex flex-col gap-2"
+                  className="flex h-24 flex-col gap-2"
                   onClick={() => setTheme("dark")}
                 >
                   <Moon className="h-6 w-6" />
@@ -60,7 +66,7 @@ export default function SettingsPage() {
                 </Button>
                 <Button
                   variant={theme === "system" ? "default" : "outline"}
-                  className="h-24 flex flex-col gap-2"
+                  className="flex h-24 flex-col gap-2"
                   onClick={() => setTheme("system")}
                 >
                   <Monitor className="h-6 w-6" />
@@ -84,9 +90,7 @@ export default function SettingsPage() {
                 <Label htmlFor="lang-no" className="text-base">
                   Norsk
                 </Label>
-                <p className="text-sm text-muted-foreground">
-                  Standardspråk
-                </p>
+                <p className="text-sm text-muted-foreground">Standardspråk</p>
               </div>
               <Switch
                 id="lang-no"

@@ -4,11 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import {
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Menu, Rocket } from "lucide-react";
@@ -58,15 +54,15 @@ export function Header({ user }: { user: any }) {
   return (
     <header
       className={cn(
-        "fixed top-0 left-1/2 transform -translate-x-1/2 w-[calc(100%-2.5rem)] max-w-8xl z-50 transition-all duration-300 rounded-full",
+        "max-w-8xl fixed left-1/2 top-0 z-50 w-[calc(100%-2.5rem)] -translate-x-1/2 transform rounded-full transition-all duration-300",
         isScrolled
-          ? "bg-white/70 dark:bg-black/70 backdrop-blur-md border py-4 border-border border-[1.5px] mt-5"
-          : "bg-white/70 dark:bg-black/70 backdrop-blur-md border py-4 border-border border-[1.5px] mt-5"
+          ? "mt-5 border border-[1.5px] border-border bg-white/70 py-4 backdrop-blur-md dark:bg-black/70"
+          : "mt-5 border border-[1.5px] border-border bg-white/70 py-4 backdrop-blur-md dark:bg-black/70"
       )}
     >
-      <div className="px-6 grid grid-cols-2 md:grid-cols-3 items-center">
+      <div className="grid grid-cols-2 items-center px-6 md:grid-cols-3">
         {/* Sol taraf - Logo */}
-        <div className="justify-self-start flex items-center gap-2">
+        <div className="flex items-center gap-2 justify-self-start">
           <Rocket className="h-6 w-6 text-primary" />
           <Link href="/" className="text-lg">
             ACME Inc.
@@ -74,14 +70,16 @@ export function Header({ user }: { user: any }) {
         </div>
 
         {/* Orta - Navigation Menu */}
-        <nav className="hidden md:flex items-center gap-8 justify-self-center">
+        <nav className="hidden items-center gap-8 justify-self-center md:flex">
           {routes.map((route) => (
             <Link
               key={route.href}
               href={route.href}
               className={cn(
                 "text-sm font-medium transition-colors hover:text-primary",
-                route.active ? "text-foreground font-semibold" : "text-muted-foreground"
+                route.active
+                  ? "font-semibold text-foreground"
+                  : "text-muted-foreground"
               )}
             >
               {route.label}
@@ -91,9 +89,15 @@ export function Header({ user }: { user: any }) {
 
         {/* Sağ taraf - Buttons */}
         <div className="justify-self-end">
-          <div className="hidden md:flex items-center gap-4">
+          <div className="hidden items-center gap-4 md:flex">
             <Link href="https://buy.stripe.com/00w28sgaE73OfzD4RRcAo0A">
-              <Button variant="default" size="sm" className="rounded-full bg-red-500 hover:bg-red-600 text-white">Buy Boilerplate</Button>
+              <Button
+                variant="default"
+                size="sm"
+                className="rounded-full bg-red-500 text-white hover:bg-red-600"
+              >
+                Buy Boilerplate
+              </Button>
             </Link>
             <ThemeToggle />
             {user ? (
@@ -112,7 +116,7 @@ export function Header({ user }: { user: any }) {
             )}
           </div>
 
-          <div className="flex items-center md:hidden gap-2">
+          <div className="flex items-center gap-2 md:hidden">
             <ThemeToggle />
             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
               <SheetTrigger asChild>
@@ -122,7 +126,7 @@ export function Header({ user }: { user: any }) {
                 </Button>
               </SheetTrigger>
               <SheetContent side="right">
-                <div className="flex flex-col gap-6 h-full mt-8">
+                <div className="mt-8 flex h-full flex-col gap-6">
                   <nav className="flex flex-col gap-4">
                     {routes.map((route) => (
                       <Link
@@ -131,7 +135,9 @@ export function Header({ user }: { user: any }) {
                         onClick={() => setIsMobileMenuOpen(false)}
                         className={cn(
                           "text-lg font-medium transition-colors hover:text-primary",
-                          route.active ? "text-foreground font-semibold" : "text-muted-foreground"
+                          route.active
+                            ? "font-semibold text-foreground"
+                            : "text-muted-foreground"
                         )}
                       >
                         {route.label}
@@ -140,20 +146,37 @@ export function Header({ user }: { user: any }) {
                   </nav>
                   <div className="mt-auto flex flex-col gap-4">
                     {user ? (
-                      <Button asChild variant="default" className="w-full rounded-full">
-                        <Link href="/dashboard" onClick={() => setIsMobileMenuOpen(false)}>
+                      <Button
+                        asChild
+                        variant="default"
+                        className="w-full rounded-full"
+                      >
+                        <Link
+                          href="/dashboard"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
                           Dashboard
                         </Link>
                       </Button>
                     ) : (
                       <>
                         <Button asChild variant="outline" className="w-full">
-                          <Link href="/sign-in" onClick={() => setIsMobileMenuOpen(false)}>
+                          <Link
+                            href="/sign-in"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                          >
                             Sign in
                           </Link>
                         </Button>
-                        <Button asChild variant="default" className="w-full rounded-full">
-                          <Link href="/sign-up" onClick={() => setIsMobileMenuOpen(false)}>
+                        <Button
+                          asChild
+                          variant="default"
+                          className="w-full rounded-full"
+                        >
+                          <Link
+                            href="/sign-up"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                          >
                             Get Started
                           </Link>
                         </Button>

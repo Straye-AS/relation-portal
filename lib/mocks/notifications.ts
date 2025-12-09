@@ -56,8 +56,7 @@ export const mockNotifications: Notification[] = [
     id: "6",
     type: "offer",
     title: "Tilbud tapt",
-    message:
-      "Tilbudet 'Balkongutvidelse – Drammen Sentrum' ble dessverre tapt",
+    message: "Tilbudet 'Balkongutvidelse – Drammen Sentrum' ble dessverre tapt",
     read: true,
     createdAt: "2025-11-05T15:00:00Z",
     entityId: "6",

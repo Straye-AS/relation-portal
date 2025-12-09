@@ -18,9 +18,9 @@ export function OfferStatusBadge({ phase, className }: OfferStatusBadgeProps) {
       case "lost":
         return "border-transparent bg-red-500/15 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20";
       case "sent":
-        return "border-transparent bg-blue-500/15 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20";
+        return "border-transparent bg-purple-500/15 text-purple-700 border-purple-200 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/20";
       case "in_progress":
-        return "border-transparent bg-amber-500/15 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20";
+        return "border-transparent bg-blue-500/15 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20";
       case "draft":
         return "border-transparent bg-slate-500/15 text-slate-700 border-slate-200 dark:bg-slate-500/10 dark:text-slate-400 dark:border-slate-500/20";
       case "expired":
@@ -35,7 +35,11 @@ export function OfferStatusBadge({ phase, className }: OfferStatusBadgeProps) {
   return (
     <Badge
       variant="outline"
-      className={cn("border font-medium", getVariantStyles(phase), className)}
+      className={cn(
+        "whitespace-nowrap border font-medium",
+        getVariantStyles(phase),
+        className
+      )}
     >
       {label}
     </Badge>

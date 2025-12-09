@@ -1,6 +1,7 @@
 # 🚀 Quick Start Guide - Straye Relation
 
 ## Latest Version Info
+
 - **Next.js:** 15.1.3 (latest stable)
 - **React:** 18.3.1 (stable LTS - for MSAL compatibility)
 - **TypeScript:** 5.7.2
@@ -10,6 +11,7 @@
 > Next.js 15 works perfectly with React 18.
 
 ## Prerequisites
+
 - Node.js 20.18.0 (LTS) - Use `nvm use` if you have .nvmrc
 - npm 10+ (or pnpm 8+ / yarn 4+)
 - Azure AD app registration (for authentication)
@@ -17,6 +19,7 @@
 ## Installation
 
 ### 1. Clean Install (if upgrading)
+
 ```bash
 # Remove old dependencies first
 rm -rf node_modules package-lock.json
@@ -26,6 +29,7 @@ npm install
 ```
 
 ### 1. Fresh Install
+
 ```bash
 # Using npm (recommended)
 npm install
@@ -38,11 +42,13 @@ yarn install
 ```
 
 > **Tip:** If you get peer dependency errors with npm, try:
+>
 > ```bash
 > npm install --legacy-peer-deps
 > ```
 
 ### 2. Configure Environment
+
 ```bash
 # Copy example environment file
 cp .env.example .env.local
@@ -51,6 +57,7 @@ cp .env.example .env.local
 ```
 
 Required variables in `.env.local`:
+
 ```bash
 NEXT_PUBLIC_API_URL=https://api.straye-relation.dev
 NEXT_PUBLIC_AZURE_CLIENT_ID=your-azure-client-id
@@ -60,6 +67,7 @@ NEXT_PUBLIC_DEFAULT_LANGUAGE=no
 ```
 
 ### 3. Run Development Server
+
 ```bash
 pnpm dev
 ```
@@ -111,6 +119,7 @@ docker-compose down
 ## Azure AD Setup
 
 ### Quick Setup
+
 1. Go to [Azure Portal](https://portal.azure.com)
 2. Navigate to: Azure Active Directory → App registrations
 3. Click "New registration"
@@ -170,6 +179,7 @@ docker-compose down
 ## Common Issues
 
 ### Port Already in Use
+
 ```bash
 # Kill process on port 3000
 npx kill-port 3000
@@ -179,12 +189,14 @@ PORT=3001 pnpm dev
 ```
 
 ### Authentication Not Working
+
 1. Check Azure AD redirect URI matches exactly
 2. Verify Client ID and Tenant ID in `.env.local`
 3. Clear browser cache and cookies
 4. Check browser console for MSAL errors
 
 ### Build Fails
+
 ```bash
 # Clear cache and rebuild
 rm -rf .next node_modules
@@ -193,6 +205,7 @@ pnpm build
 ```
 
 ### Types Not Found
+
 ```bash
 # Reinstall types
 pnpm add -D @types/react@latest @types/react-dom@latest @types/node@latest
@@ -201,6 +214,7 @@ pnpm add -D @types/react@latest @types/react-dom@latest @types/node@latest
 ## What's Next?
 
 ### Immediate Tasks
+
 1. ✅ Set up Azure AD
 2. ✅ Test authentication
 3. ✅ Review mock data
@@ -208,13 +222,16 @@ pnpm add -D @types/react@latest @types/react-dom@latest @types/node@latest
 5. 📝 Add more mock data if needed
 
 ### Backend Integration
+
 When .NET 8 backend is ready:
+
 1. Update `NEXT_PUBLIC_API_URL`
 2. Replace functions in `lib/api/client.ts`
 3. Use OpenAPI-generated client
 4. Test end-to-end
 
 ### Future Features
+
 - Create/edit forms
 - File uploads
 - Advanced filtering
@@ -227,12 +244,14 @@ When .NET 8 backend is ready:
 ## Support
 
 📚 **Documentation:**
+
 - README.md - Full documentation
 - SETUP.md - Detailed setup guide
 - UPGRADE_NOTES.md - Latest upgrade info
 - MIGRATION_SUMMARY.md - Migration details
 
 🐛 **Issues:**
+
 - Check browser console
 - Check terminal output
 - Review `.env.local` configuration
@@ -255,11 +274,13 @@ rm -rf .next node_modules/.cache
 ## Deployment
 
 ### Azure Container Apps
+
 1. Configure GitHub secrets
 2. Push to main branch
 3. GitHub Actions automatically deploys
 
 ### Manual Deployment
+
 ```bash
 pnpm build
 docker build -t straye-relation .

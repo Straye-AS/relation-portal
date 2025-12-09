@@ -61,6 +61,11 @@ export default function ProjectDetailPage({
               </Button>
             </Link>
             <div>
+              {project.projectNumber && (
+                <span className="mb-1 block font-mono text-sm uppercase tracking-wider text-muted-foreground">
+                  Prosjekt: {project.projectNumber}
+                </span>
+              )}
               <h1 className="text-3xl font-bold">{project.name}</h1>
               <p className="text-muted-foreground">
                 Startet{" "}

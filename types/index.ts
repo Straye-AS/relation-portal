@@ -130,7 +130,14 @@ export interface Notification {
   entityType?: "offer" | "project" | "customer";
 }
 
-export type CompanyId = "all" | "gruppe" | "stalbygg" | "hybridbygg" | "industri" | "tak" | "montasje";
+export type CompanyId =
+  | "all"
+  | "gruppe"
+  | "stalbygg"
+  | "hybridbygg"
+  | "industri"
+  | "tak"
+  | "montasje";
 
 export interface Company {
   id: CompanyId;
@@ -145,7 +152,7 @@ export interface PipelinePhaseData {
   count: number;
   totalValue: number;
   weightedValue: number;
-  offers: Offer[];
+  offers?: Offer[];
 }
 
 export interface DisciplineStats {
