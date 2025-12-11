@@ -47,6 +47,7 @@ export function AddCustomerModal() {
           <CustomerForm
             onSubmit={handleSubmit}
             isLoading={createCustomer.isPending}
+            autoFocusSearch={true}
           />
         </div>
       </DialogContent>

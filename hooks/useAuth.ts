@@ -118,7 +118,7 @@ export function useAuth(): AuthContext {
         });
         return response.accessToken;
       } catch (error) {
-        console.error("Failed to acquire token silently:", error);
+        console.warn("Failed to acquire token silently:", error);
         // Do not automatically trigger popup, as it disrupts UX and can cause "interaction in progress" loops.
         // If the user needs to login, the app should handle the 401/null token.
         return null;

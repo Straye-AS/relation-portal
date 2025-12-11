@@ -206,7 +206,9 @@ export default function CustomersPage() {
                                 <NewBadge createdAt={customer.createdAt} />
                               </div>
                               <div className="text-xs text-muted-foreground">
-                                Org: {customer.orgNumber ?? "-"}
+                                {customer.orgNumber
+                                  ? `Org: ${customer.orgNumber}`
+                                  : "Privatperson"}
                               </div>
                             </div>
                           </div>
@@ -315,7 +317,9 @@ export default function CustomersPage() {
                             <NewBadge createdAt={customer.createdAt} />
                           </Link>
                         </CardTitle>
-                        <CardDescription>{customer.orgNumber}</CardDescription>
+                        <CardDescription>
+                          {customer.orgNumber ?? "Privatperson"}
+                        </CardDescription>
                       </div>
                     </CardHeader>
                     <CardContent className="grid gap-4 p-6">

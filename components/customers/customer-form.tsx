@@ -52,6 +52,7 @@ type CustomerFormValues = z.infer<typeof customerSchema>;
 interface CustomerFormProps {
   onSubmit: (data: DomainCreateCustomerRequest) => Promise<void>;
   isLoading: boolean;
+  autoFocusSearch?: boolean;
 }
 
 interface BrregEnhet {
@@ -71,12 +72,25 @@ interface BrregEnhet {
   };
 }
 
-export function CustomerForm({ onSubmit, isLoading }: CustomerFormProps) {
+export function CustomerForm({
+  onSubmit,
+  isLoading,
+  autoFocusSearch = false,
+}: CustomerFormProps) {
   const [openCombobox, setOpenCombobox] = useState(false);
   const [searchResults, setSearchResults] = useState<BrregEnhet[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchValue, setSearchValue] = useState("");
   const [isBrregSelected, setIsBrregSelected] = useState(false);
+
+  // Auto-focus search when mounted
+  useEffect(() => {
+    if (autoFocusSearch) {
+      // Small timeout to allow Dialog to settle
+      const timer = setTimeout(() => setOpenCombobox(true), 150);
+      return () => clearTimeout(timer);
+    }
+  }, [autoFocusSearch]);
 
   const form = useForm<CustomerFormValues>({
     resolver: zodResolver(customerSchema),
@@ -97,6 +111,7 @@ export function CustomerForm({ onSubmit, isLoading }: CustomerFormProps) {
     await onSubmit(values);
     form.reset();
     setIsBrregSelected(false); // Reset selection
+    setOpenCombobox(false); // Close combobox if open
   };
 
   // Debounce search
@@ -115,9 +130,16 @@ export function CustomerForm({ onSubmit, isLoading }: CustomerFormProps) {
   const searchBrreg = async (query: string) => {
     setIsSearching(true);
     try {
+      const isOrgNumber = /^\s*\d[\d\s]*$/.test(query);
+      const queryParam = isOrgNumber ? "organisasjonsnummer" : "navn";
+
+      const sanitizedQuery = isOrgNumber
+        ? query.replace(/\s/g, "")
+        : query.trim();
+
       const response = await fetch(
-        `https://data.brreg.no/enhetsregisteret/api/enheter?navn=${encodeURIComponent(
-          query
+        `https://data.brreg.no/enhetsregisteret/api/enheter?${queryParam}=${encodeURIComponent(
+          sanitizedQuery
         )}&size=10`
       );
       if (response.ok) {

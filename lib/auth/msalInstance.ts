@@ -8,6 +8,6 @@ import { msalConfig } from "./msalConfig";
 export const msalInstance = new PublicClientApplication(msalConfig);
 
 // Initialize MSAL (async initialization is handled in the provider)
-// if (typeof window !== "undefined") {
-//   msalInstance.initialize().catch(console.error);
-// }
+if (typeof window !== "undefined") {
+  msalInstance.initialize().catch(console.error);
+}
