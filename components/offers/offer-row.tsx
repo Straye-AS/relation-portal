@@ -26,6 +26,9 @@ export function OfferRow({ offer }: OfferRowProps) {
       className="cursor-pointer hover:bg-muted/50"
       onClick={handleRowClick}
     >
+      <TableCell className="whitespace-nowrap font-mono text-sm text-muted-foreground">
+        {offer.offerNumber || "-"}
+      </TableCell>
       <TableCell className="font-medium">
         <div className="flex items-center gap-2">
           <span className="truncate">{offer.title}</span>

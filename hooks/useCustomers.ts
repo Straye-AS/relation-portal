@@ -126,9 +126,13 @@ export function useCreateCustomer() {
       queryClient.invalidateQueries({ queryKey: ["customers"] });
       toast.success("Kunde opprettet");
     },
-    onError: (error: Error) => {
+    onError: (error: any) => {
       console.error("Failed to create customer:", error);
-      toast.error("Kunne ikke opprette kunde");
+      if (error.status === 409 || error.response?.status === 409) {
+        toast.error("Kunden eksisterer allerede i dette selskapet");
+      } else {
+        toast.error("Kunne ikke opprette kunde");
+      }
     },
   });
 }
@@ -159,6 +163,141 @@ export function useUpdateCustomer() {
     onError: (error: Error) => {
       console.error("Failed to update customer:", error);
       toast.error("Kunne ikke oppdatere kunde");
+    },
+  });
+}
+
+/**
+ * Update customer contact info
+ */
+export function useUpdateCustomerContactInfo() {
+  const queryClient = useQueryClient();
+  const api = useApi();
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: {
+        contactPerson?: string;
+        contactEmail?: string;
+        contactPhone?: string;
+      };
+    }) => {
+      const response = await api.customers.contactInfoUpdate({ id }, data);
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["customers"] });
+      queryClient.invalidateQueries({ queryKey: ["customers", variables.id] });
+      toast.success("Kontaktinfo oppdatert");
+    },
+    onError: (error: Error) => {
+      console.error("Failed to update contact info:", error);
+      toast.error("Kunne ikke oppdatere kontaktinfo");
+    },
+  });
+}
+
+/**
+ * Update customer address
+ */
+export function useUpdateCustomerAddress() {
+  const queryClient = useQueryClient();
+  const api = useApi();
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: {
+        address?: string;
+        postalCode?: string;
+        city?: string;
+        country?: string;
+        municipality?: string;
+        county?: string;
+      };
+    }) => {
+      const response = await api.customers.addressUpdate({ id }, data);
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["customers"] });
+      queryClient.invalidateQueries({ queryKey: ["customers", variables.id] });
+      toast.success("Adresse oppdatert");
+    },
+    onError: (error: Error) => {
+      console.error("Failed to update address:", error);
+      toast.error("Kunne ikke oppdatere adresse");
+    },
+  });
+}
+
+/**
+ * Update customer postal code
+ */
+export function useUpdateCustomerPostalCode() {
+  const queryClient = useQueryClient();
+  const api = useApi();
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: {
+        postalCode?: string;
+      };
+    }) => {
+      const response = await api.customers.postalCodeUpdate({ id }, data);
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["customers"] });
+      queryClient.invalidateQueries({ queryKey: ["customers", variables.id] });
+      toast.success("Postnummer oppdatert");
+    },
+    onError: (error: Error) => {
+      console.error("Failed to update postal code:", error);
+      toast.error("Kunne ikke oppdatere postnummer");
+    },
+  });
+}
+
+/**
+ * Update customer city
+ */
+export function useUpdateCustomerCity() {
+  const queryClient = useQueryClient();
+  const api = useApi();
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: {
+        city?: string;
+      };
+    }) => {
+      const response = await api.customers.cityUpdate({ id }, data);
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["customers"] });
+      queryClient.invalidateQueries({ queryKey: ["customers", variables.id] });
+      toast.success("Sted oppdatert");
+    },
+    onError: (error: Error) => {
+      console.error("Failed to update city:", error);
+      toast.error("Kunne ikke oppdatere sted");
     },
   });
 }

@@ -30,7 +30,11 @@ import {
   Mail,
   Phone,
   MoreHorizontal,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type { DomainCustomerDTO } from "@/lib/.generated/data-contracts";
 import { useState } from "react";
 import { AddCustomerModal } from "@/components/customers/add-customer-modal";
@@ -44,16 +48,60 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { NewBadge } from "@/components/ui/new-badge";
+import { PaginationControls } from "@/components/pagination-controls";
 
 type ViewMode = "list" | "card";
 
 export default function CustomersPage() {
   const router = useRouter();
-  const { data, isLoading } = useCustomers();
+  const [page, setPage] = useState(1);
+  const pageSize = 20;
+
+  const [sortBy, setSortBy] = useState<string>("name");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+
+  const { data, isLoading } = useCustomers({
+    page,
+    pageSize,
+    sortBy: sortBy as any,
+    sortOrder: sortOrder as any,
+  });
+
   const [viewMode, setViewMode] = useState<ViewMode>("list");
 
   // Extract customers from paginated response
   const customers: DomainCustomerDTO[] = data?.data ?? [];
+
+  const handleSort = (key: string) => {
+    if (sortBy === key) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortBy(key);
+      setSortOrder("asc");
+    }
+  };
+
+  const SortButton = ({ column, label }: { column: string; label: string }) => {
+    return (
+      <Button
+        variant="ghost"
+        size="sm"
+        className="-ml-3 h-8 data-[state=open]:bg-accent"
+        onClick={() => handleSort(column)}
+      >
+        <span>{label}</span>
+        {sortBy === column ? (
+          sortOrder === "asc" ? (
+            <ArrowUp className="ml-2 h-4 w-4" />
+          ) : (
+            <ArrowDown className="ml-2 h-4 w-4" />
+          )
+        ) : (
+          <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />
+        )}
+      </Button>
+    );
+  };
 
   return (
     <AppLayout>
@@ -122,9 +170,13 @@ export default function CustomersPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Kunde</TableHead>
+                      <TableHead>
+                        <SortButton column="name" label="Kunde" />
+                      </TableHead>
                       <TableHead>Kontaktinfo</TableHead>
-                      <TableHead>Lokasjon</TableHead>
+                      <TableHead>
+                        <SortButton column="city" label="Lokasjon" />
+                      </TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="text-right">Handling</TableHead>
                     </TableRow>
@@ -294,8 +346,8 @@ export default function CustomersPage() {
                           <div className="flex items-center gap-2 text-muted-foreground">
                             <MapPin className="h-4 w-4" />
                             <span className="truncate">
-                              {customer.address}, {customer.postalCode}{" "}
-                              {customer.city}
+                              {customer.address ? `${customer.address}, ` : ""}
+                              {customer.postalCode} {customer.city}
                             </span>
                           </div>
                         )}
@@ -321,9 +373,14 @@ export default function CustomersPage() {
 
         {/* Pagination info */}
         {data && customers.length > 0 && (
-          <div className="flex items-center justify-center border-t py-4 text-sm text-muted-foreground">
-            Viser {customers.length} av {data.total ?? customers.length} kunder
-          </div>
+          <PaginationControls
+            currentPage={page}
+            totalPages={Math.ceil((data.total ?? 0) / pageSize)}
+            onPageChange={setPage}
+            pageSize={pageSize}
+            totalCount={data.total ?? 0}
+            entityName="kunder"
+          />
         )}
       </div>
     </AppLayout>

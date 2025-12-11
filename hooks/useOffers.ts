@@ -23,6 +23,8 @@ import type {
   DomainUpdateOfferProjectRequest,
   DomainUpdateOfferDescriptionRequest,
   DomainUpdateOfferDueDateRequest,
+  DomainUpdateOfferExternalReferenceRequest,
+  DomainUpdateOfferCustomerHasWonProjectRequest,
   DomainOfferDTO,
 } from "@/lib/.generated/data-contracts";
 
@@ -235,8 +237,19 @@ export function useSendOffer() {
   const api = useApi();
 
   return useMutation({
-    mutationFn: async (id: string) => {
-      const response = await api.offers.sendCreate({ id });
+    mutationFn: async ({
+      id,
+      sentDate,
+      expirationDate,
+    }: {
+      id: string;
+      sentDate?: string;
+      expirationDate?: string;
+    }) => {
+      const response = await api.offers.sendCreate({ id }, {
+        sentDate,
+        expirationDate,
+      } as any);
       return response.data;
     },
     onSuccess: (_, id) => {
@@ -569,6 +582,125 @@ export function useDeleteOfferProject() {
     onError: (error: Error) => {
       console.error("Failed to remove project link:", error);
       toast.error("Kunne ikke fjerne prosjektlink");
+    },
+  });
+}
+
+/**
+ * Update offer number
+ */
+export function useUpdateOfferNumber() {
+  const queryClient = useQueryClient();
+  const api = useApi();
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      offerNumber,
+    }: {
+      id: string;
+      offerNumber: string;
+    }) => {
+      // Using generic update since specific endpoint might not exist
+      // Casting to any to ensure we can pass offerNumber even if type definition is lagging
+      const response = await api.offers.offersUpdate({ id }, {
+        offerNumber,
+      } as any);
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["offers"] });
+      queryClient.invalidateQueries({ queryKey: ["offers", variables.id] });
+      toast.success("Tilbudsnummer oppdatert");
+    },
+    onError: (error: any) => {
+      console.error("Failed to update offer number:", error);
+      // Check for 409 Conflict
+      if (
+        error.status === 409 ||
+        error.response?.status === 409 ||
+        error.statusCode === 409
+      ) {
+        toast.error(
+          "Dette tilbudsnummeret er allerede i bruk. Vennligst velg et annet."
+        );
+      } else {
+        toast.error("Kunne ikke oppdatere tilbudsnummer");
+      }
+    },
+  });
+}
+
+/**
+ * Update offer external reference
+ */
+export function useUpdateOfferExternalReference() {
+  const queryClient = useQueryClient();
+  const api = useApi();
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      externalReference,
+    }: {
+      id: string;
+      externalReference: string;
+    }) => {
+      const response = await api.offers.externalReferenceUpdate(
+        { id },
+        { externalReference }
+      );
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["offers"] });
+      queryClient.invalidateQueries({ queryKey: ["offers", variables.id] });
+      toast.success("Ekstern referanse oppdatert");
+    },
+    onError: (error: any) => {
+      console.error("Failed to update external reference:", error);
+      if (
+        error.status === 409 ||
+        error.response?.status === 409 ||
+        error.statusCode === 409
+      ) {
+        toast.error("Denne referansen er allerede i bruk for denne bedriften.");
+      } else {
+        toast.error("Kunne ikke oppdatere ekstern referanse");
+      }
+    },
+  });
+}
+
+/**
+ * Update offer customer won status
+ */
+export function useUpdateCustomerHasWonOffer() {
+  const queryClient = useQueryClient();
+  const api = useApi();
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      customerHasWonProject,
+    }: {
+      id: string;
+      customerHasWonProject: boolean;
+    }) => {
+      const response = await api.offers.customerHasWonProjectUpdate(
+        { id },
+        { customerHasWonProject }
+      );
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["offers"] });
+      queryClient.invalidateQueries({ queryKey: ["offers", variables.id] });
+      toast.success("Kunde vunnet status oppdatert");
+    },
+    onError: (error: Error) => {
+      console.error("Failed to update customer won status:", error);
+      toast.error("Kunne ikke oppdatere kunde vunnet status");
     },
   });
 }

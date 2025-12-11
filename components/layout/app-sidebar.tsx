@@ -82,7 +82,7 @@ export function AppSidebar() {
       transition={{ duration: 0.3, ease: "easeInOut" }}
       className="relative hidden md:flex md:flex-shrink-0"
     >
-      <div className="bg-sidebar-background flex w-full flex-col border-r">
+      <div className="flex w-full flex-col border-r bg-sidebar">
         <div className="flex h-14 items-center border-b px-4">
           <Link
             href="/"

@@ -8,6 +8,7 @@ import Link from "next/link";
 import { formatCurrency } from "@/lib/utils";
 
 interface TopCustomer extends Partial<Customer> {
+  customerId?: string; // Add fallback for ID
   offerCount?: number;
   economicValue?: number;
 }
@@ -36,37 +37,43 @@ export function TopCustomersCard({ customers }: TopCustomersCardProps) {
               const valB = b.economicValue ?? b.totalValue ?? 0;
               return valB - valA;
             })
-            .map((customer, index) => (
-              <Link
-                key={customer.id}
-                href={`/customers/${customer.id}`}
-                className="flex h-[88px] items-center justify-between rounded-lg border p-3 transition-colors hover:bg-muted/50"
-              >
-                <div className="flex min-w-0 flex-1 items-center gap-3">
-                  <Badge variant="outline" className="text-xs">
-                    {index + 1}
-                  </Badge>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="truncate text-sm font-semibold">
-                      {customer.name}
-                    </h3>
+            .map((customer, index) => {
+              const customerId = customer.id || customer.customerId;
+              if (!customerId) return null;
+
+              return (
+                <Link
+                  key={customerId}
+                  href={`/customers/${customerId}`}
+                  className="flex h-[88px] items-center justify-between rounded-lg border p-3 transition-colors hover:bg-muted/50"
+                >
+                  <div className="flex min-w-0 flex-1 items-center gap-3">
+                    <Badge variant="outline" className="text-xs">
+                      {index + 1}
+                    </Badge>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="truncate text-sm font-semibold">
+                        {customer.name}
+                      </h3>
+                      <p className="text-xs text-muted-foreground">
+                        {customer.offerCount ?? customer.activeOffers ?? 0}{" "}
+                        tilbud
+                      </p>
+                    </div>
+                  </div>
+                  <div className="ml-4 text-right">
+                    <p className="text-sm font-bold">
+                      {formatCurrency(
+                        customer.economicValue ?? customer.totalValue ?? 0
+                      )}
+                    </p>
                     <p className="text-xs text-muted-foreground">
-                      {customer.offerCount ?? customer.activeOffers ?? 0} tilbud
+                      Vunnede prosjekter
                     </p>
                   </div>
-                </div>
-                <div className="ml-4 text-right">
-                  <p className="text-sm font-bold">
-                    {formatCurrency(
-                      customer.economicValue ?? customer.totalValue ?? 0
-                    )}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Vunnede prosjekter
-                  </p>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
         </div>
       </CardContent>
     </Card>

@@ -15,15 +15,26 @@ import { useAuth } from "@/hooks/useAuth";
 /**
  * Fetch dashboard metrics
  */
-export function useDashboard() {
+export interface DashboardParams {
+  timeRange?: "rolling12months" | "allTime";
+}
+
+/**
+ * Fetch dashboard metrics
+ */
+export function useDashboard(params: DashboardParams = {}) {
   const api = useApi();
   const { selectedCompanyId } = useCompanyStore();
   const { isAuthenticated } = useAuth();
+  const { timeRange = "rolling12months" } = params;
 
   return useQuery({
-    queryKey: ["dashboard", selectedCompanyId],
+    queryKey: ["dashboard", selectedCompanyId, timeRange],
     queryFn: async () => {
-      const response = await api.dashboard.metricsList();
+      // @ts-ignore - API client update pending
+      const response = await api.dashboard.metricsList({
+        query: { timeRange },
+      } as any);
       return response.data;
     },
     enabled: isAuthenticated,

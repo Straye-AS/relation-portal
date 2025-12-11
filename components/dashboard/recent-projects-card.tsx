@@ -23,7 +23,7 @@ const projectStatusColors: Record<string, string> = {
 };
 
 const projectStatusLabels: Record<string, string> = {
-  planning: "Planlegger",
+  planning: "Tilbud",
   active: "Aktiv",
   on_hold: "På vent",
   completed: "Ferdig",

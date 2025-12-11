@@ -15,6 +15,7 @@ import { TopCustomersCard } from "@/components/dashboard/top-customers-card";
 import { QuickActions } from "@/components/dashboard/quick-actions";
 import { ActivityFeed } from "@/components/dashboard/activity-feed";
 import { motion } from "framer-motion";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useEffect, useState, useMemo } from "react";
@@ -30,7 +31,10 @@ import {
 
 export default function DashboardPage() {
   const { userCompany } = useCompanyStore();
-  const { data: rawMetrics, isLoading } = useDashboard();
+  const [timeRange, setTimeRange] = useState<"rolling12months" | "allTime">(
+    "rolling12months"
+  );
+  const { data: rawMetrics, isLoading } = useDashboard({ timeRange });
   const metrics = rawMetrics as unknown as DashboardMetrics;
   const { refetch: refetchUser } = useCurrentUser();
   const [selectedPhase, setSelectedPhase] = useState<string | null>(null);
@@ -82,6 +86,19 @@ export default function DashboardPage() {
       <PageHeader
         title="Dashboard"
         subtitle={userCompany ? `Oversikt for ${userCompany.name}` : "Oversikt"}
+        actions={
+          <Tabs
+            value={timeRange}
+            onValueChange={(v) =>
+              setTimeRange(v as "rolling12months" | "allTime")
+            }
+          >
+            <TabsList>
+              <TabsTrigger value="rolling12months">Siste 12 mnd</TabsTrigger>
+              <TabsTrigger value="allTime">Alt</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        }
       />
 
       <motion.div
@@ -103,50 +120,28 @@ export default function DashboardPage() {
 
         {/* Key Metrics Row */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {(() => {
-            // Recalculate offer metrics excluding drafts
-            // Offer Reserve = Active Offers (InProgress + Sent)
-            const activePhases = [
-              DomainOfferPhase.OfferPhaseInProgress,
-              DomainOfferPhase.OfferPhaseSent,
-            ];
-            // Safely filter pipeline (metrics.pipeline might not be populated in all cases, check types)
-            const activePipeline = (metrics.pipeline || []).filter((p) =>
-              activePhases.includes(p.phase as DomainOfferPhase)
-            );
-
-            const cleanTotalValue = activePipeline.reduce(
-              (sum, p) => sum + p.totalValue,
-              0
-            );
-            const cleanWeightedValue = activePipeline.reduce(
-              (sum, p) => sum + p.weightedValue,
-              0
-            );
-            const cleanProb =
-              cleanTotalValue > 0
-                ? (cleanWeightedValue / cleanTotalValue) * 100
-                : 0;
-
-            return (
-              <OfferReserveCard
-                offerReserve={cleanTotalValue}
-                winRate={(metrics.winRateMetrics?.winRate ?? 0) * 100}
-                economicWinRate={
-                  (metrics.winRateMetrics?.economicWinRate ?? 0) * 100
-                }
-                totalValue={cleanTotalValue}
-                weightedValue={cleanWeightedValue}
-                averageProbability={cleanProb}
-                wonCount={metrics.winRateMetrics?.wonCount}
-                lostCount={metrics.winRateMetrics?.lostCount}
-              />
-            );
-          })()}
+          <OfferReserveCard
+            offerReserve={metrics.offerReserve ?? 0}
+            winRate={(metrics.winRateMetrics?.winRate ?? 0) * 100}
+            economicWinRate={
+              (metrics.winRateMetrics?.economicWinRate ?? 0) * 100
+            }
+            totalValue={metrics.offerReserve ?? 0} // Total value of ACTIVE offers
+            weightedValue={metrics.weightedOfferReserve ?? 0}
+            averageProbability={metrics.averageProbability ?? 0}
+            wonCount={metrics.winRateMetrics?.wonCount}
+            lostCount={metrics.winRateMetrics?.lostCount}
+            periodLabel={
+              timeRange === "rolling12months" ? "siste 12 mnd" : "totalt"
+            }
+          />
           <ProjectOrderReserveCard
             amount={metrics.orderReserve ?? 0}
             totalValue={metrics.totalValue ?? 0}
             invoicedAmount={metrics.totalInvoiced ?? 0}
+            periodLabel={
+              timeRange === "rolling12months" ? "Siste 12 mnd" : "Totalt"
+            }
           />
           <OfferStatsCard data={metrics} />
           <QuickActions />

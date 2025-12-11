@@ -9,9 +9,11 @@ import { cn, formatCurrency } from "@/lib/utils";
 interface InlineEditProps {
   value: string | number;
   onSave: (value: string | number) => Promise<void>;
-  type?: "text" | "number" | "currency" | "percent";
+  type?: "text" | "number" | "currency" | "percent" | "email" | "tel";
   className?: string;
   label?: string;
+  placeholder?: string;
+  editClassName?: string;
 }
 
 export function InlineEdit({
@@ -20,6 +22,8 @@ export function InlineEdit({
   type = "text",
   className,
   label,
+  placeholder,
+  editClassName,
 }: InlineEditProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [value, setValue] = useState(initialValue);
@@ -72,7 +76,13 @@ export function InlineEdit({
 
   if (isEditing) {
     return (
-      <div className={cn("flex items-center gap-2", className)}>
+      <div
+        className={cn(
+          "flex w-full items-center gap-2",
+          className,
+          editClassName
+        )}
+      >
         <Input
           ref={inputRef}
           value={value}
@@ -93,33 +103,39 @@ export function InlineEdit({
               setValue(val);
             }
           }}
-          type={type === "text" ? "text" : "number"}
+          type={
+            type === "number" || type === "currency" || type === "percent"
+              ? "number"
+              : type
+          }
           disabled={isLoading}
           onKeyDown={handleKeyDown}
-          className="h-8"
+          className="h-7 min-w-0 flex-1 text-sm"
         />
-        <Button
-          size="icon"
-          variant="ghost"
-          className="h-8 w-8 text-green-600 hover:bg-green-100 hover:text-green-700"
-          onClick={handleSave}
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Check className="h-4 w-4" />
-          )}
-        </Button>
-        <Button
-          size="icon"
-          variant="ghost"
-          className="h-8 w-8 text-red-600 hover:bg-red-100 hover:text-red-700"
-          onClick={handleCancel}
-          disabled={isLoading}
-        >
-          <X className="h-4 w-4" />
-        </Button>
+        <div className="flex shrink-0 items-center">
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-7 w-7 text-green-600 hover:bg-green-100 hover:text-green-700"
+            onClick={handleSave}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Check className="h-4 w-4" />
+            )}
+          </Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-7 w-7 text-red-600 hover:bg-red-100 hover:text-red-700"
+            onClick={handleCancel}
+            disabled={isLoading}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
     );
   }
@@ -142,8 +158,10 @@ export function InlineEdit({
       <span
         className={cn("truncate", !value && "italic text-muted-foreground")}
       >
-        {displayValue() ||
-          (label ? `Sett ${label.toLowerCase()}` : "Klikk for å redigere")}
+        {displayValue() !== "-"
+          ? displayValue()
+          : placeholder ||
+            (label ? `Sett ${label.toLowerCase()}` : "Klikk for å redigere")}
       </span>
       <Edit2 className="h-3 w-3 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-50" />
     </div>

@@ -13,12 +13,25 @@ import { useState } from "react";
 import { DeleteConfirmationModal } from "@/components/ui/delete-confirmation-modal";
 
 import { ProjectListTable } from "@/components/projects/project-list-table";
+import { PaginationControls } from "@/components/pagination-controls";
 
 export default function ProjectsPage() {
   const router = useRouter();
-  const { data: rawProjects, isLoading } = useProjects();
+  const [page, setPage] = useState(1);
+  const pageSize = 20;
+
+  const [sortBy, setSortBy] = useState<string>("created_at");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+
+  const { data, isLoading } = useProjects({
+    page,
+    pageSize,
+    sortBy: sortBy as any,
+    sortOrder: sortOrder as any,
+  });
+
   const deleteProject = useDeleteProject();
-  const projects = rawProjects as DomainProjectDTO[] | undefined;
+  const projects = (data?.data ?? []) as DomainProjectDTO[];
 
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [projectToDelete, setProjectToDelete] =
@@ -31,6 +44,15 @@ export default function ProjectsPage() {
     e.stopPropagation();
     setProjectToDelete(project);
     setIsDeleteModalOpen(true);
+  };
+
+  const handleSort = (key: string) => {
+    if (sortBy === key) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortBy(key);
+      setSortOrder("asc");
+    }
   };
 
   const handleDeleteConfirm = async () => {
@@ -72,8 +94,25 @@ export default function ProjectsPage() {
             projects={projects}
             onProjectClick={(project) => router.push(`/projects/${project.id}`)}
             onDeleteClick={handleDeleteClick}
+            sortBy={sortBy}
+            sortOrder={sortOrder}
+            onSort={handleSort}
           />
         )}
+
+        {
+          /* Pagination */
+          data && (
+            <PaginationControls
+              currentPage={page}
+              totalPages={Math.ceil((data.total ?? 0) / pageSize)}
+              onPageChange={setPage}
+              pageSize={pageSize}
+              totalCount={data.total ?? 0}
+              entityName="prosjekter"
+            />
+          )
+        }
 
         <DeleteConfirmationModal
           isOpen={isDeleteModalOpen}

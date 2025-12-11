@@ -46,6 +46,7 @@ export function OfferListModal({
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Nr.</TableHead>
                 <TableHead>Tittel</TableHead>
                 <TableHead>Kunde</TableHead>
                 <TableHead>Fase</TableHead>
@@ -59,7 +60,7 @@ export function OfferListModal({
               {offers.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={7}
+                    colSpan={8}
                     className="h-24 text-center text-muted-foreground"
                   >
                     Ingen tilbud i denne fasen
@@ -75,6 +76,9 @@ export function OfferListModal({
                       onClose();
                     }}
                   >
+                    <TableCell className="whitespace-nowrap font-mono text-sm text-muted-foreground">
+                      {offer.offerNumber || "-"}
+                    </TableCell>
                     <TableCell className="font-medium">
                       {offer.title}
                       <NewBadge createdAt={offer.createdAt} />

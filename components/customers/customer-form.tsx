@@ -35,9 +35,10 @@ const customerSchema = z.object({
   name: z.string().min(2, "Navnet må være minst 2 tegn"),
   orgNumber: z
     .string()
-    .min(9, "Organisasjonsnummer må være 9 siffer")
-    .max(9, "Organisasjonsnummer må være 9 siffer")
-    .regex(/^\d+$/, "Kun tall er tillatt"),
+    .refine((val) => val === "" || /^\d{9}$/.test(val), {
+      message: "Organisasjonsnummer må være 9 siffer",
+    })
+    .optional(),
   email: z.string().email("Ugyldig e-postadresse").optional().or(z.literal("")),
   phone: z.string().optional(),
   address: z.string().optional(),
@@ -305,10 +306,7 @@ export function CustomerForm({ onSubmit, isLoading }: CustomerFormProps) {
               name="orgNumber"
               render={({ field, fieldState }) => (
                 <FormItem>
-                  <FormLabel>
-                    Organisasjonsnummer{" "}
-                    <span className="text-destructive">*</span>
-                  </FormLabel>
+                  <FormLabel>Organisasjonsnummer (valgfritt)</FormLabel>
                   <FormControl>
                     <Input
                       placeholder="987654321"

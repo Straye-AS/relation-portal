@@ -199,7 +199,7 @@ export const OFFER_PHASE_LABELS: Record<OfferPhase, string> = {
   sent: "Sendt",
   won: "Vunnet",
   lost: "Tapt",
-  expired: "Utløpt",
+  expired: "Utgått",
 };
 
 export const DEAL_STAGE_LABELS: Record<DealStage, string> = {
@@ -212,7 +212,7 @@ export const DEAL_STAGE_LABELS: Record<DealStage, string> = {
 };
 
 export const PROJECT_STATUS_LABELS: Record<ProjectStatus, string> = {
-  planning: "Planlegger",
+  planning: "Tilbud",
   active: "Aktiv",
   on_hold: "På vent",
   completed: "Ferdig",

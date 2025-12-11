@@ -19,6 +19,7 @@ export interface OfferReserveCardProps {
   economicWinRate: number;
   wonCount?: number;
   lostCount?: number;
+  periodLabel?: string;
 }
 
 export function OfferReserveCard({
@@ -30,6 +31,7 @@ export function OfferReserveCard({
   averageProbability,
   wonCount = 0,
   lostCount = 0,
+  periodLabel = "siste 12 mnd",
 }: OfferReserveCardProps) {
   const isGoodWinRate = winRate >= 50;
   const isGoodEconomicWinRate = economicWinRate >= 50;
@@ -52,7 +54,7 @@ export function OfferReserveCard({
               {formatCurrency(offerReserve)}
             </div>
             <p className="min-h-[2.5em] text-xs text-muted-foreground">
-              Utestående tilbudsverdi dersom vinnrate var 100%
+              Totalverdi av sendte og påbegynte tilbud
             </p>
           </motion.div>
 
@@ -107,7 +109,7 @@ export function OfferReserveCard({
                 <div className="space-y-2">
                   <h4 className="text-sm font-semibold">Vinnrate (antall)</h4>
                   <p className="text-xs text-muted-foreground">
-                    Basert på {totalDecided} avgjorte tilbud siste 12 mnd (
+                    Basert på {totalDecided} avgjorte tilbud {periodLabel} (
                     {wonCount} vunnet, {lostCount} tapt).
                   </p>
                 </div>
@@ -136,7 +138,7 @@ export function OfferReserveCard({
                 <div className="space-y-2">
                   <h4 className="text-sm font-semibold">Vinnrate (verdi)</h4>
                   <p className="text-xs text-muted-foreground">
-                    Andel av total tilbudsverdi som er vunnet siste 12 mnd.
+                    Andel av total tilbudsverdi som er vunnet {periodLabel}.
                   </p>
                 </div>
               </HoverCardContent>

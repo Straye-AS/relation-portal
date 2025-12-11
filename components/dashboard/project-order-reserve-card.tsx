@@ -9,12 +9,14 @@ export interface ProjectOrderReserveCardProps {
   amount: number;
   totalValue: number;
   invoicedAmount: number;
+  periodLabel?: string;
 }
 
 export function ProjectOrderReserveCard({
   amount,
   totalValue,
   invoicedAmount,
+  periodLabel = "Siste 12 mnd",
 }: ProjectOrderReserveCardProps) {
   return (
     <Card className="flex h-full flex-col">
@@ -62,7 +64,7 @@ export function ProjectOrderReserveCard({
           </div>
         </div>
         <div className="mt-4 border-t border-dashed pt-1 text-right">
-          <p className="text-xs text-muted-foreground">Siste 12 mnd</p>
+          <p className="text-xs text-muted-foreground">{periodLabel}</p>
         </div>
       </CardContent>
     </Card>

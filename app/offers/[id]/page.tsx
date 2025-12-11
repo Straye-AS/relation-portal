@@ -12,6 +12,8 @@ import {
   useRejectOffer,
   useSendOffer,
   useUpdateOfferDueDate,
+  useUpdateOfferExternalReference,
+  useUpdateCustomerHasWonOffer,
 } from "@/hooks/useOffers";
 import confetti from "canvas-confetti";
 import {
@@ -48,7 +50,7 @@ import {
   XCircle,
   Send,
 } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, addDays, format } from "date-fns";
 import { nb } from "date-fns/locale";
 import { use, useState, useEffect } from "react";
 import { InlineEdit } from "@/components/ui/inline-edit";
@@ -67,7 +69,9 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { ProjectListTable } from "@/components/projects/project-list-table";
 import { cn, getDueDateColor } from "@/lib/utils";
@@ -93,9 +97,9 @@ export default function OfferDetailPage({
   // Also support search.
   const [projectSearch, setProjectSearch] = useState("");
 
-  const projects = (rawProjects as DomainProjectDTO[] | undefined)?.filter(
-    (p) => p.status !== "completed"
-  );
+  const projects = (
+    rawProjects?.data as DomainProjectDTO[] | undefined
+  )?.filter((p) => p.status !== "completed");
 
   const filteredProjects = projects?.filter((p) => {
     if (!projectSearch) return true;
@@ -113,6 +117,8 @@ export default function OfferDetailPage({
   const updateResponsible = useUpdateOfferResponsible();
   const updateProject = useUpdateOfferProject();
   const updateDueDate = useUpdateOfferDueDate();
+  const updateExternalReference = useUpdateOfferExternalReference();
+  const updateCustomerHasWonOffer = useUpdateCustomerHasWonOffer();
 
   const acceptOffer = useAcceptOffer();
   const rejectOffer = useRejectOffer();
@@ -120,12 +126,15 @@ export default function OfferDetailPage({
 
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [isResponsibleModalOpen, setIsResponsibleModalOpen] = useState(false);
-  // Local state for "Customer Won" checkbox since it's not in backend yet
-  const [isCustomerWon, setIsCustomerWon] = useState(false);
+  const [isSendDetailsModalOpen, setIsSendDetailsModalOpen] = useState(false);
+  const [sendDate, setSendDate] = useState<Date>(new Date());
+  const [expirationDate, setExpirationDate] = useState<Date>(
+    addDays(new Date(), 60)
+  );
   const [localProbability, setLocalProbability] = useState(0);
   // Confirmation state
   const [confirmationAction, setConfirmationAction] = useState<
-    "send" | "win" | "loss" | null
+    "win" | "loss" | null
   >(null);
 
   // Sync local probability when offer loads or updates
@@ -158,6 +167,11 @@ export default function OfferDetailPage({
 
   const calcDB = calcPrice - calcCost;
   const calcDG = calcPrice > 0 ? (calcDB / calcPrice) * 100 : 0;
+
+  const isLocked =
+    (offer?.phase as string) === "won" ||
+    (offer?.phase as string) === "lost" ||
+    (offer?.phase as string) === "archived";
 
   if (isLoading) {
     return (
@@ -227,7 +241,12 @@ export default function OfferDetailPage({
           {(offer.phase === "draft" || offer.phase === "in_progress") && (
             <Button
               className="bg-purple-600 text-white hover:bg-purple-700"
-              onClick={() => setConfirmationAction("send")}
+              onClick={() => {
+                const today = new Date();
+                setSendDate(today);
+                setExpirationDate(addDays(today, 60));
+                setIsSendDetailsModalOpen(true);
+              }}
             >
               <Send className="mr-2 h-4 w-4" />
               Marker som sendt
@@ -268,18 +287,10 @@ export default function OfferDetailPage({
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>
-                  {confirmationAction === "send" && "Marker som sendt?"}
                   {confirmationAction === "win" && "Marker som vunnet?"}
                   {confirmationAction === "loss" && "Marker som tapt?"}
                 </AlertDialogTitle>
                 <AlertDialogDescription>
-                  {confirmationAction === "send" && (
-                    <>
-                      Er du sikker på at du vil markere tilbudet som sendt?
-                      Dette vil endre statusen til sendt og indikere at kunden
-                      har mottatt tilbudet.
-                    </>
-                  )}
                   {confirmationAction === "win" && (
                     <>
                       Gratulerer! Er du sikker på at du vil markere tilbudet som
@@ -303,14 +314,10 @@ export default function OfferDetailPage({
                     confirmationAction === "win" &&
                       "bg-green-600 hover:bg-green-700",
                     confirmationAction === "loss" &&
-                      "bg-red-600 hover:bg-red-700",
-                    confirmationAction === "send" &&
-                      "bg-purple-600 hover:bg-purple-700"
+                      "bg-red-600 hover:bg-red-700"
                   )}
                   onClick={() => {
-                    if (confirmationAction === "send") {
-                      sendOffer.mutate(offer.id!);
-                    } else if (confirmationAction === "win") {
+                    if (confirmationAction === "win") {
                       acceptOffer.mutate({ id: offer.id! });
                       confetti({
                         particleCount: 100,
@@ -324,7 +331,6 @@ export default function OfferDetailPage({
                     setConfirmationAction(null);
                   }}
                 >
-                  {confirmationAction === "send" && "Send tilbud"}
                   {confirmationAction === "win" && "Bekreft vunnet"}
                   {confirmationAction === "loss" && "Bekreft tapt"}
                 </AlertDialogAction>
@@ -357,11 +363,29 @@ export default function OfferDetailPage({
               </div>
 
               <div>
+                <p className="mb-1 text-sm text-muted-foreground">
+                  Ekstern referanse
+                </p>
+                <InlineEdit
+                  value={(offer as any).externalReference || ""}
+                  placeholder="Legg til ekstern ref..."
+                  onSave={async (val) => {
+                    await updateExternalReference.mutateAsync({
+                      id: offer.id!,
+                      externalReference: String(val),
+                    });
+                  }}
+                  className="-ml-1 w-full border-transparent p-1 px-1 font-medium hover:border-input hover:bg-transparent"
+                />
+              </div>
+
+              <div>
                 <p className="mb-1 text-sm text-muted-foreground">Frist</p>
                 <div className="flex items-center gap-2">
                   <Input
                     type="date"
                     value={offer.dueDate ? offer.dueDate.split("T")[0] : ""}
+                    disabled={isLocked}
                     onChange={(e) => {
                       // Ensure we send ISO format or at least YYYY-MM-DD as expected by backend
                       // If user clears, we might want to send null or empty string?
@@ -396,27 +420,26 @@ export default function OfferDetailPage({
               <div>
                 <p className="mb-1 text-sm text-muted-foreground">Ansvarlig</p>
                 <div className="group flex items-center gap-2">
-                  {offer.responsibleUserId ? (
-                    <Button
-                      variant="ghost"
-                      onClick={() => setIsResponsibleModalOpen(true)}
-                      className="-ml-1 h-auto justify-start p-0 pl-1 text-left font-medium hover:bg-transparent hover:text-primary"
-                    >
-                      {(users || []).find(
+                  <div
+                    role={isLocked ? undefined : "button"}
+                    onClick={() => !isLocked && setIsResponsibleModalOpen(true)}
+                    className={cn(
+                      "-ml-1 w-full rounded border border-transparent p-1 px-1 font-medium transition-colors",
+                      isLocked
+                        ? "cursor-default"
+                        : "cursor-pointer hover:border-input hover:bg-transparent"
+                    )}
+                  >
+                    {offer.responsibleUserId ? (
+                      (users || []).find(
                         (u) => u.id === offer.responsibleUserId
-                      )?.name || "Ukjent bruker"}
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 border-dashed"
-                      onClick={() => setIsResponsibleModalOpen(true)}
-                    >
-                      <Plus className="mr-2 h-3 w-3" />
-                      Sett Straye ansvarlig
-                    </Button>
-                  )}
+                      )?.name || "Ukjent bruker"
+                    ) : (
+                      <span className="italic text-muted-foreground">
+                        Sett Straye ansvarlig
+                      </span>
+                    )}
+                  </div>
 
                   <CommandDialog
                     open={isResponsibleModalOpen}
@@ -494,11 +517,17 @@ export default function OfferDetailPage({
                 <div className="mt-1 flex items-center gap-2">
                   <Checkbox
                     id="customer-won"
-                    checked={isCustomerWon}
-                    onCheckedChange={(checked) => setIsCustomerWon(!!checked)}
+                    checked={offer.customerHasWonProject || false}
+                    onCheckedChange={(checked) =>
+                      updateCustomerHasWonOffer.mutate({
+                        id: offer.id!,
+                        customerHasWonProject: !!checked,
+                      })
+                    }
+                    disabled={isLocked}
                     className={cn(
                       "h-5 w-5",
-                      isCustomerWon
+                      offer.customerHasWonProject
                         ? "border-green-600 bg-green-600 text-primary-foreground data-[state=checked]:border-green-600 data-[state=checked]:bg-green-600"
                         : "border-muted-foreground"
                     )}
@@ -507,117 +536,8 @@ export default function OfferDetailPage({
                     htmlFor="customer-won"
                     className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                   >
-                    {isCustomerWon ? "Ja" : "Nei"}
+                    {offer.customerHasWonProject ? "Ja" : "Nei"}
                   </label>
-                </div>
-              </div>
-
-              <div>
-                <p className="text-sm text-muted-foreground">Sannsynlighet</p>
-                <div className="w-full">
-                  <div className="mb-2 flex items-center justify-between">
-                    <span className="font-medium">{localProbability}%</span>
-                  </div>
-                  <Slider
-                    value={[localProbability]}
-                    max={90}
-                    min={10}
-                    step={10}
-                    onValueChange={(val) => setLocalProbability(val[0])}
-                    onValueCommit={async (val) => {
-                      await updateProbability.mutateAsync({
-                        id: offer.id!,
-                        data: { probability: val[0] },
-                      });
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* Linked Project Section */}
-              {/* Linked Project Section */}
-              <div>
-                <p className="text-sm text-muted-foreground">
-                  Tilknyttet Prosjekt
-                </p>
-                <div className="mt-1 flex items-center gap-2">
-                  {offer.projectId ? (
-                    <Button
-                      variant="ghost"
-                      onClick={() => setIsProjectModalOpen(true)}
-                      className="-ml-1 h-auto justify-start p-0 pl-1 text-left font-medium hover:bg-transparent hover:text-primary"
-                    >
-                      <LinkIcon className="mr-2 h-3 w-3" />
-                      {(projects || []).find(
-                        (p: DomainProjectDTO) => p.id === offer.projectId
-                      )?.name || "Ukjent prosjekt"}
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8"
-                      onClick={() => setIsProjectModalOpen(true)}
-                    >
-                      <Plus className="mr-2 h-3 w-3" />
-                      Koble til prosjekt
-                    </Button>
-                  )}
-
-                  <Dialog
-                    open={isProjectModalOpen}
-                    onOpenChange={setIsProjectModalOpen}
-                  >
-                    <DialogContent className="flex max-h-[80vh] max-w-4xl flex-col">
-                      <DialogHeader>
-                        <DialogTitle>Velg prosjekt</DialogTitle>
-                      </DialogHeader>
-                      <div className="flex flex-1 flex-col space-y-4 overflow-hidden">
-                        <Input
-                          placeholder="Søk etter prosjekt..."
-                          value={projectSearch}
-                          onChange={(e) => setProjectSearch(e.target.value)}
-                          className="focus-visible:border-primary focus-visible:ring-0 focus-visible:ring-offset-0"
-                        />
-                        <div className="flex-1 overflow-auto rounded-md border">
-                          <ProjectListTable
-                            compact={true}
-                            projects={filteredProjects || []}
-                            onProjectClick={(project) => {
-                              updateProject.mutate({
-                                id: offer.id!,
-                                data: { projectId: project.id! },
-                              });
-                              setIsProjectModalOpen(false);
-                            }}
-                          />
-                        </div>
-                        <div className="flex justify-end">
-                          <Button
-                            variant="outline"
-                            onClick={() => {
-                              updateProject.mutate({
-                                id: offer.id!,
-                                data: { projectId: "" },
-                              });
-                              setIsProjectModalOpen(false);
-                            }}
-                          >
-                            Fjern tilknytning
-                          </Button>
-                        </div>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-
-                  {offer.projectId && (
-                    <Link
-                      href={`/projects/${offer.projectId}`}
-                      className="ml-2 text-sm text-muted-foreground hover:underline"
-                    >
-                      (Gå til prosjekt)
-                    </Link>
-                  )}
                 </div>
               </div>
             </CardContent>
@@ -650,8 +570,13 @@ export default function OfferDetailPage({
                     />
                   ) : (
                     <div
-                      className="cursor-pointer text-2xl font-bold hover:underline"
-                      onClick={() => setEditingEconomyField("cost")}
+                      className={cn(
+                        "text-2xl font-bold",
+                        !isLocked && "cursor-pointer hover:underline"
+                      )}
+                      onClick={() =>
+                        !isLocked && setEditingEconomyField("cost")
+                      }
                     >
                       {new Intl.NumberFormat("nb-NO", {
                         style: "currency",
@@ -682,8 +607,13 @@ export default function OfferDetailPage({
                     />
                   ) : (
                     <div
-                      className="cursor-pointer text-2xl font-bold hover:underline"
-                      onClick={() => setEditingEconomyField("price")}
+                      className={cn(
+                        "text-2xl font-bold",
+                        !isLocked && "cursor-pointer hover:underline"
+                      )}
+                      onClick={() =>
+                        !isLocked && setEditingEconomyField("price")
+                      }
                     >
                       {new Intl.NumberFormat("nb-NO", {
                         style: "currency",
@@ -716,21 +646,139 @@ export default function OfferDetailPage({
                 </div>
               </div>
 
-              {offer.value !== Math.round(calcPrice) && calcPrice > 0 && (
-                <Button
-                  className="w-full"
-                  variant="outline"
-                  onClick={() =>
-                    updateValue.mutate({
-                      id: offer.id!,
-                      data: { value: Math.round(calcPrice) },
-                    })
-                  }
-                >
-                  Oppdater Total verdi ({Math.round(calcPrice).toLocaleString()}{" "}
-                  kr)
-                </Button>
-              )}
+              {offer.value !== Math.round(calcPrice) &&
+                calcPrice > 0 &&
+                !isLocked && (
+                  <Button
+                    className="w-full"
+                    variant="outline"
+                    onClick={() =>
+                      updateValue.mutate({
+                        id: offer.id!,
+                        data: { value: Math.round(calcPrice) },
+                      })
+                    }
+                  >
+                    Oppdater Total verdi (
+                    {Math.round(calcPrice).toLocaleString()} kr)
+                  </Button>
+                )}
+
+              <div className="space-y-4 border-t pt-4">
+                <div>
+                  <p className="mb-1 text-sm text-muted-foreground">
+                    Sannsynlighet
+                  </p>
+                  <div className="w-full">
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className="font-medium">{localProbability}%</span>
+                    </div>
+                    <Slider
+                      value={[localProbability]}
+                      max={90}
+                      min={10}
+                      step={10}
+                      disabled={isLocked}
+                      onValueChange={(val) => setLocalProbability(val[0])}
+                      onValueCommit={async (val) => {
+                        if (isLocked) return;
+                        await updateProbability.mutateAsync({
+                          id: offer.id!,
+                          data: { probability: val[0] },
+                        });
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <p className="mb-1 text-sm text-muted-foreground">
+                    Tilknyttet Prosjekt
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <div
+                      role={isLocked ? undefined : "button"}
+                      onClick={() => !isLocked && setIsProjectModalOpen(true)}
+                      className={cn(
+                        "-ml-1 w-full rounded border border-transparent p-1 px-1 font-medium transition-colors",
+                        isLocked
+                          ? "cursor-default"
+                          : "cursor-pointer hover:border-input hover:bg-transparent"
+                      )}
+                    >
+                      {offer.projectId ? (
+                        <div className="flex items-center gap-2">
+                          <LinkIcon className="h-3 w-3 text-muted-foreground" />
+                          <span>
+                            {(projects || []).find(
+                              (p: DomainProjectDTO) => p.id === offer.projectId
+                            )?.name || "Ukjent prosjekt"}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="italic text-muted-foreground">
+                          Koble til prosjekt
+                        </span>
+                      )}
+                    </div>
+
+                    <Dialog
+                      open={isProjectModalOpen}
+                      onOpenChange={setIsProjectModalOpen}
+                    >
+                      <DialogContent className="flex max-h-[80vh] max-w-4xl flex-col">
+                        <DialogHeader>
+                          <DialogTitle>Velg prosjekt</DialogTitle>
+                        </DialogHeader>
+                        <div className="flex flex-1 flex-col space-y-4 overflow-hidden">
+                          <Input
+                            placeholder="Søk etter prosjekt..."
+                            value={projectSearch}
+                            onChange={(e) => setProjectSearch(e.target.value)}
+                            className="focus-visible:border-primary focus-visible:ring-0 focus-visible:ring-offset-0"
+                          />
+                          <div className="flex-1 overflow-auto rounded-md border">
+                            <ProjectListTable
+                              compact={true}
+                              projects={filteredProjects || []}
+                              onProjectClick={(project) => {
+                                updateProject.mutate({
+                                  id: offer.id!,
+                                  data: { projectId: project.id! },
+                                });
+                                setIsProjectModalOpen(false);
+                              }}
+                            />
+                          </div>
+                          <div className="flex justify-end">
+                            <Button
+                              variant="outline"
+                              onClick={() => {
+                                updateProject.mutate({
+                                  id: offer.id!,
+                                  data: { projectId: "" },
+                                });
+                                setIsProjectModalOpen(false);
+                              }}
+                            >
+                              Fjern tilknytning
+                            </Button>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+
+                    {offer.projectId && (
+                      <Link
+                        href={`/projects/${offer.projectId}`}
+                        className="ml-auto text-sm text-muted-foreground hover:underline"
+                      >
+                        (Gå til prosjekt)
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -738,6 +786,7 @@ export default function OfferDetailPage({
         <OfferDescription
           offerId={offer.id!}
           initialDescription={offer.description || ""}
+          readOnly={isLocked}
         />
 
         {offer.notes && (
@@ -751,6 +800,72 @@ export default function OfferDetailPage({
           </Card>
         )}
       </div>
+
+      <Dialog
+        open={isSendDetailsModalOpen}
+        onOpenChange={setIsSendDetailsModalOpen}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Send tilbud</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="sent-date">Sendt dato</Label>
+              <Input
+                id="sent-date"
+                type="date"
+                value={sendDate ? format(sendDate, "yyyy-MM-dd") : ""}
+                onChange={(e) => {
+                  if (e.target.value) {
+                    const date = new Date(e.target.value);
+                    setSendDate(date);
+                    setExpirationDate(addDays(date, 60));
+                  }
+                }}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="expiration-date">
+                Vedståelsesfrist (60 dager)
+              </Label>
+              <Input
+                id="expiration-date"
+                type="date"
+                value={
+                  expirationDate ? format(expirationDate, "yyyy-MM-dd") : ""
+                }
+                onChange={(e) => {
+                  if (e.target.value) {
+                    setExpirationDate(new Date(e.target.value));
+                  }
+                }}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsSendDetailsModalOpen(false)}
+            >
+              Avbryt
+            </Button>
+            <Button
+              className="bg-purple-600 text-white hover:bg-purple-700"
+              onClick={() => {
+                sendOffer.mutate({
+                  id: offer.id!,
+                  sentDate: sendDate.toISOString(),
+                  expirationDate: expirationDate.toISOString(),
+                });
+                setIsSendDetailsModalOpen(false);
+              }}
+            >
+              Bekreft og send
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }

@@ -1,7 +1,16 @@
 "use client";
 
 import { AppLayout } from "@/components/layout/app-layout";
-import { useCustomer, useCustomerContacts } from "@/hooks/useCustomers";
+import {
+  useCustomer,
+  useCustomerContacts,
+  useUpdateCustomer,
+  useUpdateCustomerAddress,
+  useUpdateCustomerPostalCode,
+  useUpdateCustomerCity,
+} from "@/hooks/useCustomers";
+import { InlineEdit } from "@/components/ui/inline-edit";
+import { toast } from "sonner";
 import { useOffers } from "@/hooks/useOffers";
 import { OfferStatusBadge } from "@/components/offers/offer-status-badge";
 import { ProjectStatusBadge } from "@/components/projects/project-status-badge";
@@ -57,6 +66,10 @@ export default function CustomerDetailPage({
   const { data: contactsData } = useCustomerContacts(resolvedParams.id);
   const { data: offers } = useOffers();
   const { data: projects } = useProjects();
+  const updateCustomer = useUpdateCustomer();
+  const updateAddress = useUpdateCustomerAddress();
+  const updatePostalCode = useUpdateCustomerPostalCode();
+  const updateCity = useUpdateCustomerCity();
 
   // Cast contactsData to local interface
   const contacts = (contactsData as unknown as CustomerContact[]) || [];
@@ -65,7 +78,7 @@ export default function CustomerDetailPage({
     (o: DomainOfferDTO) => o.customerId === resolvedParams.id
   ) || []) as DomainOfferDTO[];
 
-  const customerProjects = (projects?.filter(
+  const customerProjects = (projects?.data?.filter(
     (p: DomainProjectDTO) => p.customerId === resolvedParams.id
   ) || []) as DomainProjectDTO[];
 
@@ -164,7 +177,7 @@ export default function CustomerDetailPage({
           {/* Main Info Card */}
           <Card className="md:col-span-2">
             <CardHeader>
-              <CardTitle>Nøkkeltall for økonomi</CardTitle>
+              <CardTitle>Nøkkeltall</CardTitle>
               <CardDescription>
                 Oversikt over prosjekt- og tilbudsverdier
               </CardDescription>
@@ -193,21 +206,14 @@ export default function CustomerDetailPage({
                 <div className="rounded-lg border bg-card p-4 shadow-sm transition-all hover:shadow-md">
                   <div className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <div className="text-sm font-medium text-muted-foreground">
-                      Vunnet tilbud
+                      Vunnede tilbud
                     </div>
                     <Users className="h-4 w-4 text-muted-foreground" />
                   </div>
                   <div className="mt-2 text-2xl font-bold">
                     {wonOffersCount}
                   </div>
-                  <div className="flex items-center text-xs text-green-500">
-                    <span className="flex items-center font-medium">
-                      +2 nye
-                    </span>
-                    <span className="ml-1 text-muted-foreground">
-                      siste mnd
-                    </span>
-                  </div>
+                  <div className="text-xs text-muted-foreground">Totalt</div>
                 </div>
                 <div className="rounded-lg border bg-card p-4 shadow-sm transition-all hover:shadow-md">
                   <div className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -255,14 +261,29 @@ export default function CustomerDetailPage({
                 <div className="flex h-9 w-9 items-center justify-center rounded-full bg-muted">
                   <Mail className="h-4 w-4 text-foreground" />
                 </div>
-                <div className="overflow-hidden">
+                <div className="flex flex-col gap-1 overflow-hidden">
                   <p className="text-sm font-medium leading-none">E-post</p>
-                  <a
-                    href={`mailto:${customer.email}`}
-                    className="block truncate text-sm text-muted-foreground hover:underline"
-                  >
-                    {customer.email || "-"}
-                  </a>
+                  <InlineEdit
+                    value={customer.email || ""}
+                    className="-ml-1 h-auto p-0 px-1 text-sm text-muted-foreground hover:bg-transparent"
+                    type="email"
+                    placeholder="Legg til e-post"
+                    onSave={async (value) => {
+                      const email = String(value);
+                      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                        toast.error("Ugyldig e-postadresse");
+                        throw new Error("Invalid email");
+                      }
+                      await updateCustomer.mutateAsync({
+                        id: customer.id!,
+                        data: {
+                          email,
+                          name: customer.name ?? "",
+                          country: customer.country ?? "Norge",
+                        },
+                      });
+                    }}
+                  />
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -271,12 +292,28 @@ export default function CustomerDetailPage({
                 </div>
                 <div>
                   <p className="text-sm font-medium leading-none">Telefon</p>
-                  <a
-                    href={`tel:${customer.phone}`}
-                    className="text-sm text-muted-foreground hover:underline"
-                  >
-                    {customer.phone || "-"}
-                  </a>
+                  <InlineEdit
+                    value={customer.phone || ""}
+                    className="-ml-1 h-auto p-0 px-1 text-sm text-muted-foreground hover:bg-transparent"
+                    type="tel"
+                    placeholder="Legg til telefon"
+                    onSave={async (value) => {
+                      const phone = String(value);
+                      // Simple validation: allow numbers, spaces, +, -, (, )
+                      if (phone && !/^[\d\s+\-()]+$/.test(phone)) {
+                        toast.error("Ugyldig telefonnummer");
+                        throw new Error("Invalid phone");
+                      }
+                      await updateCustomer.mutateAsync({
+                        id: customer.id!,
+                        data: {
+                          phone,
+                          name: customer.name ?? "",
+                          country: customer.country ?? "Norge",
+                        },
+                      });
+                    }}
+                  />
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -285,17 +322,49 @@ export default function CustomerDetailPage({
                 </div>
                 <div>
                   <p className="text-sm font-medium leading-none">Adresse</p>
-                  <div className="text-sm text-muted-foreground">
-                    {customer.address ? (
-                      <>
-                        <p>{customer.address}</p>
-                        <p>
-                          {customer.postalCode} {customer.city}
-                        </p>
-                      </>
-                    ) : (
-                      "-"
-                    )}
+                  <div className="flex flex-col gap-1 text-sm text-muted-foreground">
+                    <InlineEdit
+                      value={customer.address || ""}
+                      className="-ml-1 h-auto p-0 px-1 hover:bg-transparent"
+                      placeholder="Gateadresse"
+                      onSave={async (value) => {
+                        await updateAddress.mutateAsync({
+                          id: customer.id!,
+                          data: {
+                            address: String(value),
+                          },
+                        });
+                      }}
+                    />
+                    <div className="flex gap-2">
+                      <InlineEdit
+                        value={customer.postalCode || ""}
+                        className="-ml-1 h-auto p-0 px-1 hover:bg-transparent"
+                        editClassName="w-48"
+                        placeholder="Postnr"
+                        onSave={async (value) => {
+                          await updatePostalCode.mutateAsync({
+                            id: customer.id!,
+                            data: {
+                              postalCode: String(value),
+                            },
+                          });
+                        }}
+                      />
+                      <InlineEdit
+                        value={customer.city || ""}
+                        className="-ml-1 h-auto flex-1 p-0 px-1 hover:bg-transparent"
+                        placeholder="Sted"
+                        onSave={async (value) => {
+                          await updateCity.mutateAsync({
+                            id: customer.id!,
+                            data: {
+                              city: String(value),
+                            },
+                          });
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>

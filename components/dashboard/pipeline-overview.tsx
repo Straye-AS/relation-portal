@@ -17,7 +17,7 @@ export const phaseLabels: Record<string, string> = {
   sent: "Sendt",
   won: "Vunnet",
   lost: "Tapt",
-  expired: "Utløpt",
+  expired: "Utgått",
 };
 
 export const phaseColors: Record<string, string> = {

@@ -75,6 +75,7 @@ interface SearchResultItem {
   id: string;
   title: string;
   subtitle?: string;
+  header?: string;
   type: string;
   metadata?: string;
 }
@@ -125,25 +126,39 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
 
     if (response.projects?.length) {
       mappedResults.push(
-        ...response.projects.map((item) => ({
-          id: item.id,
-          title: item.name || item.title,
-          subtitle: item.customerName,
-          type: "project",
-          metadata: item.status,
-        }))
+        ...response.projects.map((item) => {
+          const extRef = item.externalReference
+            ? ` • Ref: ${item.externalReference}`
+            : "";
+
+          return {
+            id: item.id,
+            title: item.name || item.title,
+            header: item.projectNumber,
+            subtitle: `${item.customerName}${extRef}`,
+            type: "project",
+            metadata: item.status,
+          };
+        })
       );
     }
 
     if (response.offers?.length) {
       mappedResults.push(
-        ...response.offers.map((item) => ({
-          id: item.id,
-          title: item.title,
-          subtitle: item.customerName,
-          type: "offer",
-          metadata: `${(item.value || 0).toLocaleString()} NOK`,
-        }))
+        ...response.offers.map((item) => {
+          const extRef = item.externalReference
+            ? ` • Ref: ${item.externalReference}`
+            : "";
+
+          return {
+            id: item.id,
+            title: item.title,
+            header: item.offerNumber,
+            subtitle: `${item.customerName}${extRef}`,
+            type: "offer",
+            metadata: `${(item.value || 0).toLocaleString()} NOK`,
+          };
+        })
       );
     }
 
@@ -288,6 +303,11 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
           <Icon className={`h-5 w-5 ${colors.text}`} />
         </div>
         <div className="min-w-0 flex-1">
+          {result.header && (
+            <p className="truncate font-mono text-xs uppercase tracking-wider text-muted-foreground">
+              {result.header}
+            </p>
+          )}
           <p className="truncate text-sm font-semibold">{result.title}</p>
           {result.subtitle && (
             <p className="truncate text-xs text-muted-foreground">

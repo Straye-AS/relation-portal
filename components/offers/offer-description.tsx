@@ -67,7 +67,8 @@ export function OfferDescription({
   offerId,
   initialDescription,
   className,
-}: OfferDescriptionProps) {
+  readOnly = false,
+}: OfferDescriptionProps & { readOnly?: boolean }) {
   const [isEditing, setIsEditing] = useState(false);
   const [description, setDescription] = useState(initialDescription || "");
   const updateOffer = useUpdateOfferDescription();
@@ -130,19 +131,24 @@ export function OfferDescription({
     <Card className={cn("group w-full transition-all duration-200", className)}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
         <CardTitle>Beskrivelse</CardTitle>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="opacity-0 transition-opacity group-hover:opacity-100"
-          onClick={() => setIsEditing(true)}
-        >
-          <Edit2 className="mr-2 h-4 w-4" />
-          Rediger
-        </Button>
+        {!readOnly && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="opacity-0 transition-opacity group-hover:opacity-100"
+            onClick={() => setIsEditing(true)}
+          >
+            <Edit2 className="mr-2 h-4 w-4" />
+            Rediger
+          </Button>
+        )}
       </CardHeader>
       <CardContent
-        onClick={() => setIsEditing(true)}
-        className="cursor-pointer rounded-md border border-transparent px-6 py-4 hover:border-muted hover:bg-muted/10"
+        onClick={() => !readOnly && setIsEditing(true)}
+        className={cn(
+          "rounded-md border border-transparent px-6 py-4",
+          !readOnly && "cursor-pointer hover:border-muted hover:bg-muted/10"
+        )}
       >
         {description ? (
           <div className="text-sm">
@@ -153,7 +159,9 @@ export function OfferDescription({
         ) : (
           <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed py-8 text-muted-foreground transition-colors hover:bg-muted/50">
             <p className="text-sm">Ingen beskrivelse lagt til</p>
-            <p className="mt-1 text-xs">Klikk for å legge til beskrivelse</p>
+            {!readOnly && (
+              <p className="mt-1 text-xs">Klikk for å legge til beskrivelse</p>
+            )}
           </div>
         )}
       </CardContent>

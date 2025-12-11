@@ -22,31 +22,34 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { X, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
-import {
-  DomainOfferPhase,
-  DomainOfferStatus,
-} from "@/lib/.generated/data-contracts";
+import { X } from "lucide-react";
+import { DomainOfferPhase } from "@/lib/.generated/data-contracts";
 import { AddOfferModal } from "@/components/offers/add-offer-modal";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useState, useMemo } from "react";
-import { cn } from "@/lib/utils";
 
 import { COMPANIES } from "@/lib/api/types";
-
-type SortDirection = "asc" | "desc" | null;
-
-interface SortConfig {
-  key: keyof DomainOfferDTO | "customerName" | "responsibleUserName";
-  direction: SortDirection;
-}
+import { PaginationControls } from "@/components/pagination-controls";
 
 export default function OffersPage() {
-  const { data, isLoading } = useOffers();
-  const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
+  const [page, setPage] = useState(1);
+  const pageSize = 20;
 
-  // Filter States
+  // Sort State
+  const [sortBy] = useState<string>("updated_at");
+  const [sortOrder] = useState<"asc" | "desc">("desc");
+
+  // Filters State
   const [phaseFilter, setPhaseFilter] = useState<string>("all");
   const [companyFilter, setCompanyFilter] = useState<string>("all");
+  const [includeExpired, setIncludeExpired] = useState(false);
+
+  const { data, isLoading } = useOffers({
+    page,
+    pageSize,
+    sortBy: sortBy as any,
+    sortOrder: sortOrder as any,
+  });
 
   // Extract offers from paginated response
   const offers = useMemo<DomainOfferDTO[]>(
@@ -56,11 +59,11 @@ export default function OffersPage() {
 
   const filteredOffers = useMemo(() => {
     return offers.filter((offer) => {
-      // 0. Exclude Drafts (Drafts are treated as requests/inquiries)
-      if (offer.phase === DomainOfferPhase.OfferPhaseDraft) return false;
+      // 0. Exclude Drafts - REMOVED to show drafts
+      // if (offer.phase === DomainOfferPhase.OfferPhaseDraft) return false;
 
-      // 1. Status Filter (Always show Active only)
-      if (offer.status !== DomainOfferStatus.OfferStatusActive) return false;
+      // 1. Status Filter - Relaxed to debug missing offers
+      // if (offer.status !== DomainOfferStatus.OfferStatusActive) return false;
 
       // 2. Phase Filter
       if (phaseFilter !== "all" && offer.phase !== phaseFilter) return false;
@@ -69,92 +72,28 @@ export default function OffersPage() {
       if (companyFilter !== "all" && offer.companyId !== companyFilter)
         return false;
 
+      // 4. Exclude Expired (unless toggled)
+      if (!includeExpired) {
+        // Check explicit "expired" phase (if backend sets it)
+        if (offer.phase === "expired") return false;
+
+        // Check based on due date
+        if (offer.dueDate) {
+          const isExpired = new Date(offer.dueDate) < new Date();
+          // If it's expired and NOT won/lost, hide it
+          if (
+            isExpired &&
+            offer.phase !== DomainOfferPhase.OfferPhaseWon &&
+            offer.phase !== DomainOfferPhase.OfferPhaseLost
+          ) {
+            return false;
+          }
+        }
+      }
+
       return true;
     });
-  }, [offers, phaseFilter, companyFilter]);
-
-  const sortedOffers = useMemo(() => {
-    // Sort the FILTERED list
-    const sorted = [...filteredOffers];
-
-    // Default Sort: UpdatedAt (Desc)
-    if (!sortConfig) {
-      return sorted.sort((a, b) => {
-        const dateA = new Date(a.updatedAt ?? 0).getTime();
-        const dateB = new Date(b.updatedAt ?? 0).getTime();
-        return dateB - dateA;
-      });
-    }
-
-    // Active Sort
-    return sorted.sort((a, b) => {
-      const aValue = a[sortConfig.key];
-      const bValue = b[sortConfig.key];
-
-      if (aValue === bValue) return 0;
-
-      // Handle nulls always at bottom
-      if (aValue === null || aValue === undefined) return 1;
-      if (bValue === null || bValue === undefined) return -1;
-
-      // Compare
-      let result = 0;
-      if (typeof aValue === "string" && typeof bValue === "string") {
-        result = aValue.localeCompare(bValue);
-      } else if (typeof aValue === "number" && typeof bValue === "number") {
-        result = aValue - bValue;
-      } else {
-        // Fallback
-        result = aValue < bValue ? -1 : 1;
-      }
-
-      return sortConfig.direction === "asc" ? result : -result;
-    });
-  }, [filteredOffers, sortConfig]);
-
-  const handleSort = (key: SortConfig["key"]) => {
-    setSortConfig((current) => {
-      // If clicking same key: Cycle asc -> desc -> null
-      if (current?.key === key) {
-        if (current.direction === "asc") return { key, direction: "desc" };
-        if (current.direction === "desc") return null;
-      }
-      // If clicking new key: Start asc
-      return { key, direction: "asc" };
-    });
-  };
-
-  const SortHeader = ({
-    label,
-    sortKey,
-    align = "left",
-  }: {
-    label: string;
-    sortKey: SortConfig["key"];
-    align?: "left" | "right";
-  }) => {
-    const isSorted = sortConfig?.key === sortKey;
-    const Icon = isSorted
-      ? sortConfig.direction === "asc"
-        ? ArrowUp
-        : ArrowDown
-      : ArrowUpDown;
-
-    return (
-      <Button
-        variant="ghost"
-        size="sm"
-        className={cn(
-          "-ml-3 h-8 data-[state=open]:bg-accent",
-          align === "right" && "-mr-3 ml-auto"
-        )}
-        onClick={() => handleSort(sortKey)}
-      >
-        <span>{label}</span>
-        <Icon className={cn("ml-2 h-4 w-4", !isSorted && "opacity-30")} />
-      </Button>
-    );
-  };
+  }, [offers, phaseFilter, companyFilter, includeExpired]);
 
   return (
     <AppLayout>
@@ -208,12 +147,30 @@ export default function OffersPage() {
               </SelectItem>
             </SelectContent>
           </Select>
-          {(companyFilter !== "all" || phaseFilter !== "all") && (
+
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="include-expired"
+              checked={includeExpired}
+              onCheckedChange={(checked) => setIncludeExpired(!!checked)}
+            />
+            <label
+              htmlFor="include-expired"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+              Inkluder utgåtte
+            </label>
+          </div>
+
+          {(companyFilter !== "all" ||
+            phaseFilter !== "all" ||
+            includeExpired) && (
             <Button
               variant="ghost"
               onClick={() => {
                 setCompanyFilter("all");
                 setPhaseFilter("all");
+                setIncludeExpired(false);
               }}
               className="px-2 lg:px-3"
             >
@@ -245,32 +202,19 @@ export default function OffersPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>
-                    <SortHeader label="Tittel" sortKey="title" />
-                  </TableHead>
-                  <TableHead>
-                    <SortHeader label="Kunde" sortKey="customerName" />
-                  </TableHead>
+                  <TableHead>Nr.</TableHead>
+                  <TableHead>Tittel</TableHead>
+                  <TableHead>Kunde</TableHead>
                   <TableHead>Selskap</TableHead>
-                  <TableHead>
-                    <SortHeader label="Fase" sortKey="phase" />
-                  </TableHead>
-                  <TableHead>
-                    <SortHeader label="Frist" sortKey="dueDate" />
-                  </TableHead>
-                  <TableHead>
-                    <SortHeader label="Verdi" sortKey="value" />
-                  </TableHead>
-                  <TableHead>
-                    <SortHeader label="Sannsynlighet" sortKey="probability" />
-                  </TableHead>
-                  <TableHead>
-                    <SortHeader label="Oppdatert" sortKey="updatedAt" />
-                  </TableHead>
+                  <TableHead>Fase</TableHead>
+                  <TableHead>Frist</TableHead>
+                  <TableHead>Verdi</TableHead>
+                  <TableHead>Sannsynlighet</TableHead>
+                  <TableHead>Oppdatert</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sortedOffers.map((offer) => (
+                {filteredOffers.map((offer) => (
                   <OfferRow key={offer.id} offer={offer} />
                 ))}
               </TableBody>
@@ -280,10 +224,14 @@ export default function OffersPage() {
 
         {/* Pagination info - Update to show filtered count */}
         {data && (
-          <div className="text-center text-sm text-muted-foreground">
-            Viser {filteredOffers.length} av {data.total ?? offers.length}{" "}
-            tilbud
-          </div>
+          <PaginationControls
+            currentPage={page}
+            totalPages={Math.ceil((data.total ?? 0) / pageSize)}
+            onPageChange={setPage}
+            pageSize={pageSize}
+            totalCount={data.total ?? 0}
+            entityName="tilbud"
+          />
         )}
       </div>
     </AppLayout>

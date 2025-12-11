@@ -9,7 +9,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
+import { Trash2, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { format } from "date-fns";
 import { nb } from "date-fns/locale";
 import { ProjectStatusBadge } from "@/components/projects/project-status-badge";
@@ -21,6 +21,10 @@ interface ProjectListTableProps {
   projects: DomainProjectDTO[];
   onProjectClick: (project: DomainProjectDTO) => void;
   onDeleteClick?: (project: DomainProjectDTO, e: React.MouseEvent) => void;
+  // Sort props
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+  onSort?: (key: string) => void;
 }
 
 export function ProjectListTable({
@@ -28,23 +32,57 @@ export function ProjectListTable({
   onProjectClick,
   onDeleteClick,
   compact = false,
+  sortBy,
+  sortOrder,
+  onSort,
 }: ProjectListTableProps & { compact?: boolean }) {
+  const SortButton = ({ column, label }: { column: string; label: string }) => {
+    if (!onSort) return <span>{label}</span>;
+    return (
+      <Button
+        variant="ghost"
+        size="sm"
+        className="-ml-3 h-8 data-[state=open]:bg-accent"
+        onClick={() => onSort(column)}
+      >
+        <span>{label}</span>
+        {sortBy === column ? (
+          sortOrder === "asc" ? (
+            <ArrowUp className="ml-2 h-4 w-4" />
+          ) : (
+            <ArrowDown className="ml-2 h-4 w-4" />
+          )
+        ) : (
+          <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />
+        )}
+      </Button>
+    );
+  };
+
   return (
     <div className="rounded-lg border">
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead>Nr.</TableHead>
-            <TableHead>Navn</TableHead>
-            <TableHead>Kunde</TableHead>
+            <TableHead>
+              <SortButton column="name" label="Navn" />
+            </TableHead>
+            <TableHead>
+              <SortButton column="customer_name" label="Kunde" />
+            </TableHead>
             <TableHead>Selskap</TableHead>
             <TableHead>Status</TableHead>
             {!compact && (
               <>
                 <TableHead>Prosjektleder</TableHead>
-                <TableHead>Budsjett</TableHead>
+                <TableHead>
+                  <SortButton column="budget" label="Budsjett" />
+                </TableHead>
                 <TableHead>Brukt</TableHead>
-                <TableHead>Startdato</TableHead>
+                <TableHead>
+                  <SortButton column="start_date" label="Startdato" />
+                </TableHead>
               </>
             )}
             {onDeleteClick && <TableHead className="w-[50px]"></TableHead>}

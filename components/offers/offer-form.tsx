@@ -301,7 +301,7 @@ export function OfferForm({
                 <FormLabel>Beskrivelse (valgfritt)</FormLabel>
                 <FormControl>
                   <Textarea
-                    placeholder="Beskriv tilbudet..."
+                    placeholder="Beskriv tilbudet. Husk at alt kan endres senere..."
                     className="resize-none"
                     {...field}
                   />

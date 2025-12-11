@@ -82,17 +82,14 @@
     --chart-5: 195 50% 50%;
     /* Accent teal */
     --radius: 0.5rem;
-    --sidebar-background: 210 55% 25%;
-    /* Straye navy */
-    --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 210 50% 60%;
-    /* Straye light blue */
-    --sidebar-primary-foreground: 210 55% 25%;
-    --sidebar-accent: 210 45% 35%;
-    /* Darker blue for hover */
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 210 45% 30%;
-    --sidebar-ring: 210 50% 60%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 210 55% 25%;
+    --sidebar-primary: 210 55% 25%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 210 20% 96%;
+    --sidebar-accent-foreground: 210 55% 25%;
+    --sidebar-border: 210 25% 90%;
+    --sidebar-ring: 210 55% 25%;
   }
 
   .dark {

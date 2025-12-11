@@ -31,7 +31,7 @@ export function useProjects(params?: Partial<ProjectsListParams>) {
     queryFn: async () => {
       const response = await api.projects.projectsList(params ?? {});
 
-      return response.data?.data || response.data || [];
+      return response.data;
     },
     enabled: isAuthenticated,
   });
