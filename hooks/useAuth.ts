@@ -1,7 +1,7 @@
 "use client";
 
 import { useMsal } from "@azure/msal-react";
-import { AccountInfo, InteractionRequiredAuthError } from "@azure/msal-browser";
+import { AccountInfo } from "@azure/msal-browser";
 import { loginRequest } from "@/lib/auth/msalConfig";
 import { User } from "@/types";
 import { useCallback, useMemo } from "react";
@@ -29,6 +29,10 @@ export interface AuthContext {
  * Automatically uses local auth or MSAL based on environment configuration
  * Provides user info, login, logout, and authentication state
  */
+
+// Module-level lock to prevent concurrent interactive requests
+let tokenRequestLock: Promise<string | null> | null = null;
+
 export function useAuth(): AuthContext {
   const msalContext = useMsal();
   const localAuthContext = useLocalAuth();
@@ -55,15 +59,35 @@ export function useAuth(): AuthContext {
   }, [account]);
 
   const msalLogin = useCallback(async () => {
+    // Prevent login if interaction is already in progress
+    if (inProgress !== "none") {
+      console.warn("Login aborted: Interaction in progress", inProgress);
+      return;
+    }
+
     try {
       await instance.loginRedirect(loginRequest);
     } catch (error) {
       console.error("Login error:", error);
-      throw error;
+
+      // Attempt to clear stuck interaction
+      if (
+        (error as any).errorCode === "interaction_in_progress" ||
+        (error as Error).message?.includes("interaction_in_progress")
+      ) {
+        try {
+          console.log("Attempting to clear stuck interaction...");
+          await instance.handleRedirectPromise();
+          // Optional: Auto-retry? For now, let's just clear it so next click works.
+        } catch (e) {
+          console.error("Failed to recover from interaction_in_progress:", e);
+        }
+      }
     }
-  }, [instance]);
+  }, [instance, inProgress]);
 
   const msalLogout = useCallback(async () => {
+    if (inProgress !== "none") return;
     try {
       await instance.logoutRedirect({
         account: account,
@@ -72,7 +96,7 @@ export function useAuth(): AuthContext {
       console.error("Logout error:", error);
       throw error;
     }
-  }, [instance, account]);
+  }, [instance, account, inProgress]);
 
   /**
    * Get access token for API calls (MSAL mode)
@@ -80,27 +104,32 @@ export function useAuth(): AuthContext {
   const getMsalAccessToken = useCallback(async (): Promise<string | null> => {
     if (!account) return null;
 
-    try {
-      // Try to get token silently first
-      const response = await instance.acquireTokenSilent({
-        ...loginRequest,
-        account: account,
-      });
-      return response.accessToken;
-    } catch (error) {
-      // If silent acquisition fails, try interactive
-      if (error instanceof InteractionRequiredAuthError) {
-        try {
-          const response = await instance.acquireTokenPopup(loginRequest);
-          return response.accessToken;
-        } catch (popupError) {
-          console.error("Failed to acquire token via popup:", popupError);
-          return null;
-        }
-      }
-      console.error("Failed to acquire token silently:", error);
-      return null;
+    // If there is an active token request, wait for it
+    if (tokenRequestLock) {
+      return tokenRequestLock;
     }
+
+    const request = async () => {
+      try {
+        // Try to get token silently first
+        const response = await instance.acquireTokenSilent({
+          ...loginRequest,
+          account: account,
+        });
+        return response.accessToken;
+      } catch (error) {
+        console.error("Failed to acquire token silently:", error);
+        // Do not automatically trigger popup, as it disrupts UX and can cause "interaction in progress" loops.
+        // If the user needs to login, the app should handle the 401/null token.
+        return null;
+      }
+    };
+
+    tokenRequestLock = request().finally(() => {
+      tokenRequestLock = null;
+    });
+
+    return tokenRequestLock;
   }, [instance, account]);
 
   /**
