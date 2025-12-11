@@ -34,7 +34,7 @@ import {
   ArrowDown,
   ArrowUpDown,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+
 import type { DomainCustomerDTO } from "@/lib/.generated/data-contracts";
 import { useState } from "react";
 import { AddCustomerModal } from "@/components/customers/add-customer-modal";

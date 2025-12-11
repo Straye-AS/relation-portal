@@ -42,7 +42,6 @@ import { OfferStatusBadge } from "@/components/offers/offer-status-badge";
 import Link from "next/link";
 import {
   ArrowLeft,
-  Plus,
   Link as LinkIcon,
   Check,
   ChevronDown,
