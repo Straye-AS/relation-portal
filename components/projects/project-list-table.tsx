@@ -10,8 +10,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Trash2, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
-import { format } from "date-fns";
-import { nb } from "date-fns/locale";
+
 import { ProjectStatusBadge } from "@/components/projects/project-status-badge";
 import { NewBadge } from "@/components/ui/new-badge";
 import { CompanyBadge } from "@/components/ui/company-badge";
@@ -79,10 +78,7 @@ export function ProjectListTable({
                 <TableHead>
                   <SortButton column="budget" label="Budsjett" />
                 </TableHead>
-                <TableHead>Brukt</TableHead>
-                <TableHead>
-                  <SortButton column="start_date" label="Startdato" />
-                </TableHead>
+                <TableHead>Margin</TableHead>
               </>
             )}
             {onDeleteClick && <TableHead className="w-[50px]"></TableHead>}
@@ -90,9 +86,11 @@ export function ProjectListTable({
         </TableHeader>
         <TableBody>
           {projects.map((project) => {
-            const budget = project.budget ?? 0;
+            const budget = project.value ?? 0;
             const spent = project.spent ?? 0;
-            const spentPercentage = budget > 0 ? (spent / budget) * 100 : 0;
+            const margin = budget - spent;
+            const marginPercentage = budget > 0 ? margin / budget : 0;
+
             return (
               <TableRow
                 key={project.id}
@@ -118,7 +116,11 @@ export function ProjectListTable({
                 {!compact && (
                   <>
                     <TableCell className="whitespace-nowrap">
-                      {project.managerName}
+                      {project.managerName || (
+                        <span className="italic text-muted-foreground">
+                          Ikke satt
+                        </span>
+                      )}
                     </TableCell>
                     <TableCell className="whitespace-nowrap">
                       {new Intl.NumberFormat("nb-NO", {
@@ -128,39 +130,18 @@ export function ProjectListTable({
                       }).format(budget)}
                     </TableCell>
                     <TableCell>
-                      <div className="flex flex-col gap-1">
-                        <span className="text-sm">
-                          {new Intl.NumberFormat("nb-NO", {
-                            style: "currency",
-                            currency: "NOK",
-                            maximumFractionDigits: 0,
-                            minimumFractionDigits: 0,
-                          }).format(spent)}
-                        </span>
-                        <div className="h-2 w-full max-w-[100px] rounded-full bg-muted">
-                          <div
-                            className={`h-2 rounded-full ${
-                              spentPercentage > 90
-                                ? "bg-red-500"
-                                : spentPercentage > 75
-                                  ? "bg-orange-500"
-                                  : "bg-green-500"
-                            }`}
-                            style={{
-                              width: `${Math.min(spentPercentage, 100)}%`,
-                            }}
-                          />
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {format(
-                        new Date(project.startDate ?? new Date().toISOString()),
-                        "dd.MM.yyyy",
-                        {
-                          locale: nb,
-                        }
-                      )}
+                      <span
+                        className={`font-medium ${
+                          marginPercentage < 0
+                            ? "text-destructive"
+                            : "text-green-600"
+                        }`}
+                      >
+                        {new Intl.NumberFormat("nb-NO", {
+                          style: "percent",
+                          maximumFractionDigits: 1,
+                        }).format(marginPercentage)}
+                      </span>
                     </TableCell>
                   </>
                 )}

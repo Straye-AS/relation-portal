@@ -23,8 +23,7 @@ import type {
   DomainUpdateOfferProjectRequest,
   DomainUpdateOfferDescriptionRequest,
   DomainUpdateOfferDueDateRequest,
-  DomainUpdateOfferExternalReferenceRequest,
-  DomainUpdateOfferCustomerHasWonProjectRequest,
+  DomainUpdateOfferCustomerRequest,
   DomainOfferDTO,
 } from "@/lib/.generated/data-contracts";
 
@@ -42,7 +41,7 @@ export function useOffers(
   return useQuery({
     queryKey: ["offers", params, selectedCompanyId],
     queryFn: async () => {
-      const response = await api.offers.offersList(params ?? {});
+      const response = await api.offers.offersList((params as any) ?? {});
       return response.data;
     },
     enabled: isAuthenticated && (options?.enabled ?? true),
@@ -668,6 +667,36 @@ export function useUpdateOfferExternalReference() {
       } else {
         toast.error("Kunne ikke oppdatere ekstern referanse");
       }
+    },
+  });
+}
+
+/**
+ * Update offer customer
+ */
+export function useUpdateOfferCustomer() {
+  const queryClient = useQueryClient();
+  const api = useApi();
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: DomainUpdateOfferCustomerRequest;
+    }) => {
+      const response = await api.offers.customerUpdate({ id }, data);
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["offers"] });
+      queryClient.invalidateQueries({ queryKey: ["offers", variables.id] });
+      toast.success("Kunde oppdatert");
+    },
+    onError: (error: Error) => {
+      console.error("Failed to update customer:", error);
+      toast.error("Kunne ikke oppdatere kunde");
     },
   });
 }

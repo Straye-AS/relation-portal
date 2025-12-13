@@ -67,7 +67,7 @@ export function PaginationControls({
     return pages;
   };
 
-  if (totalPages <= 1) return null;
+  // if (totalPages <= 1) return null;
 
   return (
     <div className="flex flex-col items-center gap-4">
@@ -129,9 +129,12 @@ export function PaginationControls({
 
       {pageSize && totalCount !== undefined && (
         <div className="text-center text-sm text-muted-foreground">
-          Viser {(currentPage - 1) * pageSize + 1}-
-          {Math.min(currentPage * pageSize, totalCount)} av {totalCount}{" "}
-          {entityName}
+          {totalCount === 0
+            ? `Viser 0 ${entityName}`
+            : `Viser ${(currentPage - 1) * pageSize + 1}-${Math.min(
+                currentPage * pageSize,
+                totalCount
+              )} av ${totalCount} ${entityName}`}
         </div>
       )}
     </div>

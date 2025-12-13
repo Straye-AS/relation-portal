@@ -27,7 +27,7 @@ import { DeleteConfirmationModal } from "@/components/ui/delete-confirmation-mod
 export default function RequestsPage() {
   // Fetch ONLY drafts
   const { data, isLoading } = useOffers({
-    phase: DomainOfferPhase.OfferPhaseDraft,
+    phase: DomainOfferPhase.OfferPhaseDraft as any,
   });
   const deleteOffer = useDeleteOffer();
 

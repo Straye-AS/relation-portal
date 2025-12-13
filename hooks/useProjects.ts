@@ -15,6 +15,9 @@ import { useCompanyStore } from "@/store/company-store";
 import type {
   DomainCreateProjectRequest,
   DomainUpdateProjectRequest,
+  DomainUpdateProjectNameRequest,
+  DomainUpdateProjectDescriptionRequest,
+  DomainUpdateProjectManagerRequest,
   ProjectsListParams,
 } from "@/lib/.generated/data-contracts";
 
@@ -29,7 +32,7 @@ export function useProjects(params?: Partial<ProjectsListParams>) {
   return useQuery({
     queryKey: ["projects", params, selectedCompanyId],
     queryFn: async () => {
-      const response = await api.projects.projectsList(params ?? {});
+      const response = await api.projects.projectsList((params as any) ?? {});
 
       return response.data;
     },
@@ -127,6 +130,66 @@ export function useUpdateProject() {
 }
 
 /**
+ * Update project name
+ */
+export function useUpdateProjectName() {
+  const queryClient = useQueryClient();
+  const api = useApi();
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: DomainUpdateProjectNameRequest;
+    }) => {
+      const response = await api.projects.nameUpdate({ id }, data);
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["projects", variables.id] });
+      toast.success("Prosjektnavn oppdatert");
+    },
+    onError: (error: Error) => {
+      console.error("Failed to update project name:", error);
+      toast.error("Kunne ikke oppdatere prosjektnavn");
+    },
+  });
+}
+
+/**
+ * Update project description
+ */
+export function useUpdateProjectDescription() {
+  const queryClient = useQueryClient();
+  const api = useApi();
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: DomainUpdateProjectDescriptionRequest;
+    }) => {
+      const response = await api.projects.descriptionUpdate({ id }, data);
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["projects", variables.id] });
+      toast.success("Beskrivelse oppdatert");
+    },
+    onError: (error: Error) => {
+      console.error("Failed to update description:", error);
+      toast.error("Kunne ikke oppdatere beskrivelse");
+    },
+  });
+}
+
+/**
  * Delete a project
  */
 export function useDeleteProject() {
@@ -205,6 +268,67 @@ export function useInheritProjectBudget() {
     onError: (error: Error) => {
       console.error("Failed to inherit budget:", error);
       toast.error("Kunne ikke arve budsjett");
+    },
+  });
+}
+
+/**
+ * Resync project values from best offer
+ */
+export function useResyncProjectFromOffer() {
+  const queryClient = useQueryClient();
+  const api = useApi();
+
+  return useMutation({
+    mutationFn: async ({ id }: { id: string }) => {
+      const response = await api.projects.resyncFromOfferCreate({ id });
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["projects", variables.id] });
+      queryClient.invalidateQueries({
+        queryKey: ["projects", variables.id, "budget"],
+      });
+      toast.success("Prosjekt oppdatert fra beste tilbud");
+    },
+    onError: (error: any) => {
+      console.error("Failed to resync project:", error);
+      if (error.status === 403 || error.response?.status === 403) {
+        toast.error("Du har ikke tilgang. Kun prosjektleder kan gjøre dette.");
+      } else {
+        toast.error("Kunne ikke oppdatere prosjekt fra tilbud");
+      }
+    },
+  });
+}
+
+/**
+ * Update project manager
+ */
+export function useUpdateProjectManager() {
+  const queryClient = useQueryClient();
+  const api = useApi();
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: DomainUpdateProjectManagerRequest;
+    }) => {
+      const response = await api.projects.managerUpdate({ id }, data);
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["projects", variables.id] });
+      toast.success("Prosjektleder oppdatert");
+    },
+    onError: (error: Error) => {
+      console.error("Failed to update project manager:", error);
+      toast.error("Kunne ikke oppdatere prosjektleder");
     },
   });
 }

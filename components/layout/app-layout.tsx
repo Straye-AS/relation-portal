@@ -13,8 +13,15 @@ import {
   getAuthModePreference,
 } from "@/lib/auth/localAuthConfig";
 import Image from "next/image";
+import { cn } from "@/lib/utils";
 
-export function AppLayout({ children }: { children: React.ReactNode }) {
+export function AppLayout({
+  children,
+  disableScroll = false,
+}: {
+  children: React.ReactNode;
+  disableScroll?: boolean;
+}) {
   const { isAuthenticated, isLoading, login } = useAuth();
 
   // Ensure user data is loaded and company store is updated
@@ -84,14 +91,23 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="fixed inset-0 flex overflow-hidden">
       <AppSidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
         <AppHeader />
-        <main className="flex-1 overflow-y-auto bg-background">
-          <div className="mx-auto w-full max-w-[1920px] px-4 py-3 md:px-8">
-            {children}
-          </div>
+        <main
+          className={cn(
+            "flex-1 bg-background",
+            disableScroll ? "overflow-hidden" : "overflow-y-auto"
+          )}
+        >
+          {disableScroll ? (
+            children
+          ) : (
+            <div className="mx-auto w-full max-w-[1920px] px-4 py-3 md:px-8">
+              {children}
+            </div>
+          )}
         </main>
       </div>
     </div>

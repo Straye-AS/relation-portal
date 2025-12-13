@@ -23,11 +23,7 @@ import { phaseLabels } from "@/components/dashboard/pipeline-overview";
 import { OfferListModal } from "@/components/dashboard/offer-list-modal";
 import { useOffers } from "@/hooks/useOffers";
 
-import {
-  DomainOfferPhase,
-  Offer as DomainOfferDTO,
-  DashboardMetrics,
-} from "@/lib/api/types";
+import { Offer as DomainOfferDTO, DashboardMetrics } from "@/lib/api/types";
 
 export default function DashboardPage() {
   const { userCompany } = useCompanyStore();
@@ -38,10 +34,21 @@ export default function DashboardPage() {
   const metrics = rawMetrics as unknown as DashboardMetrics;
   const { refetch: refetchUser } = useCurrentUser();
   const [selectedPhase, setSelectedPhase] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const pageSize = 20;
+
+  // Reset page when phase changes
+  useEffect(() => {
+    setPage(1);
+  }, [selectedPhase]);
 
   // Fetch offers for the selected phase
   const { data: offersData } = useOffers(
-    { phase: selectedPhase as DomainOfferPhase },
+    {
+      phase: selectedPhase as any,
+      page,
+      pageSize,
+    },
     { enabled: !!selectedPhase }
   );
 
@@ -49,6 +56,8 @@ export default function DashboardPage() {
     () => offersData?.data ?? [],
     [offersData?.data]
   );
+
+  const totalOffers = offersData?.total ?? 0;
 
   // Fetch projects for order reserve calculation
   // "Ordrereserve" = Sum(budget - spent) for all "won" (active/planning) projects
@@ -154,8 +163,7 @@ export default function DashboardPage() {
         <div className="grid gap-4 pb-6 md:grid-cols-2">
           <RecentOffersCard
             offers={(metrics.recentOffers ?? []).filter(
-              (o: DomainOfferDTO) =>
-                o.phase !== DomainOfferPhase.OfferPhaseDraft
+              (o: DomainOfferDTO) => o.phase !== "draft"
             )}
           />
           <RecentProjectsCard projects={metrics.recentProjects ?? []} />
@@ -181,6 +189,11 @@ export default function DashboardPage() {
         onClose={() => setSelectedPhase(null)}
         title={selectedPhase ? phaseLabels[selectedPhase] || selectedPhase : ""}
         offers={phaseOffers}
+        page={page}
+        onPageChange={setPage}
+        totalCount={totalOffers}
+        pageSize={pageSize}
+        phase={selectedPhase || undefined}
       />
     </AppLayout>
   );

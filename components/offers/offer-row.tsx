@@ -21,6 +21,11 @@ export function OfferRow({ offer }: OfferRowProps) {
     router.push(`/offers/${offer.id}`);
   };
 
+  const value = offer.value ?? 0;
+  const cost = offer.cost ?? 0;
+  const margin = value - cost;
+  const marginRatio = value > 0 ? margin / value : 0;
+
   return (
     <TableRow
       className="cursor-pointer hover:bg-muted/50"
@@ -59,17 +64,17 @@ export function OfferRow({ offer }: OfferRowProps) {
         }).format(offer.value ?? 0)}
       </TableCell>
       <TableCell>
-        <div className="flex items-center gap-2">
-          <div className="h-2 w-full max-w-[100px] rounded-full bg-muted">
-            <div
-              className="h-2 rounded-full bg-primary"
-              style={{ width: `${offer.probability ?? 0}%` }}
-            />
-          </div>
-          <span className="w-[40px] text-right text-sm">
-            {offer.probability ?? 0}%
-          </span>
-        </div>
+        <span
+          className={cn(
+            "font-medium",
+            marginRatio < 0 ? "text-destructive" : "text-green-600"
+          )}
+        >
+          {new Intl.NumberFormat("nb-NO", {
+            style: "percent",
+            maximumFractionDigits: 1,
+          }).format(marginRatio)}
+        </span>
       </TableCell>
       <TableCell>
         {offer.updatedAt

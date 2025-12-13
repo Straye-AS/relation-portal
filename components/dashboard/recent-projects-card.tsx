@@ -2,10 +2,9 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { DomainProjectDTO } from "@/lib/.generated/data-contracts";
+import { formatRelativeDate } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
-import { format } from "date-fns";
-import { nb } from "date-fns/locale";
 import { Briefcase } from "lucide-react";
 
 interface RecentProjectsCardProps {
@@ -89,11 +88,7 @@ export function RecentProjectsCard({ projects }: RecentProjectsCardProps) {
                     -
                   </div>
                   <div className="col-span-3 flex items-center justify-end text-xs text-muted-foreground sm:col-span-2">
-                    {project.updatedAt
-                      ? format(new Date(project.updatedAt), "d. MMM", {
-                          locale: nb,
-                        })
-                      : "-"}
+                    {formatRelativeDate(project.updatedAt)}
                   </div>
                 </div>
               ))}

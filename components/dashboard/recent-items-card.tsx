@@ -1,15 +1,13 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatRelativeDate } from "@/lib/utils";
 import type {
   DomainOfferDTO,
   DomainProjectDTO,
 } from "@/lib/.generated/data-contracts";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
-import { format } from "date-fns";
-import { nb } from "date-fns/locale";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileText, Briefcase } from "lucide-react";
 
@@ -91,11 +89,7 @@ export function RecentItemsCard({ offers, projects }: RecentItemsCardProps) {
                         {formatCurrency(offer.value ?? 0)}
                       </div>
                       <div className="col-span-2 flex items-center justify-end text-xs text-muted-foreground">
-                        {offer.updatedAt
-                          ? format(new Date(offer.updatedAt), "d. MMM", {
-                              locale: nb,
-                            })
-                          : "-"}
+                        {formatRelativeDate(offer.updatedAt)}
                       </div>
                     </div>
                   ))}
@@ -146,14 +140,10 @@ export function RecentItemsCard({ offers, projects }: RecentItemsCardProps) {
                         {/* If DomainProjectDTO has budget, we show it. */}
                         {/* Assuming it does for now as activeProjects uses it. */}
                         {/* Actually, formatCurrency(project.budget || 0) */}
-                        {project.budget ? formatCurrency(project.budget) : "-"}
+                        {project.value ? formatCurrency(project.value) : "-"}
                       </div>
                       <div className="col-span-2 flex items-center justify-end text-xs text-muted-foreground">
-                        {project.updatedAt
-                          ? format(new Date(project.updatedAt), "d. MMM", {
-                              locale: nb,
-                            })
-                          : "-"}
+                        {formatRelativeDate(project.updatedAt)}
                       </div>
                     </div>
                   ))}

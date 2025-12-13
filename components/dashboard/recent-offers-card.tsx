@@ -1,12 +1,10 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatRelativeDate } from "@/lib/utils";
 import type { DomainOfferDTO } from "@/lib/.generated/data-contracts";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
-import { format } from "date-fns";
-import { nb } from "date-fns/locale";
 import { FileText } from "lucide-react";
 import { phaseLabels, phaseColors } from "./pipeline-overview";
 
@@ -59,11 +57,7 @@ export function RecentOffersCard({ offers }: RecentOffersCardProps) {
                     {formatCurrency(offer.value ?? 0)}
                   </div>
                   <div className="col-span-3 flex items-center justify-end text-xs text-muted-foreground sm:col-span-2">
-                    {offer.updatedAt
-                      ? format(new Date(offer.updatedAt), "d. MMM", {
-                          locale: nb,
-                        })
-                      : "-"}
+                    {formatRelativeDate(offer.updatedAt)}
                   </div>
                 </div>
               ))}

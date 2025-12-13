@@ -11,6 +11,15 @@ import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { DeleteConfirmationModal } from "@/components/ui/delete-confirmation-modal";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { X } from "lucide-react";
+import { PROJECT_STATUS_LABELS } from "@/lib/api/types";
 
 import { ProjectListTable } from "@/components/projects/project-list-table";
 import { PaginationControls } from "@/components/pagination-controls";
@@ -22,12 +31,14 @@ export default function ProjectsPage() {
 
   const [sortBy, setSortBy] = useState<string>("created_at");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   const { data, isLoading } = useProjects({
     page,
     pageSize,
     sortBy: sortBy as any,
     sortOrder: sortOrder as any,
+    status: statusFilter === "all" ? undefined : (statusFilter as any),
   });
 
   const deleteProject = useDeleteProject();
@@ -65,12 +76,42 @@ export default function ProjectsPage() {
   return (
     <AppLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Prosjekter</h1>
-            <p className="text-muted-foreground">
-              Oversikt over alle prosjekter og deres fremdrift
-            </p>
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+            {/* Status Filter */}
+            <Select
+              value={statusFilter}
+              onValueChange={(val) => {
+                setStatusFilter(val);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Alle statuser</SelectItem>
+                {Object.entries(PROJECT_STATUS_LABELS).map(([key, label]) => (
+                  <SelectItem key={key} value={key}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {statusFilter !== "all" && (
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setStatusFilter("all");
+                  setPage(1);
+                }}
+                className="px-2 lg:px-3"
+              >
+                Nullstill
+                <X className="ml-2 h-4 w-4" />
+              </Button>
+            )}
           </div>
           <Link href="/projects/new">
             <Button>
@@ -84,10 +125,18 @@ export default function ProjectsPage() {
           <TableSkeleton rows={10} columns={7} />
         ) : !projects || projects.length === 0 ? (
           <div className="rounded-lg border bg-muted/20 py-12 text-center">
-            <p className="text-muted-foreground">Ingen prosjekter funnet</p>
-            <Link href="/projects/new">
-              <Button className="mt-4">Opprett ditt første prosjekt</Button>
-            </Link>
+            {statusFilter !== "all" ? (
+              <p className="text-muted-foreground">
+                Ingen prosjekter med valgt status
+              </p>
+            ) : (
+              <>
+                <p className="text-muted-foreground">Ingen prosjekter funnet</p>
+                <Link href="/projects/new">
+                  <Button className="mt-4">Opprett ditt første prosjekt</Button>
+                </Link>
+              </>
+            )}
           </div>
         ) : (
           <ProjectListTable

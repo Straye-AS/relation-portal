@@ -1,10 +1,22 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { toast } from "sonner";
-import { differenceInDays, parseISO } from "date-fns";
+import { differenceInDays, parseISO, isToday, format } from "date-fns";
+import { nb } from "date-fns/locale";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
+}
+
+export function formatRelativeDate(
+  dateString: string | null | undefined
+): string {
+  if (!dateString) return "-";
+  const date = new Date(dateString);
+  if (isToday(date)) {
+    return format(date, "HH:mm");
+  }
+  return format(date, "d. MMM", { locale: nb });
 }
 
 export function getDueDateColor(dueDate?: string | null): string {

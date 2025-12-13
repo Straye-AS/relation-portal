@@ -16,6 +16,8 @@ import type {
   DomainCreateCustomerRequest,
   DomainUpdateCustomerRequest,
   CustomersListParams,
+  OffersListParams,
+  ProjectsListParams,
 } from "@/lib/.generated/data-contracts";
 
 /**
@@ -111,6 +113,56 @@ export function useCustomerContacts(customerId: string) {
 }
 
 /**
+ * Fetch offers for a customer
+ */
+export function useCustomerOffers(
+  customerId: string,
+  params?: Partial<OffersListParams>,
+  options?: { enabled?: boolean }
+) {
+  const api = useApi();
+  const { isAuthenticated } = useAuth();
+  const { selectedCompanyId } = useCompanyStore();
+
+  return useQuery({
+    queryKey: ["customers", customerId, "offers", params, selectedCompanyId],
+    queryFn: async () => {
+      const response = await api.customers.offersList({
+        id: customerId,
+        ...params,
+      });
+      return response.data;
+    },
+    enabled: !!customerId && isAuthenticated && (options?.enabled ?? true),
+  });
+}
+
+/**
+ * Fetch projects for a customer
+ */
+export function useCustomerProjects(
+  customerId: string,
+  params?: Partial<ProjectsListParams>,
+  options?: { enabled?: boolean }
+) {
+  const api = useApi();
+  const { isAuthenticated } = useAuth();
+  const { selectedCompanyId } = useCompanyStore();
+
+  return useQuery({
+    queryKey: ["customers", customerId, "projects", params, selectedCompanyId],
+    queryFn: async () => {
+      const response = await api.customers.projectsList({
+        id: customerId,
+        ...params,
+      });
+      return response.data;
+    },
+    enabled: !!customerId && isAuthenticated && (options?.enabled ?? true),
+  });
+}
+
+/**
  * Create a new customer
  */
 export function useCreateCustomer() {
@@ -126,9 +178,10 @@ export function useCreateCustomer() {
       queryClient.invalidateQueries({ queryKey: ["customers"] });
       toast.success("Kunde opprettet");
     },
-    onError: (error: any) => {
+    onError: (error) => {
       console.error("Failed to create customer:", error);
-      if (error.status === 409 || error.response?.status === 409) {
+      const err = error as { status?: number; response?: { status?: number } };
+      if (err.status === 409 || err.response?.status === 409) {
         toast.error("Kunden eksisterer allerede i dette selskapet");
       } else {
         toast.error("Kunne ikke opprette kunde");

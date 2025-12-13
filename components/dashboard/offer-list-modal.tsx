@@ -19,6 +19,7 @@ import { formatDistanceToNow } from "date-fns";
 import { nb } from "date-fns/locale";
 import { DomainOfferDTO } from "@/lib/.generated/data-contracts";
 import { OfferStatusBadge } from "@/components/offers/offer-status-badge";
+import { PaginationControls } from "@/components/pagination-controls";
 import { NewBadge } from "@/components/ui/new-badge";
 
 interface OfferListModalProps {
@@ -26,6 +27,11 @@ interface OfferListModalProps {
   onClose: () => void;
   title: string;
   offers: DomainOfferDTO[];
+  page: number;
+  onPageChange: (page: number) => void;
+  totalCount: number;
+  pageSize: number;
+  phase?: string;
 }
 
 export function OfferListModal({
@@ -33,6 +39,11 @@ export function OfferListModal({
   onClose,
   title,
   offers,
+  page,
+  onPageChange,
+  totalCount,
+  pageSize,
+  phase,
 }: OfferListModalProps) {
   const router = useRouter();
 
@@ -40,7 +51,9 @@ export function OfferListModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="flex max-h-[80vh] max-w-7xl flex-col">
         <DialogHeader>
-          <DialogTitle>Tilbud - {title}</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            Tilbud {phase ? <OfferStatusBadge phase={phase} /> : `- ${title}`}
+          </DialogTitle>
         </DialogHeader>
         <div className="min-h-0 flex-1 overflow-auto">
           <Table>
@@ -121,6 +134,17 @@ export function OfferListModal({
               )}
             </TableBody>
           </Table>
+        </div>
+
+        <div className="mt-4">
+          <PaginationControls
+            currentPage={page}
+            totalPages={Math.ceil(totalCount / pageSize)}
+            onPageChange={onPageChange}
+            pageSize={pageSize}
+            totalCount={totalCount}
+            entityName="tilbud"
+          />
         </div>
       </DialogContent>
     </Dialog>

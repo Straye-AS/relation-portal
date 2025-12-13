@@ -1,9 +1,12 @@
 "use client";
 
+import { useState, use } from "react";
 import { AppLayout } from "@/components/layout/app-layout";
 import {
-  useCustomer,
+  useCustomerWithDetails,
   useCustomerContacts,
+  useCustomerOffers,
+  useCustomerProjects,
   useUpdateCustomer,
   useUpdateCustomerAddress,
   useUpdateCustomerPostalCode,
@@ -11,14 +14,13 @@ import {
 } from "@/hooks/useCustomers";
 import { InlineEdit } from "@/components/ui/inline-edit";
 import { toast } from "sonner";
-import { useOffers } from "@/hooks/useOffers";
 import { OfferStatusBadge } from "@/components/offers/offer-status-badge";
 import { ProjectStatusBadge } from "@/components/projects/project-status-badge";
-import { useProjects } from "@/hooks/useProjects";
 import type {
   DomainOfferDTO,
   DomainProjectDTO,
 } from "@/lib/.generated/data-contracts";
+
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -38,8 +40,9 @@ import {
   MapPin,
   Building2,
   Users,
+  Banknote,
 } from "lucide-react";
-import { use } from "react";
+import { format } from "date-fns";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useRouter } from "next/navigation";
@@ -60,12 +63,35 @@ export default function CustomerDetailPage({
 }) {
   const router = useRouter();
   const resolvedParams = use(params);
-  const { data: customer, isLoading: isLoadingCustomer } = useCustomer(
-    resolvedParams.id
-  );
+  /* State for active tab to control lazy fetching */
+  const [activeTab, setActiveTab] = useState("overview");
+
+  const { data: customer, isLoading: isLoadingCustomer } =
+    useCustomerWithDetails(resolvedParams.id);
   const { data: contactsData } = useCustomerContacts(resolvedParams.id);
-  const { data: offers } = useOffers();
-  const { data: projects } = useProjects();
+
+  // Lazy fetch projects and offers only when their tabs are active
+  const { data: offersData, isLoading: isLoadingOffers } = useCustomerOffers(
+    resolvedParams.id,
+    {
+      pageSize: 50,
+      sortOrder: "desc" as any,
+      sortBy: "updatedAt" as any,
+    },
+    { enabled: activeTab === "offers" }
+  );
+
+  const { data: projectsData, isLoading: isLoadingProjects } =
+    useCustomerProjects(
+      resolvedParams.id,
+      {
+        pageSize: 50,
+        sortOrder: "desc" as any,
+        sortBy: "updatedAt" as any,
+      },
+      { enabled: activeTab === "projects" }
+    );
+
   const updateCustomer = useUpdateCustomer();
   const updateAddress = useUpdateCustomerAddress();
   const updatePostalCode = useUpdateCustomerPostalCode();
@@ -74,29 +100,29 @@ export default function CustomerDetailPage({
   // Cast contactsData to local interface
   const contacts = (contactsData as unknown as CustomerContact[]) || [];
 
-  const customerOffers = (offers?.data?.filter(
-    (o: DomainOfferDTO) => o.customerId === resolvedParams.id
-  ) || []) as DomainOfferDTO[];
+  const tabOffers = (offersData?.data || []) as DomainOfferDTO[];
+  const tabProjects = (projectsData?.data || []) as DomainProjectDTO[];
 
-  const customerProjects = (projects?.data?.filter(
-    (p: DomainProjectDTO) => p.customerId === resolvedParams.id
-  ) || []) as DomainProjectDTO[];
+  // Calculate economics using data available on the customer object for the overview
+  // We use customer.activeProjects for project stats as it's included in the detail view
+  const activeProjectsList = customer?.activeProjects || [];
 
-  // Calculate economics
-  const totalOfferValue = customerOffers.reduce(
-    (acc: number, curr: DomainOfferDTO) => acc + (curr.value || 0),
+  const activeProjectsValue = activeProjectsList.reduce(
+    (acc: number, curr: DomainProjectDTO) => acc + (curr.value || 0),
     0
   );
-  const activeProjectsValue = customerProjects.reduce(
-    (acc: number, curr: DomainProjectDTO) => acc + (curr.budget || 0),
-    0
-  );
-  const wonOffersCount = customerOffers.filter(
-    (o: DomainOfferDTO) => o.phase === "won"
-  ).length;
-  const activeProjectsCount = customerProjects.filter(
-    (p: DomainProjectDTO) => p.status === "active"
-  ).length;
+
+  const activeProjectsCount =
+    customer?.stats?.activeProjects || activeProjectsList.length || 0;
+
+  // For offers, we might not have the full list in 'overview', so we rely on stats or fallback
+  // Note: 'wonOffersCount' and 'totalOfferValue' might be approximate if we rely only on stats
+  const wonOffersCount = customer?.stats?.activeOffers || 0; // The stats might only show 'active', but closest we have
+
+  // Note: totalValue in stats is usually won/invoiced value.
+  // We'll use totalValue from stats as a proxy for specific pipeline values if needed,
+  // or show 0/placeholder if we strictly don't fetch offers.
+  const totalOfferValue = customer?.stats?.totalValue || 0;
 
   if (isLoadingCustomer) {
     return (
@@ -154,7 +180,9 @@ export default function CustomerDetailPage({
                 </h1>
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Badge variant="outline" className="font-normal">
-                    Org.nr: {customer.orgNumber}
+                    {customer.orgNumber
+                      ? `Org.nr: ${customer.orgNumber}`
+                      : "Privatperson"}
                   </Badge>
                   {customer.city && (
                     <span className="flex items-center gap-1 text-sm">
@@ -183,7 +211,7 @@ export default function CustomerDetailPage({
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-4">
                 <div className="rounded-lg border bg-card p-4 shadow-sm transition-all hover:shadow-md">
                   <div className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <div className="text-sm font-medium text-muted-foreground">
@@ -218,9 +246,9 @@ export default function CustomerDetailPage({
                 <div className="rounded-lg border bg-card p-4 shadow-sm transition-all hover:shadow-md">
                   <div className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <div className="text-sm font-medium text-muted-foreground">
-                      Total tilbudsverdi
+                      Totalverdi
                     </div>
-                    <div className="font-bold text-muted-foreground">NOK</div>
+                    <Banknote className="h-4 w-4 text-muted-foreground" />
                   </div>
                   <div className="mt-2 text-2xl font-bold">
                     {new Intl.NumberFormat("nb-NO", {
@@ -241,10 +269,10 @@ export default function CustomerDetailPage({
                     <Mail className="h-4 w-4 text-muted-foreground" />
                   </div>
                   <div className="mt-2 text-2xl font-bold">
-                    {customerOffers.length}
+                    {customer.stats?.activeOffers || 0}
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    Totalt opprettet
+                    Aktive tilbud
                   </div>
                 </div>
               </div>
@@ -261,7 +289,7 @@ export default function CustomerDetailPage({
                 <div className="flex h-9 w-9 items-center justify-center rounded-full bg-muted">
                   <Mail className="h-4 w-4 text-foreground" />
                 </div>
-                <div className="flex flex-col gap-1 overflow-hidden">
+                <div className="flex min-w-0 flex-1 flex-col gap-2">
                   <p className="text-sm font-medium leading-none">E-post</p>
                   <InlineEdit
                     value={customer.email || ""}
@@ -290,7 +318,7 @@ export default function CustomerDetailPage({
                 <div className="flex h-9 w-9 items-center justify-center rounded-full bg-muted">
                   <Phone className="h-4 w-4 text-foreground" />
                 </div>
-                <div>
+                <div className="flex min-w-0 flex-1 flex-col gap-2">
                   <p className="text-sm font-medium leading-none">Telefon</p>
                   <InlineEdit
                     value={customer.phone || ""}
@@ -320,7 +348,7 @@ export default function CustomerDetailPage({
                 <div className="flex h-9 w-9 items-center justify-center rounded-full bg-muted">
                   <MapPin className="h-4 w-4 text-foreground" />
                 </div>
-                <div>
+                <div className="flex min-w-0 flex-1 flex-col gap-2">
                   <p className="text-sm font-medium leading-none">Adresse</p>
                   <div className="flex flex-col gap-1 text-sm text-muted-foreground">
                     <InlineEdit
@@ -368,19 +396,42 @@ export default function CustomerDetailPage({
                   </div>
                 </div>
               </div>
+
+              <div className="border-t pt-4 text-xs text-muted-foreground">
+                <div className="flex justify-between">
+                  <span>Opprettet:</span>
+                  <span>
+                    {customer.createdAt
+                      ? format(new Date(customer.createdAt), "dd.MM.yyyy HH:mm")
+                      : "Ukjent"}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Sist oppdatert:</span>
+                  <span>
+                    {customer.updatedAt
+                      ? format(new Date(customer.updatedAt), "dd.MM.yyyy HH:mm")
+                      : "Ukjent"}
+                  </span>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
 
         {/* Tabs Section */}
-        <Tabs defaultValue="overview" className="space-y-4">
+        <Tabs
+          defaultValue="overview"
+          className="space-y-4"
+          onValueChange={setActiveTab}
+        >
           <TabsList>
             <TabsTrigger value="overview">Oversikt</TabsTrigger>
             <TabsTrigger value="projects">
-              Prosjekter ({customerProjects.length})
+              Prosjekter ({customer.stats?.activeProjects ?? "?"})
             </TabsTrigger>
             <TabsTrigger value="offers">
-              Tilbud ({customerOffers.length})
+              Tilbud ({customer.stats?.activeOffers ?? "?"})
             </TabsTrigger>
             <TabsTrigger value="contacts">
               Kontakter ({contacts.length})
@@ -470,13 +521,17 @@ export default function CustomerDetailPage({
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {customerProjects.length === 0 ? (
+                {isLoadingProjects ? (
+                  <div className="py-8 text-center text-muted-foreground">
+                    Laster prosjekter...
+                  </div>
+                ) : tabProjects.length === 0 ? (
                   <p className="py-8 text-center text-muted-foreground">
                     Ingen prosjekter registrert.
                   </p>
                 ) : (
                   <div className="space-y-2">
-                    {customerProjects.map((project: DomainProjectDTO) => (
+                    {tabProjects.map((project: DomainProjectDTO) => (
                       <div
                         key={project.id}
                         className="flex cursor-pointer items-center justify-between rounded-lg border p-4 transition-colors hover:bg-muted/50"
@@ -497,7 +552,7 @@ export default function CustomerDetailPage({
                               style: "currency",
                               currency: "NOK",
                               maximumFractionDigits: 0,
-                            }).format(project.budget || 0)}
+                            }).format(project.value || 0)}
                           </div>
                         </div>
                       </div>
@@ -517,13 +572,17 @@ export default function CustomerDetailPage({
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {customerOffers.length === 0 ? (
+                {isLoadingOffers ? (
+                  <div className="py-8 text-center text-muted-foreground">
+                    Laster tilbud...
+                  </div>
+                ) : tabOffers.length === 0 ? (
                   <p className="py-8 text-center text-muted-foreground">
                     Ingen tilbud registrert.
                   </p>
                 ) : (
                   <div className="space-y-2">
-                    {customerOffers.map((offer: DomainOfferDTO) => (
+                    {tabOffers.map((offer: DomainOfferDTO) => (
                       <div
                         key={offer.id}
                         className="flex cursor-pointer items-center justify-between rounded-lg border p-4 transition-colors hover:bg-muted/50"
