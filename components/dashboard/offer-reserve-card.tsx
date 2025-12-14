@@ -54,7 +54,7 @@ export function OfferReserveCard({
               {formatCurrency(offerReserve)}
             </div>
             <p className="min-h-[2.5em] text-xs text-muted-foreground">
-              Totalverdi av sendte og påbegynte tilbud
+              Total verdi av sendte og påbegynte tilbud
             </p>
           </motion.div>
 

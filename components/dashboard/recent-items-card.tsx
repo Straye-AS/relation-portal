@@ -16,20 +16,19 @@ interface RecentItemsCardProps {
   projects: DomainProjectDTO[];
 }
 
-const projectStatusColors: Record<string, string> = {
-  planning: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300",
+const projectPhaseColors: Record<string, string> = {
+  tilbud: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300",
+  working: "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300",
   active: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
-  on_hold:
-    "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300",
   completed:
     "bg-slate-100 text-slate-700 dark:bg-slate-900 dark:text-slate-300",
   cancelled: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
 };
 
-const projectStatusLabels: Record<string, string> = {
-  planning: "Tilbud",
+const projectPhaseLabels: Record<string, string> = {
+  tilbud: "Tilbud",
   active: "Aktiv",
-  on_hold: "På vent",
+  working: "I arbeid",
   completed: "Ferdig",
   cancelled: "Kansellert",
 };
@@ -124,11 +123,11 @@ export function RecentItemsCard({ offers, projects }: RecentItemsCardProps) {
                       </div>
                       <div className="col-span-3 flex items-center">
                         <Badge
-                          className={`max-w-full truncate text-xs font-normal ${projectStatusColors[project.status ?? "active"] || projectStatusColors.active}`}
+                          className={`max-w-full truncate text-xs font-normal ${projectPhaseColors[project.phase ?? "active"] || projectPhaseColors.active}`}
                           variant="secondary"
                         >
-                          {projectStatusLabels[project.status ?? "active"] ||
-                            project.status}
+                          {projectPhaseLabels[project.phase ?? "active"] ||
+                            project.phase}
                         </Badge>
                       </div>
                       <div className="col-span-2 flex items-center justify-end font-medium">

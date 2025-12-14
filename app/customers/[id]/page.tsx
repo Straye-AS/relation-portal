@@ -15,7 +15,7 @@ import {
 import { InlineEdit } from "@/components/ui/inline-edit";
 import { toast } from "sonner";
 import { OfferStatusBadge } from "@/components/offers/offer-status-badge";
-import { ProjectStatusBadge } from "@/components/projects/project-status-badge";
+import { ProjectPhaseBadge } from "@/components/projects/project-phase-badge";
 import type {
   DomainOfferDTO,
   DomainProjectDTO,
@@ -540,7 +540,7 @@ export default function CustomerDetailPage({
                         <div className="grid gap-1">
                           <div className="flex items-center gap-2">
                             <h3 className="font-semibold">{project.name}</h3>
-                            <ProjectStatusBadge status={project.status ?? ""} />
+                            <ProjectPhaseBadge phase={project.phase ?? ""} />
                           </div>
                           <p className="text-sm text-muted-foreground">
                             Leder: {project.managerName || "Ikke tildelt"}

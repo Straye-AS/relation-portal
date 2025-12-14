@@ -14,6 +14,7 @@ import { Plus } from "lucide-react";
 import { OfferForm } from "./offer-form";
 import { useCreateOffer } from "@/hooks/useOffers";
 import type { DomainCreateOfferRequest } from "@/lib/.generated/data-contracts";
+import { OfferStatusBadge } from "./offer-status-badge";
 
 export function AddOfferModal() {
   const [open, setOpen] = useState(false);
@@ -39,9 +40,12 @@ export function AddOfferModal() {
       <DialogContent className="flex max-h-[90vh] flex-col overflow-hidden p-0 sm:max-w-[700px]">
         <DialogHeader className="p-6 pb-2">
           <DialogTitle>Opprett nytt tilbud</DialogTitle>
-          <DialogDescription>
-            Opprett et nytt tilbud for en kunde. Legg til varelinjer og
-            detaljer.
+          <DialogDescription asChild>
+            <div>
+              Opprett et nytt tilbud. Fyll ut nødvendig informasjon. <br />
+              Tilbudet vil bli lagret med status{" "}
+              <OfferStatusBadge phase="in_progress" />
+            </div>
           </DialogDescription>
         </DialogHeader>
         <div className="flex-1 overflow-y-auto px-6 pb-6 pt-2">

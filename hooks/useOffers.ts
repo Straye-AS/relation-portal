@@ -26,6 +26,7 @@ import type {
   DomainUpdateOfferCustomerRequest,
   DomainOfferDTO,
 } from "@/lib/.generated/data-contracts";
+import { ContentType } from "@/lib/.generated/http-client";
 
 /**
  * Fetch paginated list of offers
@@ -413,6 +414,37 @@ export function useUpdateOfferValue() {
 }
 
 /**
+ * Update offer cost
+ */
+export function useUpdateOfferCost() {
+  const queryClient = useQueryClient();
+  const api = useApi();
+
+  return useMutation({
+    mutationFn: async ({ id, cost }: { id: string; cost: number }) => {
+      // Manually calling the endpoint as it might be missing from the generated client
+      const response = await api.offers.http.request({
+        path: `/offers/${id}/cost`,
+        method: "PUT",
+        body: { cost },
+        secure: true,
+        type: ContentType.Json,
+      });
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["offers"] });
+      queryClient.invalidateQueries({ queryKey: ["offers", variables.id] });
+      toast.success("Kostnad oppdatert");
+    },
+    onError: (error: Error) => {
+      console.error("Failed to update cost:", error);
+      toast.error("Kunne ikke oppdatere kostnad");
+    },
+  });
+}
+
+/**
  * Update offer description
  */
 export function useUpdateOfferDescription() {
@@ -626,6 +658,39 @@ export function useUpdateOfferNumber() {
       } else {
         toast.error("Kunne ikke oppdatere tilbudsnummer");
       }
+    },
+  });
+}
+
+/**
+ * Update offer expiration date
+ */
+export function useUpdateOfferExpirationDate() {
+  const queryClient = useQueryClient();
+  const api = useApi();
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      expirationDate,
+    }: {
+      id: string;
+      expirationDate?: string;
+    }) => {
+      const response = await api.offers.expirationDateUpdate(
+        { id },
+        { expirationDate }
+      );
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["offers"] });
+      queryClient.invalidateQueries({ queryKey: ["offers", variables.id] });
+      toast.success("Vedståelsesfrist oppdatert");
+    },
+    onError: (error: Error) => {
+      console.error("Failed to update expiration date:", error);
+      toast.error("Kunne ikke oppdatere vedståelsesfrist");
     },
   });
 }

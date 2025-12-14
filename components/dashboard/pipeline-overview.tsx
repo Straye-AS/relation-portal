@@ -125,9 +125,7 @@ export function PipelineOverview({
             <div>
               <p className="text-sm text-muted-foreground">Antall tilbud</p>
               <p className="text-2xl font-bold">
-                {pipeline
-                  .filter((p) => p.phase !== "draft")
-                  .reduce((sum, p) => sum + p.count, 0)}
+                {pipeline.reduce((sum, p) => sum + p.count, 0)}
               </p>
             </div>
             <p className="text-xs text-muted-foreground">Siste 12 mnd</p>

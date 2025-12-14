@@ -58,7 +58,7 @@ export {
   DomainOfferPhase,
   DomainOfferStatus,
   DomainDealStage,
-  DomainProjectStatus,
+  DomainProjectPhase,
   DomainProjectHealth,
   DomainActivityType,
   DomainActivityStatus,
@@ -144,10 +144,10 @@ export type DealStage =
   | "won"
   | "lost";
 
-export type ProjectStatus =
-  | "planning"
+export type ProjectPhase =
+  | "tilbud"
+  | "working"
   | "active"
-  | "on_hold"
   | "completed"
   | "cancelled";
 
@@ -211,10 +211,10 @@ export const DEAL_STAGE_LABELS: Record<DealStage, string> = {
   lost: "Tapt",
 };
 
-export const PROJECT_STATUS_LABELS: Record<ProjectStatus, string> = {
-  planning: "Tilbud",
+export const PROJECT_PHASE_LABELS: Record<ProjectPhase, string> = {
+  tilbud: "Tilbud",
   active: "Aktiv",
-  on_hold: "På vent",
+  working: "I arbeid",
   completed: "Ferdig",
   cancelled: "Kansellert",
 };

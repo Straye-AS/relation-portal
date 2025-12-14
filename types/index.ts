@@ -10,6 +10,13 @@ export type OfferPhase =
 
 export type OfferStatus = "active" | "inactive" | "archived";
 
+export type ProjectPhase =
+  | "tilbud"
+  | "working"
+  | "active"
+  | "completed"
+  | "cancelled";
+
 export type ProjectStatus =
   | "planning"
   | "active"
@@ -95,7 +102,7 @@ export interface Project {
   customerId: string;
   customerName?: string;
   companyId: CompanyId;
-  status: ProjectStatus;
+  phase: ProjectPhase;
   startDate: string;
   endDate?: string;
   budget: number;
@@ -108,6 +115,8 @@ export interface Project {
   createdAt: string;
   updatedAt: string;
   offerId?: string;
+  // Legacy support if needed, but user asked to remove status field usage
+  status?: string;
 }
 
 export interface User {

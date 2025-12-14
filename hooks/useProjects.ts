@@ -41,6 +41,26 @@ export function useProjects(params?: Partial<ProjectsListParams>) {
 }
 
 /**
+ * Fetch all projects (non-paginated, for dropdowns etc.)
+ */
+export function useAllProjects() {
+  const api = useApi();
+  const { isAuthenticated } = useAuth();
+  const { selectedCompanyId } = useCompanyStore();
+
+  return useQuery({
+    queryKey: ["projects", "all", selectedCompanyId],
+    queryFn: async () => {
+      // Fetch with large page size to get all
+      const response = await api.projects.projectsList({ pageSize: 1000 });
+      return response.data?.data ?? [];
+    },
+    enabled: isAuthenticated,
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  });
+}
+
+/**
  * Fetch single project by ID
  */
 export function useProject(id: string) {
@@ -70,6 +90,24 @@ export function useProjectBudget(projectId: string) {
     queryKey: ["projects", projectId, "budget", selectedCompanyId],
     queryFn: async () => {
       const response = await api.projects.budgetList({ id: projectId });
+      return response.data;
+    },
+    enabled: !!projectId && isAuthenticated,
+  });
+}
+
+/**
+ * Fetch offers linked to a project
+ */
+export function useProjectOffers(projectId: string) {
+  const api = useApi();
+  const { isAuthenticated } = useAuth();
+  const { selectedCompanyId } = useCompanyStore();
+
+  return useQuery({
+    queryKey: ["projects", projectId, "offers", selectedCompanyId],
+    queryFn: async () => {
+      const response = await api.projects.offersList({ id: projectId });
       return response.data;
     },
     enabled: !!projectId && isAuthenticated,
@@ -214,18 +252,21 @@ export function useDeleteProject() {
 /**
  * Update project status
  */
-export function useUpdateProjectStatus() {
+/**
+ * Update project phase
+ */
+export function useUpdateProjectPhase() {
   const queryClient = useQueryClient();
   const api = useApi();
 
   return useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const response = await api.projects.statusUpdate(
+    mutationFn: async ({ id, phase }: { id: string; phase: string }) => {
+      const response = await api.projects.phaseUpdate(
         { id },
         {
-          status: status as Parameters<
-            typeof api.projects.statusUpdate
-          >[1]["status"],
+          phase: phase as Parameters<
+            typeof api.projects.phaseUpdate
+          >[1]["phase"],
         }
       );
       return response.data;
@@ -233,11 +274,11 @@ export function useUpdateProjectStatus() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
       queryClient.invalidateQueries({ queryKey: ["projects", variables.id] });
-      toast.success("Prosjektstatus oppdatert");
+      toast.success("Prosjektfase oppdatert");
     },
     onError: (error: Error) => {
-      console.error("Failed to update project status:", error);
-      toast.error("Kunne ikke oppdatere prosjektstatus");
+      console.error("Failed to update project phase:", error);
+      toast.error("Kunne ikke oppdatere prosjektfase");
     },
   });
 }
@@ -263,11 +304,11 @@ export function useInheritProjectBudget() {
       queryClient.invalidateQueries({
         queryKey: ["projects", variables.id, "budget"],
       });
-      toast.success("Budsjett arvet fra tilbud");
+      toast.success("Verdi arvet fra tilbud");
     },
     onError: (error: Error) => {
       console.error("Failed to inherit budget:", error);
-      toast.error("Kunne ikke arve budsjett");
+      toast.error("Kunne ikke arve verdi");
     },
   });
 }

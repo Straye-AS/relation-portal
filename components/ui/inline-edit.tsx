@@ -156,7 +156,10 @@ export function InlineEdit({
       )}
     >
       <span
-        className={cn("truncate", !value && "italic text-muted-foreground")}
+        className={cn(
+          "truncate pr-1",
+          !value && "italic text-muted-foreground"
+        )}
       >
         {displayValue() !== "-"
           ? displayValue()

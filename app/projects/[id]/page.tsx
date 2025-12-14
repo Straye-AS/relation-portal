@@ -6,13 +6,12 @@ import {
   useUpdateProjectManager,
   useUpdateProjectName,
   useResyncProjectFromOffer,
+  useProjectOffers,
 } from "@/hooks/useProjects";
-import { useOffers } from "@/hooks/useOffers"; // Added import
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CardSkeleton } from "@/components/ui/card-skeleton";
 
-import { Progress } from "@/components/ui/progress";
 import Link from "next/link";
 import { ArrowLeft, Check, RefreshCw, CalendarDays } from "lucide-react";
 import { format } from "date-fns";
@@ -26,7 +25,7 @@ import {
   TableRow,
 } from "@/components/ui/table"; // Added table imports
 import { OfferRow } from "@/components/offers/offer-row";
-import { ProjectStatusBadge } from "@/components/projects/project-status-badge";
+import { ProjectPhaseBadge } from "@/components/projects/project-phase-badge";
 import { useUsers } from "@/hooks/useUsers";
 
 import { CompanyBadge } from "@/components/ui/company-badge";
@@ -52,6 +51,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
+import { Progress } from "@/components/ui/progress";
 
 export default function ProjectDetailPage({
   params,
@@ -60,7 +60,7 @@ export default function ProjectDetailPage({
 }) {
   const resolvedParams = use(params);
   const { data: project, isLoading } = useProject(resolvedParams.id);
-  const { data: offersData } = useOffers({ page: 1, pageSize: 1000 });
+  const { data: connectedOffers = [] } = useProjectOffers(resolvedParams.id);
 
   const { data: users } = useUsers();
   const updateProjectManager = useUpdateProjectManager();
@@ -99,14 +99,14 @@ export default function ProjectDetailPage({
   const spentPercentage = budget > 0 ? (spent / budget) * 100 : 0;
   const remaining = totalCost - spent;
 
+  const invoiced = project.invoiced ?? 0;
+  const invoicedPercentage = budget > 0 ? (invoiced / budget) * 100 : 0;
+  const invoiceDiff = invoiced - spent;
+
   // Calculate advanced metrics
   // Check if budgetData has totalCost, otherwise default to 0
   const profit = budget - totalCost; // DB
   const margin = budget > 0 ? (profit / budget) * 100 : 0; // DG
-
-  // Filter offers connected to this project
-  const connectedOffers =
-    offersData?.data?.filter((offer) => offer.projectId === project.id) || [];
 
   return (
     <AppLayout>
@@ -166,9 +166,9 @@ export default function ProjectDetailPage({
                 </Link>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Status</p>
-                <ProjectStatusBadge
-                  status={project.status || "planning"}
+                <p className="text-sm text-muted-foreground">Fase</p>
+                <ProjectPhaseBadge
+                  phase={project.phase || "tilbud"}
                   className="mt-1"
                 />
               </div>
@@ -318,7 +318,7 @@ export default function ProjectDetailPage({
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle>Økonomi</CardTitle>
               {connectedOffers.length > 0 &&
-                (project.status as string) === "planning" && (
+                (project.phase as string) === "tilbud" && (
                   <Button
                     variant="outline"
                     size="sm"
@@ -328,14 +328,14 @@ export default function ProjectDetailPage({
                   >
                     <RefreshCw className="h-3.5 w-3.5 text-muted-foreground" />
                     <span className="text-xs text-muted-foreground">
-                      Sync fra tilbud
+                      Sync<span className="hidden xl:inline"> fra tilbud</span>
                     </span>
                   </Button>
                 )}
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
+              <div className="flex flex-wrap gap-4">
+                <div className="min-w-[200px] flex-1 space-y-1">
                   <p className="text-sm text-muted-foreground">Total kostnad</p>
                   <p className="text-2xl font-bold">
                     {new Intl.NumberFormat("nb-NO", {
@@ -345,7 +345,7 @@ export default function ProjectDetailPage({
                     }).format(totalCost)}
                   </p>
                 </div>
-                <div className="space-y-1">
+                <div className="min-w-[200px] flex-1 space-y-1">
                   <p className="text-sm text-muted-foreground">Total pris</p>
                   <p className="text-2xl font-bold">
                     {new Intl.NumberFormat("nb-NO", {
@@ -360,13 +360,17 @@ export default function ProjectDetailPage({
               <div className="space-y-4 rounded-lg bg-muted/50 p-4">
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-medium text-muted-foreground">
-                    Margin (DG)
+                    <span className="hidden xl:inline">Margin (DG)</span>
+                    <span className="inline xl:hidden">DG</span>
                   </p>
                   <p className="text-2xl font-bold">{margin.toFixed(1)} %</p>
                 </div>
                 <div className="flex items-center justify-between border-t pt-2">
                   <p className="text-sm text-muted-foreground">
-                    Dekningsbidrag (DB)
+                    <span className="hidden sm:inline">
+                      Dekningsbidrag (DB)
+                    </span>
+                    <span className="inline sm:hidden">DB</span>
                   </p>
                   <p className="font-mono font-medium text-green-600">
                     {new Intl.NumberFormat("nb-NO", {
@@ -378,47 +382,97 @@ export default function ProjectDetailPage({
                 </div>
               </div>
 
-              <div className="space-y-2 pt-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    Brukt av budsjett
-                  </span>
-                  <span className="font-medium">
-                    {new Intl.NumberFormat("nb-NO", {
-                      style: "currency",
-                      currency: "NOK",
-                      maximumFractionDigits: 0,
-                    }).format(spent)}{" "}
-                    ({spentPercentage.toFixed(1)}%)
-                  </span>
+              <div className="space-y-4 pt-2">
+                {/* Brukt av budsjett */}
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">
+                      Hittil påløpte kostnader
+                    </span>
+                    <span className="font-medium">
+                      {new Intl.NumberFormat("nb-NO", {
+                        style: "currency",
+                        currency: "NOK",
+                        maximumFractionDigits: 0,
+                      }).format(spent)}{" "}
+                      ({spentPercentage.toFixed(1)}%)
+                    </span>
+                  </div>
+                  <Progress
+                    value={spentPercentage}
+                    className="h-2"
+                    indicatorClassName={
+                      spentPercentage > 100
+                        ? "bg-red-600"
+                        : spentPercentage > 80
+                          ? "bg-orange-500"
+                          : "bg-green-600"
+                    }
+                  />
                 </div>
-                <Progress
-                  value={spentPercentage}
-                  className="h-2"
-                  indicatorClassName={
-                    spentPercentage > 100
-                      ? "bg-red-600"
-                      : spentPercentage > 80
-                        ? "bg-orange-500"
-                        : "bg-green-600"
-                  }
-                />
 
-                <div className="mt-4 flex justify-between border-t pt-2">
-                  <span className="text-sm text-muted-foreground">
-                    Gjenstående
-                  </span>
-                  <span
-                    className={`font-mono text-lg font-bold ${
-                      remaining < 0 ? "text-red-600" : "text-green-600"
-                    }`}
-                  >
-                    {new Intl.NumberFormat("nb-NO", {
-                      style: "currency",
-                      currency: "NOK",
-                      maximumFractionDigits: 0,
-                    }).format(remaining)}
-                  </span>
+                {/* Hittil fakturert */}
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">
+                      Hittil fakturert
+                    </span>
+                    <span className="font-medium">
+                      {new Intl.NumberFormat("nb-NO", {
+                        style: "currency",
+                        currency: "NOK",
+                        maximumFractionDigits: 0,
+                      }).format(invoiced)}{" "}
+                      ({invoicedPercentage.toFixed(1)}%)
+                    </span>
+                  </div>
+                  <Progress
+                    value={invoicedPercentage}
+                    className="h-2"
+                    indicatorClassName="bg-blue-600"
+                  />
+                </div>
+
+                <div className="mt-4 flex items-center justify-between border-t pt-4">
+                  <div className="space-y-1">
+                    <span className="text-xs text-muted-foreground">
+                      Differanse
+                    </span>
+                    <p
+                      className={`font-mono text-lg font-bold ${
+                        invoiceDiff === 0
+                          ? "text-gray-600"
+                          : invoiceDiff > 0
+                            ? "text-green-600"
+                            : "text-red-600"
+                      }`}
+                    >
+                      {invoiceDiff === 0
+                        ? "Ingen tall finnes"
+                        : new Intl.NumberFormat("nb-NO", {
+                            style: "currency",
+                            currency: "NOK",
+                            maximumFractionDigits: 0,
+                            signDisplay: "exceptZero",
+                          }).format(invoiceDiff)}
+                    </p>
+                  </div>
+                  <div className="space-y-1 text-right">
+                    <span className="text-xs text-muted-foreground">
+                      Gjenstående
+                    </span>
+                    <p
+                      className={`font-mono text-lg font-bold ${
+                        remaining < 0 ? "text-red-600" : "text-green-600"
+                      }`}
+                    >
+                      {new Intl.NumberFormat("nb-NO", {
+                        style: "currency",
+                        currency: "NOK",
+                        maximumFractionDigits: 0,
+                      }).format(remaining)}
+                    </p>
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -448,7 +502,7 @@ export default function ProjectDetailPage({
                       <TableHead>Fase</TableHead>
                       <TableHead>Frist</TableHead>
                       <TableHead>Verdi</TableHead>
-                      <TableHead>Sannsynlighet</TableHead>
+                      <TableHead>Margin (DG)</TableHead>
                       <TableHead>Oppdatert</TableHead>
                     </TableRow>
                   </TableHeader>

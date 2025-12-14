@@ -2,32 +2,14 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { DomainProjectDTO } from "@/lib/.generated/data-contracts";
-import { formatRelativeDate } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
-import Link from "next/link";
 import { Briefcase } from "lucide-react";
+import Link from "next/link";
+import { formatCurrency, formatRelativeDate } from "@/lib/utils";
+import { ProjectPhaseBadge } from "@/components/projects/project-phase-badge";
 
 interface RecentProjectsCardProps {
   projects: DomainProjectDTO[];
 }
-
-const projectStatusColors: Record<string, string> = {
-  planning: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300",
-  active: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
-  on_hold:
-    "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300",
-  completed:
-    "bg-slate-100 text-slate-700 dark:bg-slate-900 dark:text-slate-300",
-  cancelled: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
-};
-
-const projectStatusLabels: Record<string, string> = {
-  planning: "Tilbud",
-  active: "Aktiv",
-  on_hold: "På vent",
-  completed: "Ferdig",
-  cancelled: "Kansellert",
-};
 
 export function RecentProjectsCard({ projects }: RecentProjectsCardProps) {
   return (
@@ -57,35 +39,17 @@ export function RecentProjectsCard({ projects }: RecentProjectsCardProps) {
                       {project.name}
                     </Link>
                     <span className="truncate text-xs text-muted-foreground">
-                      {project.projectNumber && (
-                        <span className="mr-1 font-mono text-xs">
-                          {project.projectNumber} •
-                        </span>
-                      )}
                       {project.customerName}
                     </span>
                   </div>
                   <div className="col-span-6 flex items-center sm:col-span-3">
-                    <Badge
-                      className={`max-w-full truncate text-xs font-normal ${
-                        projectStatusColors[project.status ?? "active"] ||
-                        projectStatusColors.active
-                      }`}
-                      variant="secondary"
-                    >
-                      {projectStatusLabels[project.status ?? "active"] ||
-                        project.status}
-                    </Badge>
+                    <ProjectPhaseBadge
+                      phase={project.phase || "active"}
+                      className="max-w-full truncate"
+                    />
                   </div>
-                  {/* Note: DomainProjectDTO might need budget field verification. 
-                      Using 0 if undefined just like in RecentItemsCard logic previously checked */}
                   <div className="col-span-3 flex items-center justify-end font-medium sm:col-span-2">
-                    {/* Assuming project DTO doesn't strictly have value but let's hide or show what we can. 
-                         The previous ActiveProjectsCard used budget. The RecentItemsCard used simple mapping.
-                         Let's try to show Value/Budget if available, or just skip. 
-                         The previous RecentItemsCard logic had a placeholder for logic value.
-                         I'll assume if we have it, we show it, else dash. */}
-                    -
+                    {formatCurrency(project.value ?? 0)}
                   </div>
                   <div className="col-span-3 flex items-center justify-end text-xs text-muted-foreground sm:col-span-2">
                     {formatRelativeDate(project.updatedAt)}

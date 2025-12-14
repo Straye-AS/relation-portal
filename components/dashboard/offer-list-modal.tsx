@@ -21,6 +21,8 @@ import { DomainOfferDTO } from "@/lib/.generated/data-contracts";
 import { OfferStatusBadge } from "@/components/offers/offer-status-badge";
 import { PaginationControls } from "@/components/pagination-controls";
 import { NewBadge } from "@/components/ui/new-badge";
+import { CompanyBadge } from "@/components/ui/company-badge";
+import { cn, getDueDateColor } from "@/lib/utils";
 
 interface OfferListModalProps {
   isOpen: boolean;
@@ -47,6 +49,17 @@ export function OfferListModal({
 }: OfferListModalProps) {
   const router = useRouter();
 
+  const bestOffersByProject = new Map<string, number>();
+
+  offers.forEach((offer) => {
+    if (offer.projectId) {
+      const currentBest = bestOffersByProject.get(offer.projectId) || 0;
+      if ((offer.value || 0) > currentBest) {
+        bestOffersByProject.set(offer.projectId, offer.value || 0);
+      }
+    }
+  });
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="flex max-h-[80vh] max-w-7xl flex-col">
@@ -61,11 +74,13 @@ export function OfferListModal({
               <TableRow>
                 <TableHead>Nr.</TableHead>
                 <TableHead>Tittel</TableHead>
+                <TableHead>Prosjekt</TableHead>
                 <TableHead>Kunde</TableHead>
+                <TableHead>Selskap</TableHead>
                 <TableHead>Fase</TableHead>
+                <TableHead>Frist</TableHead>
                 <TableHead>Verdi</TableHead>
-                <TableHead>Sannsynlighet</TableHead>
-                <TableHead>Ansvarlig</TableHead>
+                <TableHead>Margin (DG)</TableHead>
                 <TableHead>Oppdatert</TableHead>
               </TableRow>
             </TableHeader>
@@ -73,64 +88,102 @@ export function OfferListModal({
               {offers.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={8}
+                    colSpan={10}
                     className="h-24 text-center text-muted-foreground"
                   >
                     Ingen tilbud i denne fasen
                   </TableCell>
                 </TableRow>
               ) : (
-                offers.map((offer) => (
-                  <TableRow
-                    key={offer.id}
-                    className="cursor-pointer hover:bg-muted/50"
-                    onClick={() => {
-                      router.push(`/offers/${offer.id}`);
-                      onClose();
-                    }}
-                  >
-                    <TableCell className="whitespace-nowrap font-mono text-sm text-muted-foreground">
-                      {offer.offerNumber || "-"}
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {offer.title}
-                      <NewBadge createdAt={offer.createdAt} />
-                    </TableCell>
-                    <TableCell>{offer.customerName}</TableCell>
-                    <TableCell>
-                      <OfferStatusBadge phase={offer.phase || "draft"} />
-                    </TableCell>
-                    <TableCell>
-                      {new Intl.NumberFormat("nb-NO", {
-                        style: "currency",
-                        currency: "NOK",
-                        maximumFractionDigits: 0,
-                      }).format(offer.value ?? 0)}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <div className="h-2 w-full max-w-[100px] rounded-full bg-muted">
-                          <div
-                            className="h-2 rounded-full bg-primary"
-                            style={{ width: `${offer.probability ?? 0}%` }}
-                          />
+                offers.map((offer) => {
+                  const isNotBest =
+                    offer.projectId &&
+                    (offer.value || 0) <
+                      (bestOffersByProject.get(offer.projectId) || 0);
+
+                  const value = offer.value ?? 0;
+                  const cost = offer.cost ?? 0;
+                  const margin = value - cost;
+                  const marginRatio = value > 0 ? margin / value : 0;
+
+                  return (
+                    <TableRow
+                      key={offer.id}
+                      className={`cursor-pointer hover:bg-muted/50 ${
+                        isNotBest ? "bg-orange-50 dark:bg-orange-950/20" : ""
+                      }`}
+                      onClick={() => {
+                        router.push(`/offers/${offer.id}`);
+                        onClose();
+                      }}
+                    >
+                      <TableCell className="whitespace-nowrap font-mono text-sm text-muted-foreground">
+                        {offer.offerNumber || "-"}
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          <span className="truncate">{offer.title}</span>
+                          <NewBadge createdAt={offer.createdAt} />
                         </div>
-                        <span className="text-sm">
-                          {offer.probability ?? 0}%
+                      </TableCell>
+                      <TableCell>{offer.projectName || "-"}</TableCell>
+                      <TableCell className="max-w-[150px]">
+                        <span
+                          className="block truncate"
+                          title={offer.customerName ?? ""}
+                        >
+                          {offer.customerName}
                         </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>{offer.responsibleUserName ?? "-"}</TableCell>
-                    <TableCell>
-                      {offer.updatedAt
-                        ? formatDistanceToNow(new Date(offer.updatedAt), {
-                            addSuffix: true,
-                            locale: nb,
-                          })
-                        : "-"}
-                    </TableCell>
-                  </TableRow>
-                ))
+                      </TableCell>
+                      <TableCell>
+                        <CompanyBadge companyId={offer.companyId} />
+                      </TableCell>
+                      <TableCell>
+                        <OfferStatusBadge phase={offer.phase || "draft"} />
+                      </TableCell>
+                      <TableCell
+                        className={cn(
+                          "text-sm",
+                          getDueDateColor(offer.dueDate)
+                        )}
+                      >
+                        {offer.dueDate
+                          ? new Date(offer.dueDate).toLocaleDateString("nb-NO")
+                          : "-"}
+                      </TableCell>
+                      <TableCell>
+                        {new Intl.NumberFormat("nb-NO", {
+                          style: "currency",
+                          currency: "NOK",
+                          maximumFractionDigits: 0,
+                        }).format(value)}
+                      </TableCell>
+                      <TableCell>
+                        <span
+                          className={cn(
+                            "font-medium",
+                            marginRatio < 0
+                              ? "text-destructive"
+                              : "text-green-600"
+                          )}
+                        >
+                          {new Intl.NumberFormat("nb-NO", {
+                            style: "percent",
+                            maximumFractionDigits: 1,
+                          }).format(marginRatio)}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        {offer.updatedAt
+                          ? formatDistanceToNow(new Date(offer.updatedAt), {
+                              addSuffix: true,
+                              locale: nb,
+                            })
+                          : "-"}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
           </Table>

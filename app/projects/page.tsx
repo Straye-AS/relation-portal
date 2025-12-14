@@ -19,30 +19,47 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { X } from "lucide-react";
-import { PROJECT_STATUS_LABELS } from "@/lib/api/types";
+import { PROJECT_PHASE_LABELS, COMPANIES } from "@/lib/api/types";
 
 import { ProjectListTable } from "@/components/projects/project-list-table";
 import { PaginationControls } from "@/components/pagination-controls";
+import { useMemo } from "react";
 
 export default function ProjectsPage() {
   const router = useRouter();
   const [page, setPage] = useState(1);
   const pageSize = 20;
 
-  const [sortBy, setSortBy] = useState<string>("created_at");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [phaseFilter, setPhaseFilter] = useState<string>("all");
+  const [companyFilter, setCompanyFilter] = useState<string>("all");
 
   const { data, isLoading } = useProjects({
     page,
     pageSize,
-    sortBy: sortBy as any,
-    sortOrder: sortOrder as any,
-    status: statusFilter === "all" ? undefined : (statusFilter as any),
+    sortBy: "created_at" as any,
+    sortOrder: "desc" as any,
+    phase: phaseFilter === "all" ? undefined : (phaseFilter as any),
   });
 
   const deleteProject = useDeleteProject();
-  const projects = (data?.data ?? []) as DomainProjectDTO[];
+  const projects = useMemo(
+    () => (data?.data ?? []) as DomainProjectDTO[],
+    [data?.data]
+  );
+
+  const filteredProjects = useMemo(() => {
+    return projects.filter((project) => {
+      // 1. Phase Filter
+      // Note: We also send this to API, but filtering here ensures consistency if API ignores it
+      if (phaseFilter !== "all" && project.phase !== phaseFilter) return false;
+
+      // 2. Company Filter
+      if (companyFilter !== "all" && project.companyId !== companyFilter)
+        return false;
+
+      return true;
+    });
+  }, [projects, phaseFilter, companyFilter]);
 
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [projectToDelete, setProjectToDelete] =
@@ -57,15 +74,6 @@ export default function ProjectsPage() {
     setIsDeleteModalOpen(true);
   };
 
-  const handleSort = (key: string) => {
-    if (sortBy === key) {
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-    } else {
-      setSortBy(key);
-      setSortOrder("asc");
-    }
-  };
-
   const handleDeleteConfirm = async () => {
     if (projectToDelete?.id) {
       await deleteProject.mutateAsync(projectToDelete.id);
@@ -76,42 +84,12 @@ export default function ProjectsPage() {
   return (
     <AppLayout>
       <div className="space-y-6">
-        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-            {/* Status Filter */}
-            <Select
-              value={statusFilter}
-              onValueChange={(val) => {
-                setStatusFilter(val);
-                setPage(1);
-              }}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Alle statuser</SelectItem>
-                {Object.entries(PROJECT_STATUS_LABELS).map(([key, label]) => (
-                  <SelectItem key={key} value={key}>
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {statusFilter !== "all" && (
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setStatusFilter("all");
-                  setPage(1);
-                }}
-                className="px-2 lg:px-3"
-              >
-                Nullstill
-                <X className="ml-2 h-4 w-4" />
-              </Button>
-            )}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Prosjekter</h1>
+            <p className="text-muted-foreground">
+              Oversikt over alle prosjekter og deres status
+            </p>
           </div>
           <Link href="/projects/new">
             <Button>
@@ -121,13 +99,79 @@ export default function ProjectsPage() {
           </Link>
         </div>
 
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+          {/* Company Filter */}
+          <Select
+            value={companyFilter}
+            onValueChange={(val) => {
+              setCompanyFilter(val);
+              setPage(1);
+            }}
+          >
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Selskap" />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.values(COMPANIES).map((company) => (
+                <SelectItem key={company.id} value={company.id}>
+                  <div className="flex items-center gap-2">
+                    {company.id !== "all" && (
+                      <div
+                        className="h-2 w-2 rounded-full"
+                        style={{ backgroundColor: company.color }}
+                      />
+                    )}
+                    <span>{company.name}</span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Phase Filter */}
+          <Select
+            value={phaseFilter}
+            onValueChange={(val) => {
+              setPhaseFilter(val);
+              setPage(1);
+            }}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Fase" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Alle faser</SelectItem>
+              {Object.entries(PROJECT_PHASE_LABELS).map(([key, label]) => (
+                <SelectItem key={key} value={key}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {(phaseFilter !== "all" || companyFilter !== "all") && (
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setPhaseFilter("all");
+                setCompanyFilter("all");
+                setPage(1);
+              }}
+              className="px-2 lg:px-3"
+            >
+              Nullstill
+              <X className="ml-2 h-4 w-4" />
+            </Button>
+          )}
+        </div>
+
         {isLoading ? (
           <TableSkeleton rows={10} columns={7} />
-        ) : !projects || projects.length === 0 ? (
+        ) : !filteredProjects || filteredProjects.length === 0 ? (
           <div className="rounded-lg border bg-muted/20 py-12 text-center">
-            {statusFilter !== "all" ? (
+            {phaseFilter !== "all" || companyFilter !== "all" ? (
               <p className="text-muted-foreground">
-                Ingen prosjekter med valgt status
+                Ingen prosjekter med valgte filtre
               </p>
             ) : (
               <>
@@ -140,12 +184,10 @@ export default function ProjectsPage() {
           </div>
         ) : (
           <ProjectListTable
-            projects={projects}
+            projects={filteredProjects}
             onProjectClick={(project) => router.push(`/projects/${project.id}`)}
             onDeleteClick={handleDeleteClick}
-            sortBy={sortBy}
-            sortOrder={sortOrder}
-            onSort={handleSort}
+            showRelativeDate
           />
         )}
 

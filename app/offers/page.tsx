@@ -97,7 +97,7 @@ export default function OffersPage() {
             <div>
               <h1 className="text-3xl font-bold">Tilbud</h1>
               <p className="text-muted-foreground">
-                Administrer alle tilbud og deres status
+                Oversikt over alle tilbud og deres status
               </p>
             </div>
             <AddOfferModal />

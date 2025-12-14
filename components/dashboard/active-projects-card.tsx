@@ -11,13 +11,12 @@ interface ActiveProjectsCardProps {
 }
 
 const statusColors: Record<string, string> = {
-  Planning: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300",
-  Active: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
-  OnHold:
-    "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300",
-  Completed:
+  tilbud: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300",
+  working: "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300",
+  active: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
+  completed:
     "bg-slate-100 text-slate-700 dark:bg-slate-900 dark:text-slate-300",
-  Cancelled: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
+  cancelled: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
 };
 
 export function ActiveProjectsCard({ projects }: ActiveProjectsCardProps) {
@@ -59,8 +58,10 @@ export function ActiveProjectsCard({ projects }: ActiveProjectsCardProps) {
                   <h3 className="truncate text-sm font-semibold">
                     {project.name}
                   </h3>
-                  <Badge className={`text-xs ${statusColors[project.status]}`}>
-                    {project.status}
+                  <Badge
+                    className={`text-xs ${statusColors[project.phase || "active"]}`}
+                  >
+                    {project.phase}
                   </Badge>
                 </div>
                 <p className="text-xs text-muted-foreground">
