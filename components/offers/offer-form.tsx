@@ -58,6 +58,8 @@ import {
 import { COMPANIES } from "@/lib/api/types";
 import { Slider } from "@/components/ui/slider";
 import { SmartDatePicker } from "@/components/ui/smart-date-picker";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Info } from "lucide-react";
 
 // ... imports
 
@@ -93,6 +95,7 @@ interface OfferFormProps {
   isLoading: boolean;
   initialData?: Partial<OfferFormValues> & { companyId?: string };
   showCompanySelect?: boolean;
+  showCustomerWarning?: boolean;
 }
 
 export function OfferForm({
@@ -100,6 +103,7 @@ export function OfferForm({
   isLoading,
   initialData,
   showCompanySelect,
+  showCustomerWarning,
 }: OfferFormProps) {
   const { data: customers } = useAllCustomers();
   const { data: projects } = useAllProjects();
@@ -153,6 +157,14 @@ export function OfferForm({
   }, [selectedProjectId, projects, form, selectedCustomerId]);
 
   const filteredProjects = projects?.filter((p) => {
+    // Only show projects in 'tilbud' phase
+    // Note: We might want to allow 'active' if linking to existing active project for variation?
+    // Requirement says: "Filter project selector to phase === 'tilbud' when linking offers"
+    // and "Linking Rules: Only tilbud phase".
+    if (p.phase !== "tilbud") {
+      return false;
+    }
+
     if (selectedCustomerId) {
       return p.customerId === selectedCustomerId;
     }
@@ -254,6 +266,18 @@ export function OfferForm({
                 </FormItem>
               )}
             />
+          )}
+
+          {showCustomerWarning && (
+            <Alert className="border-blue-200 bg-blue-50 text-blue-900">
+              <Info className="h-4 w-4 text-blue-900" />
+              <AlertDescription>
+                Vi har fylt ut kunde automatisk, men kanskje dette tilbudet er
+                til en annen kunde? Å ha to tilbud til samme kunde på samme
+                prosjekt er kanskje ikke det du ønsker? Husk å endre det til
+                riktig kunde i så fall.
+              </AlertDescription>
+            </Alert>
           )}
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

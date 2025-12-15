@@ -91,7 +91,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { ProjectListTable } from "@/components/projects/project-list-table";
 import { CustomerListTable } from "@/components/customers/customer-list-table";
-import { cn } from "@/lib/utils";
+import { cn, formatOfferNumber } from "@/lib/utils";
 import { SmartDatePicker } from "@/components/ui/smart-date-picker";
 import type { DomainProjectDTO } from "@/lib/.generated/data-contracts";
 
@@ -121,7 +121,7 @@ export default function OfferDetailPage({
 
   const projects = (
     rawProjects?.data as DomainProjectDTO[] | undefined
-  )?.filter((p) => p.phase !== "completed" && p.id !== offer?.projectId);
+  )?.filter((p) => p.phase === "tilbud" && p.id !== offer?.projectId);
 
   const filteredProjects = projects?.filter((p) => {
     if (!projectSearch) return true;
@@ -254,7 +254,10 @@ export default function OfferDetailPage({
                 <div>
                   <span className="mb-1 block font-mono text-sm uppercase tracking-wider text-muted-foreground">
                     {offer.offerNumber
-                      ? `Tilbud: ${offer.offerNumber}`
+                      ? `Tilbud: ${formatOfferNumber(
+                          offer.offerNumber,
+                          offer.phase
+                        )}`
                       : "Tilbud"}
                   </span>
                   <div className="flex items-center gap-2">
@@ -383,7 +386,19 @@ export default function OfferDetailPage({
                                   Herlig! Er du sikker på at du vil markere
                                   tilbudet som vunnet?
                                 </p>
-                                <div className="text-sm text-muted-foreground">
+                                <Alert className="mt-4 border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+                                  <Info className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                                  <AlertTitle className="ml-2 text-amber-900 dark:text-amber-100">
+                                    Obs: Andre tilbud vil utløpe
+                                  </AlertTitle>
+                                  <AlertDescription className="ml-2 text-amber-800 dark:text-amber-200">
+                                    Dette tilbudet er en del av et prosjekt.
+                                    Hvis du vinner dette, vil alle andre aktive
+                                    tilbud i samme prosjekt automatisk settes
+                                    til &apos;Utgått&apos;.
+                                  </AlertDescription>
+                                </Alert>
+                                <div className="mt-2 text-sm text-muted-foreground">
                                   Tilbudet vil bli låst for redigering for å
                                   sikre historikken. Prosjektet overtar som{" "}
                                   <ProjectPhaseBadge phase="active" /> fase, og

@@ -44,17 +44,12 @@ export function AppHeader() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="mx-auto flex h-14 w-full max-w-[1920px] items-center px-4 md:px-8">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="mr-2 md:hidden"
-          onClick={toggleSidebar}
-        >
-          <Menu className="h-5 w-5" />
-        </Button>
+      <div className="relative flex h-14 w-full items-center px-4 md:px-8">
+        <div className="flex items-center gap-4 md:hidden">
+          <Button variant="ghost" size="icon" onClick={toggleSidebar}>
+            <Menu className="h-5 w-5" />
+          </Button>
 
-        <div className="mr-4 flex md:hidden">
           <Link href="/" className="flex items-center space-x-3">
             <Image
               src="/straye-logo-blue.png"
@@ -78,19 +73,23 @@ export function AppHeader() {
           </Link>
         </div>
 
-        <div className="flex flex-1 items-center justify-end space-x-2">
+        <div className="absolute left-1/2 top-1/2 hidden w-full max-w-xl -translate-x-1/2 -translate-y-1/2 transform justify-center sm:flex">
           <Button
-            variant="outline"
-            className="hidden gap-2 text-muted-foreground sm:flex"
+            variant="secondary"
+            className="w-full justify-between gap-2 text-muted-foreground hover:bg-secondary/80"
             onClick={() => setSearchOpen(true)}
           >
-            <Search className="h-4 w-4" />
-            <span className="hidden md:inline">Søk...</span>
-            <kbd className="pointer-events-none ml-auto hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 md:inline">
+            <div className="flex items-center gap-2">
+              <Search className="h-4 w-4" />
+              <span>Søk...</span>
+            </div>
+            <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 md:inline-flex">
               <span className="text-xs">⌘</span>K
             </kbd>
           </Button>
+        </div>
 
+        <div className="ml-auto flex items-center justify-end space-x-2">
           <Button
             variant="ghost"
             size="icon"

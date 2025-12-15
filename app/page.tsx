@@ -1,7 +1,6 @@
 "use client";
 
 import { AppLayout } from "@/components/layout/app-layout";
-import { PageHeader } from "@/components/layout/page-header";
 import { useDashboard } from "@/hooks/useDashboard";
 import { CardSkeleton } from "@/components/ui/card-skeleton";
 import { useCompanyStore } from "@/store/company-store";
@@ -68,12 +67,18 @@ export default function DashboardPage() {
 
   if (isLoading) {
     return (
-      <AppLayout>
-        <PageHeader title="Dashboard" />
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-            <CardSkeleton key={i} />
-          ))}
+      <AppLayout disableScroll>
+        <div className="flex h-full flex-col">
+          <div className="flex-none border-b bg-background px-4 py-4 md:px-8">
+            <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          </div>
+          <div className="flex-1 overflow-y-auto px-4 py-6 md:px-8">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                <CardSkeleton key={i} />
+              ))}
+            </div>
+          </div>
         </div>
       </AppLayout>
     );
@@ -81,108 +86,128 @@ export default function DashboardPage() {
 
   if (!metrics) {
     return (
-      <AppLayout>
-        <PageHeader title="Dashboard" />
-        <div className="py-12 text-center">
-          <p className="text-muted-foreground">Kunne ikke laste dashboard</p>
+      <AppLayout disableScroll>
+        <div className="flex h-full flex-col">
+          <div className="flex-none border-b bg-background px-4 py-4 md:px-8">
+            <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          </div>
+          <div className="flex-1 overflow-y-auto px-4 py-6 md:px-8">
+            <div className="py-12 text-center">
+              <p className="text-muted-foreground">
+                Kunne ikke laste dashboard
+              </p>
+            </div>
+          </div>
         </div>
       </AppLayout>
     );
   }
 
   return (
-    <AppLayout>
-      <PageHeader
-        title="Dashboard"
-        subtitle={userCompany ? `Oversikt for ${userCompany.name}` : "Oversikt"}
-        actions={
-          <Tabs
-            value={timeRange}
-            onValueChange={(v) =>
-              setTimeRange(v as "rolling12months" | "allTime")
-            }
+    <AppLayout disableScroll>
+      <div className="flex h-full flex-col">
+        <div className="flex-none border-b bg-background px-4 py-4 md:px-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+              <p className="mt-1 text-muted-foreground">
+                {userCompany ? `Oversikt for ${userCompany.name}` : "Oversikt"}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Tabs
+                value={timeRange}
+                onValueChange={(v) =>
+                  setTimeRange(v as "rolling12months" | "allTime")
+                }
+              >
+                <TabsList>
+                  <TabsTrigger value="rolling12months">
+                    Siste 12 mnd
+                  </TabsTrigger>
+                  <TabsTrigger value="allTime">Alt</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-4 py-6 md:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="space-y-6"
           >
-            <TabsList>
-              <TabsTrigger value="rolling12months">Siste 12 mnd</TabsTrigger>
-              <TabsTrigger value="allTime">Alt</TabsTrigger>
-            </TabsList>
-          </Tabs>
-        }
-      />
+            {/* Pipeline Overview */}
+            {/* TODO: Update PipelineOverview component to use DomainPipelinePhaseData[] */}
+            <PipelineOverview
+              pipeline={
+                metrics.pipeline as Parameters<
+                  typeof PipelineOverview
+                >[0]["pipeline"]
+              }
+              onPhaseClick={setSelectedPhase}
+            />
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        className="space-y-6"
-      >
-        {/* Pipeline Overview */}
-        {/* TODO: Update PipelineOverview component to use DomainPipelinePhaseData[] */}
-        <PipelineOverview
-          pipeline={
-            metrics.pipeline as Parameters<
-              typeof PipelineOverview
-            >[0]["pipeline"]
-          }
-          onPhaseClick={setSelectedPhase}
-        />
+            {/* Key Metrics Row */}
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <OfferReserveCard
+                offerReserve={metrics.offerReserve ?? 0}
+                winRate={(metrics.winRateMetrics?.winRate ?? 0) * 100}
+                economicWinRate={
+                  (metrics.winRateMetrics?.economicWinRate ?? 0) * 100
+                }
+                totalValue={metrics.offerReserve ?? 0} // Total value of ACTIVE offers
+                weightedValue={metrics.weightedOfferReserve ?? 0}
+                averageProbability={metrics.averageProbability ?? 0}
+                wonCount={metrics.winRateMetrics?.wonCount}
+                lostCount={metrics.winRateMetrics?.lostCount}
+                periodLabel={
+                  timeRange === "rolling12months" ? "siste 12 mnd" : "totalt"
+                }
+              />
+              <ProjectOrderReserveCard
+                amount={metrics.orderReserve ?? 0}
+                totalValue={metrics.totalValue ?? 0}
+                invoicedAmount={metrics.totalInvoiced ?? 0}
+                periodLabel={
+                  timeRange === "rolling12months" ? "Siste 12 mnd" : "Totalt"
+                }
+              />
+              <OfferStatsCard data={metrics} />
+              <QuickActions />
+            </div>
 
-        {/* Key Metrics Row */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <OfferReserveCard
-            offerReserve={metrics.offerReserve ?? 0}
-            winRate={(metrics.winRateMetrics?.winRate ?? 0) * 100}
-            economicWinRate={
-              (metrics.winRateMetrics?.economicWinRate ?? 0) * 100
-            }
-            totalValue={metrics.offerReserve ?? 0} // Total value of ACTIVE offers
-            weightedValue={metrics.weightedOfferReserve ?? 0}
-            averageProbability={metrics.averageProbability ?? 0}
-            wonCount={metrics.winRateMetrics?.wonCount}
-            lostCount={metrics.winRateMetrics?.lostCount}
-            periodLabel={
-              timeRange === "rolling12months" ? "siste 12 mnd" : "totalt"
-            }
-          />
-          <ProjectOrderReserveCard
-            amount={metrics.orderReserve ?? 0}
-            totalValue={metrics.totalValue ?? 0}
-            invoicedAmount={metrics.totalInvoiced ?? 0}
-            periodLabel={
-              timeRange === "rolling12months" ? "Siste 12 mnd" : "Totalt"
-            }
-          />
-          <OfferStatsCard data={metrics} />
-          <QuickActions />
+            {/* Projects, Customers and Activity */}
+            {/* TODO: Update these components to use Domain types */}
+            {/* Projects, Customers and Activity */}
+            {/* TODO: Update these components to use Domain types */}
+            <div className="grid gap-4 pb-6 md:grid-cols-2">
+              <RecentOffersCard
+                offers={(metrics.recentOffers ?? []).filter(
+                  (o: DomainOfferDTO) => o.phase !== "draft"
+                )}
+              />
+              <RecentProjectsCard projects={metrics.recentProjects ?? []} />
+              <TopCustomersCard
+                customers={
+                  metrics.topCustomers as Parameters<
+                    typeof TopCustomersCard
+                  >[0]["customers"]
+                }
+              />
+              <ActivityFeed
+                activities={
+                  metrics.recentActivities as Parameters<
+                    typeof ActivityFeed
+                  >[0]["activities"]
+                }
+              />
+            </div>
+          </motion.div>
         </div>
-
-        {/* Projects, Customers and Activity */}
-        {/* TODO: Update these components to use Domain types */}
-        {/* Projects, Customers and Activity */}
-        {/* TODO: Update these components to use Domain types */}
-        <div className="grid gap-4 pb-6 md:grid-cols-2">
-          <RecentOffersCard
-            offers={(metrics.recentOffers ?? []).filter(
-              (o: DomainOfferDTO) => o.phase !== "draft"
-            )}
-          />
-          <RecentProjectsCard projects={metrics.recentProjects ?? []} />
-          <TopCustomersCard
-            customers={
-              metrics.topCustomers as Parameters<
-                typeof TopCustomersCard
-              >[0]["customers"]
-            }
-          />
-          <ActivityFeed
-            activities={
-              metrics.recentActivities as Parameters<
-                typeof ActivityFeed
-              >[0]["activities"]
-            }
-          />
-        </div>
-      </motion.div>
+      </div>
 
       <OfferListModal
         isOpen={!!selectedPhase}

@@ -15,7 +15,6 @@ export type {
   DomainDealDTO as Deal,
   DomainOfferDTO as Offer,
   DomainOfferDetailDTO as OfferDetail,
-  DomainProjectDTO as Project,
   DomainActivityDTO as Activity,
   DomainBudgetItemDTO as BudgetDimension,
   DomainNotificationDTO as Notification,
@@ -31,13 +30,11 @@ export type {
   DomainCreateContactRequest as CreateContactRequest,
   DomainCreateDealRequest as CreateDealRequest,
   DomainCreateOfferRequest as CreateOfferRequest,
-  DomainCreateProjectRequest as CreateProjectRequest,
   DomainCreateActivityRequest as CreateActivityRequest,
   DomainUpdateCustomerRequest as UpdateCustomerRequest,
   DomainUpdateContactRequest as UpdateContactRequest,
   DomainUpdateDealRequest as UpdateDealRequest,
   DomainUpdateOfferRequest as UpdateOfferRequest,
-  DomainUpdateProjectRequest as UpdateProjectRequest,
   DomainUpdateActivityRequest as UpdateActivityRequest,
   DomainLoseDealRequest as LoseDealRequest,
   DomainAcceptOfferRequest as AcceptOfferRequest,
@@ -48,6 +45,27 @@ export type {
   DomainUpdateOfferResponsibleRequest,
   DomainUpdateOfferProjectRequest,
 } from "@/lib/.generated/data-contracts";
+
+import type {
+  DomainProjectDTO as GeneratedProjectDTO,
+  DomainCreateProjectRequest as GeneratedCreateProjectRequest,
+  DomainUpdateProjectRequest as GeneratedUpdateProjectRequest,
+} from "@/lib/.generated/data-contracts";
+
+export interface Project extends GeneratedProjectDTO {
+  location?: string;
+  externalReference?: string;
+}
+
+export interface CreateProjectRequest extends GeneratedCreateProjectRequest {
+  location?: string;
+  externalReference?: string;
+}
+
+export interface UpdateProjectRequest extends GeneratedUpdateProjectRequest {
+  location?: string;
+  externalReference?: string;
+}
 
 // Re-export Enums (as values)
 export {

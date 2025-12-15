@@ -9,7 +9,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
+import { Trash2, FileText } from "lucide-react";
 
 import { ProjectPhaseBadge } from "@/components/projects/project-phase-badge";
 import { NewBadge } from "@/components/ui/new-badge";
@@ -22,6 +22,7 @@ interface ProjectListTableProps {
   projects: DomainProjectDTO[];
   onProjectClick: (project: DomainProjectDTO) => void;
   onDeleteClick?: (project: DomainProjectDTO, e: React.MouseEvent) => void;
+  onCreateOfferClick?: (project: DomainProjectDTO, e: React.MouseEvent) => void;
   showRelativeDate?: boolean;
 }
 
@@ -29,6 +30,7 @@ export function ProjectListTable({
   projects,
   onProjectClick,
   onDeleteClick,
+  onCreateOfferClick,
   compact = false,
   showRelativeDate = false,
 }: ProjectListTableProps & { compact?: boolean; showRelativeDate?: boolean }) {
@@ -46,11 +48,11 @@ export function ProjectListTable({
               <>
                 <TableHead>Prosjektleder</TableHead>
                 <TableHead>Verdi</TableHead>
-                <TableHead>Margin (DG)</TableHead>
+                <TableHead>DG</TableHead>
               </>
             )}
             {showRelativeDate && <TableHead>Oppdatert</TableHead>}
-            {onDeleteClick && <TableHead className="w-[50px]"></TableHead>}
+            <TableHead className="w-[100px]"></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -123,8 +125,23 @@ export function ProjectListTable({
                       : "-"}
                   </TableCell>
                 )}
-                {onDeleteClick && (
-                  <TableCell>
+                {/* Actions */}
+                <TableCell
+                  className="flex justify-end gap-2"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {onCreateOfferClick && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-primary"
+                      onClick={(e) => onCreateOfferClick(project, e)}
+                      title="Opprett tilbud"
+                    >
+                      <FileText className="h-4 w-4" />
+                    </Button>
+                  )}
+                  {onDeleteClick && (
                     <Button
                       variant="ghost"
                       size="icon"
@@ -133,8 +150,8 @@ export function ProjectListTable({
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
-                  </TableCell>
-                )}
+                  )}
+                </TableCell>
               </TableRow>
             );
           })}

@@ -11,6 +11,7 @@ import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { DeleteConfirmationModal } from "@/components/ui/delete-confirmation-modal";
+import { AddOfferModal } from "@/components/offers/add-offer-modal";
 import {
   Select,
   SelectContent,
@@ -65,6 +66,9 @@ export default function ProjectsPage() {
   const [projectToDelete, setProjectToDelete] =
     useState<DomainProjectDTO | null>(null);
 
+  const [selectedProjectForOffer, setSelectedProjectForOffer] =
+    useState<DomainProjectDTO | null>(null);
+
   const handleDeleteClick = (
     project: DomainProjectDTO,
     e: React.MouseEvent
@@ -82,141 +86,168 @@ export default function ProjectsPage() {
   };
 
   return (
-    <AppLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Prosjekter</h1>
-            <p className="text-muted-foreground">
-              Oversikt over alle prosjekter og deres status
-            </p>
+    <AppLayout disableScroll>
+      <div className="flex h-full flex-col">
+        <div className="flex-none space-y-4 border-b bg-background px-4 py-4 md:px-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold">Prosjekter</h1>
+              <p className="text-muted-foreground">
+                Oversikt over alle prosjekter og deres status
+              </p>
+            </div>
+            <Link href="/projects/new">
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Nytt prosjekt
+              </Button>
+            </Link>
           </div>
-          <Link href="/projects/new">
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Nytt prosjekt
-            </Button>
-          </Link>
-        </div>
 
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-          {/* Company Filter */}
-          <Select
-            value={companyFilter}
-            onValueChange={(val) => {
-              setCompanyFilter(val);
-              setPage(1);
-            }}
-          >
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Selskap" />
-            </SelectTrigger>
-            <SelectContent>
-              {Object.values(COMPANIES).map((company) => (
-                <SelectItem key={company.id} value={company.id}>
-                  <div className="flex items-center gap-2">
-                    {company.id !== "all" && (
-                      <div
-                        className="h-2 w-2 rounded-full"
-                        style={{ backgroundColor: company.color }}
-                      />
-                    )}
-                    <span>{company.name}</span>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {/* Phase Filter */}
-          <Select
-            value={phaseFilter}
-            onValueChange={(val) => {
-              setPhaseFilter(val);
-              setPage(1);
-            }}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Fase" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Alle faser</SelectItem>
-              {Object.entries(PROJECT_PHASE_LABELS).map(([key, label]) => (
-                <SelectItem key={key} value={key}>
-                  {label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {(phaseFilter !== "all" || companyFilter !== "all") && (
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setPhaseFilter("all");
-                setCompanyFilter("all");
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+            {/* Company Filter */}
+            <Select
+              value={companyFilter}
+              onValueChange={(val) => {
+                setCompanyFilter(val);
                 setPage(1);
               }}
-              className="px-2 lg:px-3"
             >
-              Nullstill
-              <X className="ml-2 h-4 w-4" />
-            </Button>
-          )}
-        </div>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Selskap" />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.values(COMPANIES).map((company) => (
+                  <SelectItem key={company.id} value={company.id}>
+                    <div className="flex items-center gap-2">
+                      {company.id !== "all" && (
+                        <div
+                          className="h-2 w-2 rounded-full"
+                          style={{ backgroundColor: company.color }}
+                        />
+                      )}
+                      <span>{company.name}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-        {isLoading ? (
-          <TableSkeleton rows={10} columns={7} />
-        ) : !filteredProjects || filteredProjects.length === 0 ? (
-          <div className="rounded-lg border bg-muted/20 py-12 text-center">
-            {phaseFilter !== "all" || companyFilter !== "all" ? (
-              <p className="text-muted-foreground">
-                Ingen prosjekter med valgte filtre
-              </p>
-            ) : (
-              <>
-                <p className="text-muted-foreground">Ingen prosjekter funnet</p>
-                <Link href="/projects/new">
-                  <Button className="mt-4">Opprett ditt første prosjekt</Button>
-                </Link>
-              </>
+            {/* Phase Filter */}
+            <Select
+              value={phaseFilter}
+              onValueChange={(val) => {
+                setPhaseFilter(val);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Fase" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Alle faser</SelectItem>
+                {Object.entries(PROJECT_PHASE_LABELS).map(([key, label]) => (
+                  <SelectItem key={key} value={key}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {(phaseFilter !== "all" || companyFilter !== "all") && (
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setPhaseFilter("all");
+                  setCompanyFilter("all");
+                  setPage(1);
+                }}
+                className="px-2 lg:px-3"
+              >
+                Nullstill
+                <X className="ml-2 h-4 w-4" />
+              </Button>
             )}
           </div>
-        ) : (
-          <ProjectListTable
-            projects={filteredProjects}
-            onProjectClick={(project) => router.push(`/projects/${project.id}`)}
-            onDeleteClick={handleDeleteClick}
-            showRelativeDate
-          />
-        )}
+        </div>
 
-        {
-          /* Pagination */
-          data && (
-            <PaginationControls
-              currentPage={page}
-              totalPages={Math.ceil((data.total ?? 0) / pageSize)}
-              onPageChange={setPage}
-              pageSize={pageSize}
-              totalCount={data.total ?? 0}
-              entityName="prosjekter"
+        <div className="flex-1 overflow-y-auto px-4 py-6 md:px-8">
+          <div className="space-y-6">
+            {isLoading ? (
+              <TableSkeleton rows={10} columns={7} />
+            ) : !filteredProjects || filteredProjects.length === 0 ? (
+              <div className="rounded-lg border bg-muted/20 py-12 text-center">
+                {phaseFilter !== "all" || companyFilter !== "all" ? (
+                  <p className="text-muted-foreground">
+                    Ingen prosjekter med valgte filtre
+                  </p>
+                ) : (
+                  <>
+                    <p className="text-muted-foreground">
+                      Ingen prosjekter funnet
+                    </p>
+                    <Link href="/projects/new">
+                      <Button className="mt-4">
+                        Opprett ditt første prosjekt
+                      </Button>
+                    </Link>
+                  </>
+                )}
+              </div>
+            ) : (
+              <ProjectListTable
+                projects={filteredProjects}
+                onProjectClick={(project) =>
+                  router.push(`/projects/${project.id}`)
+                }
+                onDeleteClick={handleDeleteClick}
+                onCreateOfferClick={(project, e) => {
+                  e.stopPropagation();
+                  setSelectedProjectForOffer(project);
+                }}
+                showRelativeDate
+              />
+            )}
+
+            {
+              /* Pagination */
+              data && (
+                <PaginationControls
+                  currentPage={page}
+                  totalPages={Math.ceil((data.total ?? 0) / pageSize)}
+                  onPageChange={setPage}
+                  pageSize={pageSize}
+                  totalCount={data.total ?? 0}
+                  entityName="prosjekter"
+                />
+              )
+            }
+
+            <DeleteConfirmationModal
+              isOpen={isDeleteModalOpen}
+              onClose={() => {
+                setIsDeleteModalOpen(false);
+                setProjectToDelete(null);
+              }}
+              onConfirm={handleDeleteConfirm}
+              title="Slett prosjekt"
+              description="Er du sikker på at du vil slette dette prosjektet? Dette vil fjerne prosjektet, alle relaterte timer og data permanent."
+              itemTitle={projectToDelete?.name}
+              isLoading={deleteProject.isPending}
             />
-          )
-        }
 
-        <DeleteConfirmationModal
-          isOpen={isDeleteModalOpen}
-          onClose={() => {
-            setIsDeleteModalOpen(false);
-            setProjectToDelete(null);
-          }}
-          onConfirm={handleDeleteConfirm}
-          title="Slett prosjekt"
-          description="Er du sikker på at du vil slette dette prosjektet? Dette vil fjerne prosjektet, alle relaterte timer og data permanent."
-          itemTitle={projectToDelete?.name}
-          isLoading={deleteProject.isPending}
-        />
+            <AddOfferModal
+              open={!!selectedProjectForOffer}
+              onOpenChange={(open) => {
+                if (!open) setSelectedProjectForOffer(null);
+              }}
+              defaultProjectId={selectedProjectForOffer?.id}
+              defaultCustomerId={selectedProjectForOffer?.customerId}
+              showCustomerWarning={true}
+              hideTrigger
+            />
+          </div>
+        </div>
       </div>
     </AppLayout>
   );

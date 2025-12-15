@@ -13,13 +13,15 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useCompanyStore } from "@/store/company-store";
 import type {
-  DomainCreateProjectRequest,
-  DomainUpdateProjectRequest,
   DomainUpdateProjectNameRequest,
   DomainUpdateProjectDescriptionRequest,
   DomainUpdateProjectManagerRequest,
   ProjectsListParams,
 } from "@/lib/.generated/data-contracts";
+import type {
+  CreateProjectRequest as DomainCreateProjectRequest,
+  UpdateProjectRequest as DomainUpdateProjectRequest,
+} from "@/lib/api/types";
 
 /**
  * Fetch paginated list of projects

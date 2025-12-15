@@ -80,7 +80,7 @@ export function OfferListModal({
                 <TableHead>Fase</TableHead>
                 <TableHead>Frist</TableHead>
                 <TableHead>Verdi</TableHead>
-                <TableHead>Margin (DG)</TableHead>
+                <TableHead>DG</TableHead>
                 <TableHead>Oppdatert</TableHead>
               </TableRow>
             </TableHeader>

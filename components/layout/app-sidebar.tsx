@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -66,11 +68,26 @@ const navigation = [
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const { sidebarCollapsed, toggleSidebarCollapse } = useUIStore();
+  const { sidebarCollapsed, toggleSidebarCollapse, setSidebarCollapsed } =
+    useUIStore();
   const { data: offersData } = useOffers({
     phase: "draft" as any,
   });
   const requestCount = offersData?.data?.length ?? 0;
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 1280 && !sidebarCollapsed) {
+        setSidebarCollapsed(true);
+      }
+    };
+
+    // Initial check
+    handleResize();
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [setSidebarCollapsed, sidebarCollapsed]);
 
   return (
     <motion.aside

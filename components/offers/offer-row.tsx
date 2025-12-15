@@ -8,7 +8,7 @@ import { NewBadge } from "@/components/ui/new-badge";
 import { CompanyBadge } from "@/components/ui/company-badge";
 import type { DomainOfferDTO } from "@/lib/.generated/data-contracts";
 import { useRouter } from "next/navigation";
-import { cn, getDueDateColor } from "@/lib/utils";
+import { cn, getDueDateColor, formatOfferNumber } from "@/lib/utils";
 
 interface OfferRowProps {
   offer: DomainOfferDTO;
@@ -32,7 +32,7 @@ export function OfferRow({ offer }: OfferRowProps) {
       onClick={handleRowClick}
     >
       <TableCell className="whitespace-nowrap font-mono text-sm text-muted-foreground">
-        {offer.offerNumber || "-"}
+        {formatOfferNumber(offer.offerNumber, offer.phase)}
       </TableCell>
       <TableCell className="font-medium">
         <div className="flex items-center gap-2">

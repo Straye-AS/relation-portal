@@ -104,3 +104,14 @@ export const FEATURES = {
     "Advanced security",
   ],
 };
+
+export function formatOfferNumber(
+  offerNumber: string | undefined | null,
+  phase?: string | undefined | null
+): string {
+  if (!offerNumber) return "-";
+  if (phase === "won" && !offerNumber.toUpperCase().endsWith("W")) {
+    return `${offerNumber}W`;
+  }
+  return offerNumber;
+}

@@ -31,7 +31,6 @@ export function useDashboard(params: DashboardParams = {}) {
   return useQuery({
     queryKey: ["dashboard", selectedCompanyId, timeRange],
     queryFn: async () => {
-      // @ts-ignore - API client update pending
       const response = await api.dashboard.metricsList({
         query: { timeRange },
       } as any);

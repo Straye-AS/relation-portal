@@ -24,9 +24,9 @@ import type {
   DomainUpdateOfferDescriptionRequest,
   DomainUpdateOfferDueDateRequest,
   DomainUpdateOfferCustomerRequest,
-  DomainOfferDTO,
 } from "@/lib/.generated/data-contracts";
 import { ContentType } from "@/lib/.generated/http-client";
+import { Offer, OfferDetail } from "@/lib/api/types";
 
 /**
  * Fetch paginated list of offers
@@ -61,7 +61,7 @@ export function useOffer(id: string) {
     queryKey: ["offers", id, selectedCompanyId],
     queryFn: async () => {
       const response = await api.offers.offersDetail({ id });
-      return response.data as unknown as DomainOfferDTO;
+      return response.data as Offer;
     },
     enabled: !!id && isAuthenticated,
   });
@@ -79,7 +79,7 @@ export function useOfferWithDetails(id: string) {
     queryKey: ["offers", id, "details", selectedCompanyId],
     queryFn: async () => {
       const response = await api.offers.detailList({ id });
-      return response.data;
+      return response.data as OfferDetail;
     },
     enabled: !!id && isAuthenticated,
   });
@@ -587,9 +587,17 @@ export function useUpdateOfferProject() {
       queryClient.invalidateQueries({ queryKey: ["offers", variables.id] });
       toast.success("Prosjekt oppdatert");
     },
-    onError: (error: Error) => {
+    onError: (error: any) => {
       console.error("Failed to update project:", error);
-      toast.error("Kunne ikke oppdatere prosjekt");
+      if (
+        error.status === 400 ||
+        error.response?.status === 400 ||
+        error.statusCode === 400
+      ) {
+        toast.error("Kan kun koble til prosjekter som er i tilbudsfasen.");
+      } else {
+        toast.error("Kunne ikke oppdatere prosjekt");
+      }
     },
   });
 }

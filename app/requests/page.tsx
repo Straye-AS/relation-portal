@@ -62,107 +62,113 @@ export default function RequestsPage() {
   };
 
   return (
-    <AppLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Forespørsler</h1>
-            <p className="text-muted-foreground">
-              Oversikt over innkommende forespørsler som må behandles.
-            </p>
+    <AppLayout disableScroll>
+      <div className="flex h-full flex-col">
+        <div className="flex-none border-b bg-background px-4 py-4 md:px-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold">Forespørsler</h1>
+              <p className="text-muted-foreground">
+                Oversikt over innkommende forespørsler som må behandles.
+              </p>
+            </div>
+            {/* No "Create" button here as per requirements */}
           </div>
-          {/* No "Create" button here as per requirements */}
         </div>
 
-        {isLoading ? (
-          <TableSkeleton rows={5} columns={4} />
-        ) : offers.length === 0 ? (
-          <div className="rounded-lg border bg-muted/20 py-12 text-center">
-            <p className="text-muted-foreground">
-              Ingen forespørsler funnet 👍
-            </p>
+        <div className="flex-1 overflow-y-auto px-4 py-6 md:px-8">
+          <div className="space-y-6">
+            {isLoading ? (
+              <TableSkeleton rows={5} columns={4} />
+            ) : offers.length === 0 ? (
+              <div className="rounded-lg border bg-muted/20 py-12 text-center">
+                <p className="text-muted-foreground">
+                  Ingen forespørsler funnet 👍
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-lg border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Tittel</TableHead>
+                      <TableHead>Kunde</TableHead>
+                      <TableHead>Selskap</TableHead>
+                      <TableHead>Opprettet</TableHead>
+                      <TableHead className="text-right">Handling</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {offers.map((offer) => (
+                      <TableRow key={offer.id} className="hover:bg-muted/50">
+                        <TableCell className="font-medium">
+                          {offer.title}
+                          <NewBadge createdAt={offer.createdAt} />
+                        </TableCell>
+                        <TableCell>{offer.customerName}</TableCell>
+                        <TableCell>
+                          <CompanyBadge companyId={offer.companyId} />
+                        </TableCell>
+                        <TableCell>
+                          {offer.createdAt
+                            ? formatDistanceToNow(new Date(offer.createdAt), {
+                                addSuffix: true,
+                                locale: nb,
+                              })
+                            : "-"}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => handleDeleteClick(offer, e)}
+                              className="text-muted-foreground hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={(e) => handleConvertClick(offer, e)}
+                              className="gap-2"
+                            >
+                              Konverter
+                              <ArrowRight className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+
+            {/* Pagination info could go here */}
+
+            <ConvertRequestModal
+              offer={selectedOffer}
+              isOpen={isConvertModalOpen}
+              onClose={() => {
+                setIsConvertModalOpen(false);
+                setSelectedOffer(null);
+              }}
+            />
+
+            <DeleteConfirmationModal
+              isOpen={isDeleteModalOpen}
+              onClose={() => {
+                setIsDeleteModalOpen(false);
+                setSelectedOffer(null);
+              }}
+              onConfirm={handleDeleteConfirm}
+              title="Slett forespørsel"
+              description="Er du sikker på at du vil slette denne forespørselen? Dette kan ikke angres."
+              itemTitle={selectedOffer?.title}
+              isLoading={deleteOffer.isPending}
+            />
           </div>
-        ) : (
-          <div className="rounded-lg border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Tittel</TableHead>
-                  <TableHead>Kunde</TableHead>
-                  <TableHead>Selskap</TableHead>
-                  <TableHead>Opprettet</TableHead>
-                  <TableHead className="text-right">Handling</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {offers.map((offer) => (
-                  <TableRow key={offer.id} className="hover:bg-muted/50">
-                    <TableCell className="font-medium">
-                      {offer.title}
-                      <NewBadge createdAt={offer.createdAt} />
-                    </TableCell>
-                    <TableCell>{offer.customerName}</TableCell>
-                    <TableCell>
-                      <CompanyBadge companyId={offer.companyId} />
-                    </TableCell>
-                    <TableCell>
-                      {offer.createdAt
-                        ? formatDistanceToNow(new Date(offer.createdAt), {
-                            addSuffix: true,
-                            locale: nb,
-                          })
-                        : "-"}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={(e) => handleDeleteClick(offer, e)}
-                          className="text-muted-foreground hover:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          onClick={(e) => handleConvertClick(offer, e)}
-                          className="gap-2"
-                        >
-                          Konverter
-                          <ArrowRight className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
-
-        {/* Pagination info could go here */}
-
-        <ConvertRequestModal
-          offer={selectedOffer}
-          isOpen={isConvertModalOpen}
-          onClose={() => {
-            setIsConvertModalOpen(false);
-            setSelectedOffer(null);
-          }}
-        />
-
-        <DeleteConfirmationModal
-          isOpen={isDeleteModalOpen}
-          onClose={() => {
-            setIsDeleteModalOpen(false);
-            setSelectedOffer(null);
-          }}
-          onConfirm={handleDeleteConfirm}
-          title="Slett forespørsel"
-          description="Er du sikker på at du vil slette denne forespørselen? Dette kan ikke angres."
-          itemTitle={selectedOffer?.title}
-          isLoading={deleteOffer.isPending}
-        />
+        </div>
       </div>
     </AppLayout>
   );
