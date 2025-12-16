@@ -42,6 +42,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Generate API types from staging
+        run: pnpm generate:api:staging
+
       - name: Run ESLint
         run: pnpm lint
 
@@ -89,6 +92,9 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Generate API types from staging
+        run: pnpm generate:api:staging
 
       - name: Build application
         run: pnpm build

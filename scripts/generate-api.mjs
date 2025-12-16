@@ -24,7 +24,8 @@ const __dirname = path.dirname(__filename);
 // Environment-specific Swagger/OpenAPI URLs
 const SWAGGER_URLS = {
   local: "http://localhost:8080/swagger/doc.json",
-  staging: "https://api-staging.straye.no/swagger/doc.json",
+  staging:
+    "https://straye-relation-staging.proudsmoke-10281cc0.norwayeast.azurecontainerapps.io/swagger/doc.json",
   prod: "https://api.straye.no/swagger/doc.json",
 };
 
