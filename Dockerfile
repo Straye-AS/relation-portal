@@ -39,6 +39,9 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_AZURE_CLIENT_ID=$NEXT_PUBLIC_AZURE_CLIENT_ID
 ENV NEXT_PUBLIC_AZURE_TENANT_ID=$NEXT_PUBLIC_AZURE_TENANT_ID
 
+# Generate API types from staging swagger spec
+RUN pnpm generate:api:staging
+
 # Build the application
 RUN pnpm build
 
