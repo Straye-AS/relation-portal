@@ -14,8 +14,13 @@ import { Trash2, FileText } from "lucide-react";
 import { ProjectPhaseBadge } from "@/components/projects/project-phase-badge";
 import { NewBadge } from "@/components/ui/new-badge";
 import { CompanyBadge } from "@/components/ui/company-badge";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, format } from "date-fns";
 import { nb } from "date-fns/locale";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { DomainProjectDTO } from "@/lib/.generated/data-contracts";
 
 interface ProjectListTableProps {
@@ -117,12 +122,29 @@ export function ProjectListTable({
                 )}
                 {showRelativeDate && (
                   <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
-                    {project.updatedAt
-                      ? formatDistanceToNow(new Date(project.updatedAt), {
-                          addSuffix: true,
-                          locale: nb,
-                        })
-                      : "-"}
+                    {project.updatedAt ? (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="cursor-help underline decoration-muted-foreground/30 decoration-dotted underline-offset-4">
+                            {formatDistanceToNow(new Date(project.updatedAt), {
+                              addSuffix: true,
+                              locale: nb,
+                            })}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          {format(
+                            new Date(project.updatedAt),
+                            "d. MMMM yyyy HH:mm",
+                            {
+                              locale: nb,
+                            }
+                          )}
+                        </TooltipContent>
+                      </Tooltip>
+                    ) : (
+                      "-"
+                    )}
                   </TableCell>
                 )}
                 {/* Actions */}

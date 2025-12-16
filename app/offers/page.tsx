@@ -36,7 +36,7 @@ export default function OffersPage() {
   const pageSize = 20;
 
   // Sort State
-  const [sortBy] = useState<string>("updated_at");
+  const [sortBy] = useState<string>("updatedAt");
   const [sortOrder] = useState<"asc" | "desc">("desc");
 
   // Filters State
@@ -95,7 +95,12 @@ export default function OffersPage() {
         <div className="flex-none space-y-4 border-b bg-background px-4 py-4 md:px-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold">Tilbud</h1>
+              <h1 className="text-3xl font-bold">
+                Tilbud{" "}
+                <span className="text-sm text-muted-foreground">
+                  ({data?.total ?? 0})
+                </span>
+              </h1>
               <p className="text-muted-foreground">
                 Oversikt over alle tilbud og deres status
               </p>
@@ -222,6 +227,7 @@ export default function OffersPage() {
                       <TableHead>Kunde</TableHead>
                       <TableHead>Selskap</TableHead>
                       <TableHead>Fase</TableHead>
+                      <TableHead>Sendt</TableHead>
                       <TableHead>Frist</TableHead>
                       <TableHead>Verdi</TableHead>
                       <TableHead>DG</TableHead>

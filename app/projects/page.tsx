@@ -37,7 +37,7 @@ export default function ProjectsPage() {
   const { data, isLoading } = useProjects({
     page,
     pageSize,
-    sortBy: "created_at" as any,
+    sortBy: "updatedAt" as any,
     sortOrder: "desc" as any,
     phase: phaseFilter === "all" ? undefined : (phaseFilter as any),
   });
@@ -91,7 +91,12 @@ export default function ProjectsPage() {
         <div className="flex-none space-y-4 border-b bg-background px-4 py-4 md:px-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold">Prosjekter</h1>
+              <h1 className="text-3xl font-bold">
+                Prosjekter{" "}
+                <span className="text-sm text-muted-foreground">
+                  ({data?.total ?? 0})
+                </span>
+              </h1>
               <p className="text-muted-foreground">
                 Oversikt over alle prosjekter og deres status
               </p>

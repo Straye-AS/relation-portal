@@ -798,11 +798,36 @@ export function useUpdateCustomerHasWonOffer() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["offers"] });
       queryClient.invalidateQueries({ queryKey: ["offers", variables.id] });
-      toast.success("Kunde vunnet status oppdatert");
+      toast.success("Kunde er merket som vinner for prosjektet");
     },
     onError: (error: Error) => {
       console.error("Failed to update customer won status:", error);
-      toast.error("Kunne ikke oppdatere kunde vunnet status");
+      toast.error("Kunne ikke oppdatere vinner-status");
     },
+  });
+}
+
+/**
+ * Fetch next offer number for a company
+ */
+export function useOfferNextNumber(companyId?: string) {
+  const api = useApi();
+  const { isAuthenticated } = useAuth();
+
+  return useQuery({
+    queryKey: ["offers", "next-number", companyId],
+    queryFn: async () => {
+      if (!companyId) return null;
+
+      const response = await api.offers.http.request({
+        path: `/offers/next-number`,
+        method: "GET",
+        query: { companyId },
+        secure: true,
+        type: ContentType.Json,
+      });
+      return response.data as string;
+    },
+    enabled: !!companyId && isAuthenticated,
   });
 }

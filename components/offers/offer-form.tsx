@@ -14,13 +14,14 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { CustomerListTable } from "@/components/customers/customer-list-table";
+import { ProjectListTable } from "@/components/projects/project-list-table";
 import {
   Select,
   SelectContent,
@@ -30,7 +31,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, ChevronsUpDown, Check } from "lucide-react";
+import { Loader2, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Accordion,
@@ -49,12 +50,9 @@ import {
 } from "@/lib/.generated/data-contracts";
 import { useAllCustomers } from "@/hooks/useCustomers";
 import { useAllProjects } from "@/hooks/useProjects";
+import { useOfferNextNumber } from "@/hooks/useOffers";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Search } from "lucide-react";
 import { COMPANIES } from "@/lib/api/types";
 import { Slider } from "@/components/ui/slider";
 import { SmartDatePicker } from "@/components/ui/smart-date-picker";
@@ -96,6 +94,7 @@ interface OfferFormProps {
   initialData?: Partial<OfferFormValues> & { companyId?: string };
   showCompanySelect?: boolean;
   showCustomerWarning?: boolean;
+  lockedCustomerId?: string; // If set, customer is locked to this ID
 }
 
 export function OfferForm({
@@ -104,18 +103,20 @@ export function OfferForm({
   initialData,
   showCompanySelect,
   showCustomerWarning,
+  lockedCustomerId,
 }: OfferFormProps) {
   const { data: customers } = useAllCustomers();
   const { data: projects } = useAllProjects();
   const { user } = useCurrentUser();
-  const [openCustomerCombobox, setOpenCustomerCombobox] = useState(false);
-  const [openProjectCombobox, setOpenProjectCombobox] = useState(false);
 
+  // We need to watch companyId to fetch the next number
+  // Form might not have it set initially if it depends on user data loading, but user data is loaded in parent or here?
+  // user.company.id is available.
   const form = useForm<OfferFormValues>({
     resolver: zodResolver(offerSchema),
     defaultValues: {
       title: initialData?.title ?? "",
-      customerId: initialData?.customerId ?? "",
+      customerId: lockedCustomerId ?? initialData?.customerId ?? "",
       projectId: initialData?.projectId ?? "",
       companyId: initialData?.companyId ?? user?.company?.id ?? "",
       description: initialData?.description ?? "",
@@ -125,6 +126,9 @@ export function OfferForm({
     },
     mode: "onChange",
   });
+
+  const selectedCompanyId = form.watch("companyId") || user?.company?.id;
+  const { data: nextOfferNumber } = useOfferNextNumber(selectedCompanyId);
 
   const selectedCustomerId = form.watch("customerId");
   const selectedProjectId = form.watch("projectId");
@@ -215,6 +219,14 @@ export function OfferForm({
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         {/* Main Info */}
         <div className="space-y-4">
+          {nextOfferNumber && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span className="font-medium">Neste tilbudsnummer:</span>
+              <span className="rounded bg-muted px-2 py-0.5 font-mono text-foreground">
+                {nextOfferNumber}
+              </span>
+            </div>
+          )}
           <FormField
             control={form.control}
             name="title"
@@ -294,86 +306,25 @@ export function OfferForm({
                       </span>
                     )}
                   </FormLabel>
-                  <Popover
-                    open={openCustomerCombobox}
-                    onOpenChange={setOpenCustomerCombobox}
-                  >
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          className={cn(
-                            "w-full justify-between",
-                            !field.value && "text-muted-foreground",
-                            field.value &&
-                              !form.formState.errors.customerId &&
-                              "border-green-500"
-                          )}
-                        >
-                          {field.value
-                            ? customers?.find(
-                                (customer: DomainCustomerDTO) =>
-                                  customer.id === field.value
-                              )?.name
-                            : "Velg kunde..."}
-                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-                      <Command>
-                        <CommandInput placeholder="Søk etter kunde..." />
-                        <CommandList className="max-h-[200px] overflow-y-auto">
-                          <CommandEmpty>Ingen kunder funnet.</CommandEmpty>
-                          <CommandGroup>
-                            {/* Option to clear selection if we want to support unselecting? */}
-                            <CommandItem
-                              value="clear_selection"
-                              onSelect={() => {
-                                form.setValue("customerId", "", {
-                                  shouldValidate: true,
-                                });
-                                setOpenCustomerCombobox(false);
-                              }}
-                              className="italic text-muted-foreground"
-                            >
-                              <span className="mr-2 h-4 w-4" />
-                              Fjern valg
-                            </CommandItem>
-                            {customers?.map((customer: DomainCustomerDTO) => (
-                              <CommandItem
-                                value={customer.name}
-                                key={customer.id}
-                                onSelect={() => {
-                                  form.setValue(
-                                    "customerId",
-                                    customer.id ?? "",
-                                    {
-                                      shouldValidate: true,
-                                    }
-                                  );
-                                  // If new customer selected, verify project compatibility?
-                                  // For now, let's just create offer.
-                                  setOpenCustomerCombobox(false);
-                                }}
-                              >
-                                <Check
-                                  className={cn(
-                                    "mr-2 h-4 w-4",
-                                    customer.id === field.value
-                                      ? "opacity-100"
-                                      : "opacity-0"
-                                  )}
-                                />
-                                {customer.name}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
+                  <FormControl>
+                    {lockedCustomerId ? (
+                      <div className="flex h-10 w-full items-center rounded-md border border-input bg-muted px-3 py-2 text-sm text-muted-foreground">
+                        {customers?.find((c) => c.id === lockedCustomerId)
+                          ?.name || "Kunde"}
+                        <span className="ml-auto text-xs font-normal">
+                          (Låst)
+                        </span>
+                      </div>
+                    ) : (
+                      <CustomerSelectionModal
+                        customers={customers ?? []}
+                        selectedCustomerId={field.value}
+                        onSelect={(customerId) => {
+                          field.onChange(customerId);
+                        }}
+                      />
+                    )}
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -392,84 +343,21 @@ export function OfferForm({
                       </span>
                     )}
                   </FormLabel>
-                  <Popover
-                    open={openProjectCombobox}
-                    onOpenChange={setOpenProjectCombobox}
-                  >
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          className={cn(
-                            "w-full justify-between",
-                            !field.value && "text-muted-foreground",
-                            field.value &&
-                              !form.formState.errors.projectId &&
-                              "border-green-500"
-                          )}
-                        >
-                          {field.value
-                            ? projects?.find(
-                                (p: DomainProjectDTO) => p.id === field.value
-                              )?.name
-                            : "Velg prosjekt..."}
-                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-                      <Command>
-                        <CommandInput placeholder="Søk etter prosjekt..." />
-                        <CommandList className="max-h-[200px] overflow-y-auto">
-                          <CommandEmpty>Ingen prosjekter funnet.</CommandEmpty>
-                          <CommandGroup>
-                            <CommandItem
-                              value="clear_selection"
-                              onSelect={() => {
-                                form.setValue("projectId", "", {
-                                  shouldValidate: true,
-                                });
-                                setOpenProjectCombobox(false);
-                              }}
-                              className="italic text-muted-foreground"
-                            >
-                              <span className="mr-2 h-4 w-4" />
-                              Fjern valg
-                            </CommandItem>
-                            {filteredProjects?.map(
-                              (project: DomainProjectDTO) => (
-                                <CommandItem
-                                  value={project.name}
-                                  key={project.id}
-                                  onSelect={() => {
-                                    form.setValue(
-                                      "projectId",
-                                      project.id ?? "",
-                                      {
-                                        shouldValidate: true,
-                                      }
-                                    );
-                                    setOpenProjectCombobox(false);
-                                  }}
-                                >
-                                  <Check
-                                    className={cn(
-                                      "mr-2 h-4 w-4",
-                                      project.id === field.value
-                                        ? "opacity-100"
-                                        : "opacity-0"
-                                    )}
-                                  />
-                                  {project.name}
-                                </CommandItem>
-                              )
-                            )}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
+                  <FormControl>
+                    <ProjectSelectionModal
+                      projects={filteredProjects ?? []}
+                      selectedProjectId={field.value}
+                      onSelect={(projectId) => {
+                        field.onChange(projectId);
+                      }}
+                    />
+                  </FormControl>
+                  {lockedCustomerId && !field.value && (
+                    <p className="text-[0.8rem] text-muted-foreground">
+                      Hvis du ikke velger et prosjekt, vil et nytt bli opprettet
+                      automatisk.
+                    </p>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}
@@ -569,5 +457,171 @@ export function OfferForm({
         </div>
       </form>
     </Form>
+  );
+}
+
+function CustomerSelectionModal({
+  customers,
+  selectedCustomerId,
+  onSelect,
+}: {
+  customers: DomainCustomerDTO[];
+  selectedCustomerId?: string;
+  onSelect: (id: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const selectedCustomer = customers.find((c) => c.id === selectedCustomerId);
+
+  const filtered = customers.filter(
+    (c) =>
+      c.name?.toLowerCase().includes(search.toLowerCase()) ||
+      c.orgNumber?.includes(search)
+  );
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          className={cn(
+            "w-full justify-between",
+            !selectedCustomerId && "text-muted-foreground",
+            selectedCustomerId && "border-green-500"
+          )}
+        >
+          {selectedCustomer ? selectedCustomer.name : "Velg kunde..."}
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="flex max-h-[90vh] max-w-[800px] flex-col p-0">
+        <DialogHeader className="border-b p-4 pb-2">
+          <DialogTitle>Velg kunde</DialogTitle>
+          <div className="relative mt-2">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Søk etter kunde..."
+              className="pl-9"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+        </DialogHeader>
+        <div className="flex-1 overflow-y-auto p-4">
+          <CustomerListTable
+            customers={filtered}
+            onCustomerClick={(c) => {
+              onSelect(c.id ?? "");
+              setOpen(false);
+            }}
+            compact
+          />
+          {filtered.length === 0 && (
+            <div className="py-8 text-center text-muted-foreground">
+              Ingen kunder funnet
+            </div>
+          )}
+        </div>
+        <div className="flex justify-between border-t bg-muted/20 p-4">
+          <Button
+            variant="ghost"
+            onClick={() => {
+              onSelect("");
+              setOpen(false);
+            }}
+          >
+            Fjern valg
+          </Button>
+          <Button variant="outline" onClick={() => setOpen(false)}>
+            Lukk
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function ProjectSelectionModal({
+  projects,
+  selectedProjectId,
+  onSelect,
+}: {
+  projects: DomainProjectDTO[];
+  selectedProjectId?: string;
+  onSelect: (id: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const selectedProject = projects.find((p) => p.id === selectedProjectId);
+
+  const filtered = projects.filter(
+    (p) =>
+      p.name?.toLowerCase().includes(search.toLowerCase()) ||
+      p.projectNumber?.includes(search) ||
+      p.customerName?.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          className={cn(
+            "w-full justify-between",
+            !selectedProjectId && "text-muted-foreground",
+            selectedProjectId && "border-green-500"
+          )}
+        >
+          {selectedProject ? selectedProject.name : "Velg prosjekt..."}
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="flex max-h-[90vh] max-w-[1000px] flex-col p-0">
+        <DialogHeader className="border-b p-4 pb-2">
+          <DialogTitle>Velg prosjekt</DialogTitle>
+          <div className="relative mt-2">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Søk etter prosjekt..."
+              className="pl-9"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+        </DialogHeader>
+        <div className="flex-1 overflow-y-auto p-4">
+          <ProjectListTable
+            projects={filtered}
+            onProjectClick={(p) => {
+              onSelect(p.id ?? "");
+              setOpen(false);
+            }}
+            compact
+            showRelativeDate
+          />
+          {filtered.length === 0 && (
+            <div className="py-8 text-center text-muted-foreground">
+              Ingen prosjekter funnet
+            </div>
+          )}
+        </div>
+        <div className="flex justify-between border-t bg-muted/20 p-4">
+          <Button
+            variant="ghost"
+            onClick={() => {
+              onSelect("");
+              setOpen(false);
+            }}
+          >
+            Fjern valg
+          </Button>
+          <Button variant="outline" onClick={() => setOpen(false)}>
+            Lukk
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

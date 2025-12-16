@@ -2,8 +2,13 @@
 
 import { TableCell, TableRow } from "@/components/ui/table";
 import { OfferStatusBadge } from "@/components/offers/offer-status-badge";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, format } from "date-fns";
 import { nb } from "date-fns/locale";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { NewBadge } from "@/components/ui/new-badge";
 import { CompanyBadge } from "@/components/ui/company-badge";
 import type { DomainOfferDTO } from "@/lib/.generated/data-contracts";
@@ -51,6 +56,11 @@ export function OfferRow({ offer }: OfferRowProps) {
       <TableCell>
         <OfferStatusBadge phase={offer.phase || "draft"} />
       </TableCell>
+      <TableCell className="text-sm">
+        {offer.sentDate
+          ? new Date(offer.sentDate).toLocaleDateString("nb-NO")
+          : "-"}
+      </TableCell>
       <TableCell className={cn("text-sm", getDueDateColor(offer.dueDate))}>
         {offer.dueDate
           ? new Date(offer.dueDate).toLocaleDateString("nb-NO")
@@ -77,12 +87,25 @@ export function OfferRow({ offer }: OfferRowProps) {
         </span>
       </TableCell>
       <TableCell>
-        {offer.updatedAt
-          ? formatDistanceToNow(new Date(offer.updatedAt), {
-              addSuffix: true,
-              locale: nb,
-            })
-          : "-"}
+        {offer.updatedAt ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="cursor-help underline decoration-muted-foreground/30 decoration-dotted underline-offset-4">
+                {formatDistanceToNow(new Date(offer.updatedAt), {
+                  addSuffix: true,
+                  locale: nb,
+                })}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              {format(new Date(offer.updatedAt), "d. MMMM yyyy HH:mm", {
+                locale: nb,
+              })}
+            </TooltipContent>
+          </Tooltip>
+        ) : (
+          "-"
+        )}
       </TableCell>
     </TableRow>
   );

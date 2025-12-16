@@ -61,6 +61,7 @@ export function SmartDatePicker({
             onSelect={onSelect}
             disabled={disabledDates}
             initialFocus
+            defaultMonth={value}
           />
         </PopoverContent>
       </Popover>

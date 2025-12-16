@@ -23,6 +23,7 @@ import { OfferListModal } from "@/components/dashboard/offer-list-modal";
 import { useOffers } from "@/hooks/useOffers";
 
 import { Offer as DomainOfferDTO, DashboardMetrics } from "@/lib/api/types";
+import { SortByEnum2, SortOrderEnum1 } from "@/lib/.generated/data-contracts";
 
 export default function DashboardPage() {
   const { userCompany } = useCompanyStore();
@@ -47,6 +48,8 @@ export default function DashboardPage() {
       phase: selectedPhase as any,
       page,
       pageSize,
+      sortBy: SortByEnum2.UpdatedAt,
+      sortOrder: SortOrderEnum1.Desc,
     },
     { enabled: !!selectedPhase }
   );

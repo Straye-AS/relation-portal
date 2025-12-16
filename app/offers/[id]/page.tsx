@@ -18,6 +18,7 @@ import {
   useUpdateOfferCustomer,
   useUpdateOfferExpirationDate,
   useUpdateOfferCost,
+  useAdvanceOffer,
 } from "@/hooks/useOffers";
 import { useAllCustomers } from "@/hooks/useCustomers";
 
@@ -64,6 +65,7 @@ import {
   XCircle,
   Send,
   Pencil,
+  Undo2,
 } from "lucide-react";
 import { formatDistanceToNow, addDays, format } from "date-fns";
 import { nb } from "date-fns/locale";
@@ -100,6 +102,8 @@ import { Slider } from "@/components/ui/slider";
 
 import { OfferDescription } from "@/components/offers/offer-description";
 import { ProjectPhaseBadge } from "@/components/projects/project-phase-badge";
+
+import { Badge } from "@/components/ui/badge";
 
 export default function OfferDetailPage({
   params,
@@ -159,6 +163,7 @@ export default function OfferDetailPage({
   const acceptOffer = useAcceptOffer();
   const rejectOffer = useRejectOffer();
   const sendOffer = useSendOffer();
+  const advanceOffer = useAdvanceOffer();
 
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [isResponsibleModalOpen, setIsResponsibleModalOpen] = useState(false);
@@ -243,7 +248,7 @@ export default function OfferDetailPage({
     <AppLayout disableScroll>
       <div className="flex h-full flex-col">
         <div className="flex-none border-b bg-background px-4 py-4 md:px-8">
-          <div className="mx-auto w-full max-w-[1920px]">
+          <div className="w-full">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <Link href="/offers">
@@ -262,17 +267,25 @@ export default function OfferDetailPage({
                   </span>
                   <div className="flex items-center gap-2">
                     <h1 className="text-3xl font-bold">
-                      <InlineEdit
-                        value={offer.title || ""}
-                        onSave={async (val) => {
-                          await updateTitle.mutateAsync({
-                            id: offer.id!,
-                            data: { title: String(val) },
-                          });
-                        }}
-                        className="-ml-1 border-transparent p-0 text-3xl font-bold hover:border-transparent hover:bg-transparent"
-                      />
+                      {isLocked ? (
+                        <span>{offer.title || ""}</span>
+                      ) : (
+                        <InlineEdit
+                          value={offer.title || ""}
+                          onSave={async (val) => {
+                            await updateTitle.mutateAsync({
+                              id: offer.id!,
+                              data: { title: String(val) },
+                            });
+                          }}
+                          className="-ml-1 border-transparent p-0 text-3xl font-bold hover:border-transparent hover:bg-transparent"
+                        />
+                      )}
                     </h1>
+                    <OfferStatusBadge
+                      phase={offer.phase || "draft"}
+                      className="px-3 py-1 text-base"
+                    />
                   </div>
                   <p className="text-muted-foreground">
                     Opprettet{" "}
@@ -311,18 +324,30 @@ export default function OfferDetailPage({
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem
-                      className="text-green-600 focus:bg-green-50 focus:text-green-600"
+                      className="cursor-pointer text-green-600 focus:bg-green-50 focus:text-green-600"
                       onClick={() => setConfirmationAction("win")}
                     >
                       <Trophy className="mr-2 h-4 w-4" />
                       Vunnet
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      className="text-red-600 focus:bg-red-50 focus:text-red-600"
+                      className="cursor-pointer text-red-600 focus:bg-red-50 focus:text-red-600"
                       onClick={() => setConfirmationAction("loss")}
                     >
                       <XCircle className="mr-2 h-4 w-4" />
                       Tapt
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="cursor-pointer text-muted-foreground focus:bg-gray-100"
+                      onClick={() =>
+                        advanceOffer.mutate({
+                          id: offer.id!,
+                          phase: "in_progress",
+                        })
+                      }
+                    >
+                      <Undo2 className="mr-2 h-4 w-4" />
+                      Tilbake til <OfferStatusBadge phase="in_progress" />
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -470,7 +495,7 @@ export default function OfferDetailPage({
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 py-6 md:px-8">
-          <div className="mx-auto w-full max-w-[1920px] space-y-6">
+          <div className="w-full space-y-6">
             {(offer.phase === "won" || offer.phase === "lost") &&
               showLockedAlert && (
                 <Alert
@@ -638,17 +663,23 @@ export default function OfferDetailPage({
                     <p className="mb-1 text-sm text-muted-foreground">
                       Ekstern referanse
                     </p>
-                    <InlineEdit
-                      value={(offer as any).externalReference || ""}
-                      placeholder="Legg til ekstern ref..."
-                      onSave={async (val) => {
-                        await updateExternalReference.mutateAsync({
-                          id: offer.id!,
-                          externalReference: String(val),
-                        });
-                      }}
-                      className="-ml-1 w-full border-transparent p-1 px-1 font-medium hover:border-input hover:bg-transparent"
-                    />
+                    {isLocked ? (
+                      <span className="font-medium">
+                        {(offer as any).externalReference || "-"}
+                      </span>
+                    ) : (
+                      <InlineEdit
+                        value={(offer as any).externalReference || ""}
+                        placeholder="Legg til ekstern ref..."
+                        onSave={async (val) => {
+                          await updateExternalReference.mutateAsync({
+                            id: offer.id!,
+                            externalReference: String(val),
+                          });
+                        }}
+                        className="-ml-1 w-full border-transparent p-1 px-1 font-medium hover:border-input hover:bg-transparent"
+                      />
+                    )}
                   </div>
 
                   <div>
@@ -838,8 +869,18 @@ export default function OfferDetailPage({
                   </div>
 
                   <div className="border-t pt-4 text-xs text-muted-foreground">
-                    <div className="flex justify-between">
-                      <span>Opprettet:</span>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1">
+                        Opprettet av{" "}
+                        {offer.createdByName ?? (
+                          <Badge
+                            variant="secondary"
+                            className="h-4 px-1 text-[10px]"
+                          >
+                            System
+                          </Badge>
+                        )}
+                      </div>
                       <span>
                         {offer.createdAt
                           ? format(
@@ -849,8 +890,18 @@ export default function OfferDetailPage({
                           : "Ukjent"}
                       </span>
                     </div>
-                    <div className="flex justify-between">
-                      <span>Sist oppdatert:</span>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1">
+                        Sist oppdatert av{" "}
+                        {offer.updatedByName ?? (
+                          <Badge
+                            variant="secondary"
+                            className="h-4 px-1 text-[10px]"
+                          >
+                            System
+                          </Badge>
+                        )}
+                      </div>
                       <span>
                         {offer.updatedAt
                           ? format(
@@ -929,9 +980,14 @@ export default function OfferDetailPage({
 
                   <div className="space-y-6 border-t pt-6">
                     <div>
-                      <p className="mb-2 text-sm text-muted-foreground">
-                        Sannsynlighet: {localProbability}%
-                      </p>
+                      <div className="mb-2 text-sm text-muted-foreground">
+                        <div>Sannsynlighet: {localProbability}%</div>
+                        <div className="text-xs text-orange-500">
+                          {isLocked
+                            ? "Slik den var når tilbudet ble lukket"
+                            : ""}
+                        </div>
+                      </div>
                       <div className="w-full">
                         <Slider
                           value={[localProbability]}
@@ -1152,7 +1208,7 @@ export default function OfferDetailPage({
             <OfferDescription
               offerId={offer.id!}
               initialDescription={offer.description || ""}
-              readOnly={isLocked}
+              readOnly={offer.phase === "won"}
             />
 
             {offer.notes && (

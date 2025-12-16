@@ -62,7 +62,7 @@ export function OfferListModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="flex max-h-[80vh] max-w-7xl flex-col">
+      <DialogContent className="flex max-h-[80vh] max-w-[95vw] flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             Tilbud {phase ? <OfferStatusBadge phase={phase} /> : `- ${title}`}

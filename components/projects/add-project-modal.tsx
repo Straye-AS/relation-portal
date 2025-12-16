@@ -11,44 +11,39 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { OfferForm } from "./offer-form";
-import { useCreateOffer } from "@/hooks/useOffers";
-import type { DomainCreateOfferRequest } from "@/lib/.generated/data-contracts";
-import { OfferStatusBadge } from "./offer-status-badge";
+import { ProjectForm } from "./project-form";
+import { useCreateProject } from "@/hooks/useProjects";
+import type { DomainCreateProjectRequest } from "@/lib/.generated/data-contracts";
 
-export interface AddOfferModalProps {
+export interface AddProjectModalProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   defaultCustomerId?: string;
-  defaultProjectId?: string;
-  showCustomerWarning?: boolean;
-  lockedCustomerId?: string; // New prop for locking customer
+  lockedCustomerId?: string;
   trigger?: React.ReactNode;
   hideTrigger?: boolean;
 }
 
-export function AddOfferModal({
+export function AddProjectModal({
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
   defaultCustomerId,
-  defaultProjectId,
-  showCustomerWarning,
   lockedCustomerId,
   trigger,
   hideTrigger,
-}: AddOfferModalProps) {
+}: AddProjectModalProps) {
   const [internalOpen, setInternalOpen] = useState(false);
   const open = controlledOpen ?? internalOpen;
   const setOpen = controlledOnOpenChange ?? setInternalOpen;
 
-  const createOffer = useCreateOffer();
+  const createProject = useCreateProject();
 
-  const handleSubmit = async (data: DomainCreateOfferRequest) => {
+  const handleSubmit = async (data: DomainCreateProjectRequest) => {
     try {
-      await createOffer.mutateAsync(data);
+      await createProject.mutateAsync(data);
       setOpen(false);
     } catch {
-      // Error is handled by the mutation hook (toast)
+      // Error handled by mutation hook
     }
   };
 
@@ -62,33 +57,26 @@ export function AddOfferModal({
           <DialogTrigger asChild>
             <Button>
               <Plus className="mr-2 h-4 w-4" />
-              Nytt tilbud
+              Nytt prosjekt
             </Button>
           </DialogTrigger>
         )
       )}
       <DialogContent className="flex max-h-[90vh] flex-col overflow-hidden p-0 sm:max-w-[700px]">
         <DialogHeader className="p-6 pb-2">
-          <DialogTitle>Opprett nytt tilbud</DialogTitle>
-          <DialogDescription asChild>
-            <div>
-              Opprett et nytt tilbud. Fyll ut nødvendig informasjon. <br />
-              Tilbudet vil bli lagret med status{" "}
-              <OfferStatusBadge phase="in_progress" />
-            </div>
+          <DialogTitle>Opprett nytt prosjekt</DialogTitle>
+          <DialogDescription>
+            Fyll ut informasjonen for å opprette et nytt prosjekt.
           </DialogDescription>
         </DialogHeader>
         <div className="flex-1 overflow-y-auto px-6 pb-6 pt-2">
-          {/* Key on open to re-mount form and reset defaults when opened anew */}
           {open && (
-            <OfferForm
+            <ProjectForm
               onSubmit={handleSubmit}
-              isLoading={createOffer.isPending}
+              isLoading={createProject.isPending}
               initialData={{
                 customerId: defaultCustomerId,
-                projectId: defaultProjectId,
               }}
-              showCustomerWarning={showCustomerWarning}
               lockedCustomerId={lockedCustomerId}
             />
           )}

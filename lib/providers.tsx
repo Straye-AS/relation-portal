@@ -7,6 +7,7 @@ import { AuthProvider } from "@/lib/auth/AuthProvider";
 import { ApiProvider } from "@/lib/api/api-provider";
 import { Toaster } from "sonner";
 import { useState } from "react";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -25,16 +26,18 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <AuthProvider>
       <ApiProvider>
         <QueryClientProvider client={queryClient}>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            {children}
-            <Toaster position="top-right" richColors />
-            <ReactQueryDevtools initialIsOpen={false} />
-          </ThemeProvider>
+          <TooltipProvider>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+            >
+              {children}
+              <Toaster position="top-right" richColors />
+              <ReactQueryDevtools initialIsOpen={false} />
+            </ThemeProvider>
+          </TooltipProvider>
         </QueryClientProvider>
       </ApiProvider>
     </AuthProvider>

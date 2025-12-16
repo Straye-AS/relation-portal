@@ -75,8 +75,8 @@ export function AppHeader() {
 
         <div className="absolute left-1/2 top-1/2 hidden w-full max-w-xl -translate-x-1/2 -translate-y-1/2 transform justify-center sm:flex">
           <Button
-            variant="secondary"
-            className="w-full justify-between gap-2 text-muted-foreground hover:bg-secondary/80"
+            variant="outline"
+            className="w-full justify-between gap-2 bg-muted/40 text-muted-foreground hover:bg-accent hover:text-accent-foreground dark:border-0 dark:bg-secondary dark:text-secondary-foreground dark:hover:bg-secondary/80"
             onClick={() => setSearchOpen(true)}
           >
             <div className="flex items-center gap-2">
