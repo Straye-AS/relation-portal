@@ -159,7 +159,7 @@ jobs:
             ${{ steps.acr-creds.outputs.host }}/relation-portal:${{ github.sha }}
             ${{ steps.acr-creds.outputs.host }}/relation-portal:latest
           build-args: |
-            NEXT_PUBLIC_API_URL=https://straye-relation-staging.proudsmoke-10281cc0.norwayeast.azurecontainerapps.io
+            NEXT_PUBLIC_API_URL=https://straye-relation-staging.proudsmoke-10281cc0.norwayeast.azurecontainerapps.io/api/v1
             NEXT_PUBLIC_AZURE_CLIENT_ID=${{ secrets.NEXT_PUBLIC_AZURE_CLIENT_ID }}
             NEXT_PUBLIC_AZURE_TENANT_ID=${{ secrets.NEXT_PUBLIC_AZURE_TENANT_ID }}
           cache-from: type=gha
