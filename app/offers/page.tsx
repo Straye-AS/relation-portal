@@ -4,14 +4,7 @@ import { AppLayout } from "@/components/layout/app-layout";
 import { useOffers } from "@/hooks/useOffers";
 import { Button } from "@/components/ui/button";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
-import { OfferRow } from "@/components/offers/offer-row";
-import {
-  Table,
-  TableBody,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { OfferListTable } from "@/components/offers/offer-list-table";
 
 import type { DomainOfferDTO } from "@/lib/.generated/data-contracts";
 
@@ -54,10 +47,21 @@ export default function OffersPage() {
   });
 
   // Extract offers from paginated response
-  const offers = useMemo<DomainOfferDTO[]>(
-    () => data?.data ?? [],
-    [data?.data]
-  );
+  const offers = useMemo<DomainOfferDTO[]>(() => {
+    const list = [...(data?.data ?? [])];
+    return list.sort((a, b) => {
+      const dateA = new Date(a.updatedAt ?? 0).getTime();
+      const dateB = new Date(b.updatedAt ?? 0).getTime();
+      if (dateA !== dateB) return dateB - dateA;
+      return (b.offerNumber ?? "").localeCompare(
+        a.offerNumber ?? "",
+        undefined,
+        {
+          numeric: true,
+        }
+      );
+    });
+  }, [data?.data]);
 
   const filteredOffers = useMemo(() => {
     return offers.filter((offer) => {
@@ -154,8 +158,11 @@ export default function OffersPage() {
                 <SelectItem value={DomainOfferPhase.OfferPhaseSent}>
                   Sendt
                 </SelectItem>
-                <SelectItem value={DomainOfferPhase.OfferPhaseWon}>
-                  Vunnet
+                <SelectItem value={DomainOfferPhase.OfferPhaseOrder}>
+                  Ordre
+                </SelectItem>
+                <SelectItem value={DomainOfferPhase.OfferPhaseCompleted}>
+                  Ferdig
                 </SelectItem>
                 <SelectItem value={DomainOfferPhase.OfferPhaseLost}>
                   Tapt
@@ -218,29 +225,7 @@ export default function OffersPage() {
                 )}
               </div>
             ) : (
-              <div className="rounded-lg border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Nr.</TableHead>
-                      <TableHead>Tittel</TableHead>
-                      <TableHead>Kunde</TableHead>
-                      <TableHead>Selskap</TableHead>
-                      <TableHead>Fase</TableHead>
-                      <TableHead>Sendt</TableHead>
-                      <TableHead>Frist</TableHead>
-                      <TableHead>Verdi</TableHead>
-                      <TableHead>DG</TableHead>
-                      <TableHead>Oppdatert</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredOffers.map((offer) => (
-                      <OfferRow key={offer.id} offer={offer} />
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+              <OfferListTable offers={filteredOffers} />
             )}
 
             {/* Pagination info - Update to show filtered count */}

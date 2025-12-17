@@ -18,10 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { DomainCreateProjectRequest } from "@/lib/.generated/data-contracts";
-import {
-  DomainCompanyID,
-  DomainCreateProjectRequestPhaseEnum,
-} from "@/lib/.generated/data-contracts";
+import { DomainCreateProjectRequestPhaseEnum } from "@/lib/.generated/data-contracts";
 import { useAllCustomers } from "@/hooks/useCustomers";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { SmartDatePicker } from "@/components/ui/smart-date-picker";
@@ -45,7 +42,6 @@ import type { DomainCustomerDTO } from "@/lib/.generated/data-contracts";
 const projectSchema = z.object({
   name: z.string().min(2, "Navn må være minst 2 tegn").max(200),
   customerId: z.string().min(1, "Du må velge en kunde"),
-  companyId: z.string().optional(),
   description: z.string().optional(),
   startDate: z.date().optional(),
   endDate: z.date().optional(),
@@ -68,14 +64,13 @@ export function ProjectForm({
   lockedCustomerId,
 }: ProjectFormProps) {
   const { data: customers } = useAllCustomers();
-  const { user } = useCurrentUser();
+  useCurrentUser();
 
   const form = useForm<ProjectFormValues>({
     resolver: zodResolver(projectSchema),
     defaultValues: {
       name: initialData?.name ?? "",
       customerId: lockedCustomerId ?? initialData?.customerId ?? "",
-      companyId: user?.company?.id ?? "",
       description: initialData?.description ?? "",
       startDate: initialData?.startDate ?? new Date(),
       endDate: undefined,
@@ -85,18 +80,12 @@ export function ProjectForm({
 
   const handleSubmit = async (values: ProjectFormValues) => {
     const payload: DomainCreateProjectRequest = {
-      ...values,
-      companyId:
-        (values.companyId as DomainCompanyID) || DomainCompanyID.CompanyGruppen, // Fallback
-      phase: DomainCreateProjectRequestPhaseEnum.Tilbud, // Default to tilbud?
-      managerId: user?.id, // Default to current user as manager?
+      phase: DomainCreateProjectRequestPhaseEnum.Tilbud,
       customerId: values.customerId,
       name: values.name,
+      description: values.description,
       startDate: values.startDate?.toISOString(),
       endDate: values.endDate?.toISOString(),
-      // Ensure required fields are set
-      value: 0,
-      completionPercent: 0,
     };
     await onSubmit(payload);
   };
@@ -255,7 +244,7 @@ function CustomerSelectionModal({
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="flex max-h-[90vh] max-w-[800px] flex-col p-0">
+      <DialogContent className="flex max-h-[90vh] w-[95vw] max-w-[95vw] flex-col p-0">
         <DialogHeader className="border-b p-4 pb-2">
           <DialogTitle>Velg kunde</DialogTitle>
           <div className="relative mt-2">

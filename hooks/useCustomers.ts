@@ -15,6 +15,7 @@ import { useCompanyStore } from "@/store/company-store";
 import type {
   DomainCreateCustomerRequest,
   DomainUpdateCustomerRequest,
+  DomainCreateContactRequest,
   CustomersListParams,
   OffersListParams,
   ProjectsListParams,
@@ -210,6 +211,8 @@ export function useUpdateCustomer() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["customers"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["offers"] });
       queryClient.invalidateQueries({ queryKey: ["customers", variables.id] });
       toast.success("Kunde oppdatert");
     },
@@ -250,6 +253,44 @@ export function useUpdateCustomerContactInfo() {
     onError: (error: Error) => {
       console.error("Failed to update contact info:", error);
       toast.error("Kunne ikke oppdatere kontaktinfo");
+    },
+  });
+}
+
+/**
+ * Create a new customer contact
+ */
+export function useCreateCustomerContact() {
+  const queryClient = useQueryClient();
+  const api = useApi();
+
+  return useMutation({
+    mutationFn: async ({
+      customerId,
+      data,
+    }: {
+      customerId: string;
+      data: DomainCreateContactRequest;
+    }) => {
+      const response = await api.customers.contactsCreate(
+        { id: customerId },
+        data
+      );
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["customers", variables.customerId, "contacts"],
+      });
+      // Also invalidate details to update stats if necessary (though contacts are usually separate list)
+      queryClient.invalidateQueries({
+        queryKey: ["customers", variables.customerId, "details"],
+      });
+      toast.success("Kontaktperson opprettet");
+    },
+    onError: (error) => {
+      console.error("Failed to create contact:", error);
+      toast.error("Kunne ikke opprette kontaktperson");
     },
   });
 }

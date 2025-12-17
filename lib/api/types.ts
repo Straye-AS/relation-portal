@@ -77,7 +77,6 @@ export {
   DomainOfferStatus,
   DomainDealStage,
   DomainProjectPhase,
-  DomainProjectHealth,
   DomainActivityType,
   DomainActivityStatus,
   DomainContactType,
@@ -118,8 +117,8 @@ export const COMPANIES: Record<CompanyId, Company> = {
   },
   stalbygg: {
     id: "stalbygg",
-    name: "Straye Stalbygg",
-    shortName: "Stalbygg",
+    name: "Straye Stålbygg",
+    shortName: "Stålbygg",
     color: "#059669",
   },
   hybridbygg: {
@@ -148,7 +147,8 @@ export type OfferPhase =
   | "draft"
   | "in_progress"
   | "sent"
-  | "won"
+  | "order" // Customer accepted, work in progress
+  | "completed" // Work finished
   | "lost"
   | "expired";
 
@@ -165,7 +165,7 @@ export type DealStage =
 export type ProjectPhase =
   | "tilbud"
   | "working"
-  | "active"
+  | "on_hold"
   | "completed"
   | "cancelled";
 
@@ -215,7 +215,8 @@ export const OFFER_PHASE_LABELS: Record<OfferPhase, string> = {
   draft: "Kladd",
   in_progress: "I gang",
   sent: "Sendt",
-  won: "Vunnet",
+  order: "Ordre",
+  completed: "Ferdig",
   lost: "Tapt",
   expired: "Utgått",
 };
@@ -231,8 +232,8 @@ export const DEAL_STAGE_LABELS: Record<DealStage, string> = {
 
 export const PROJECT_PHASE_LABELS: Record<ProjectPhase, string> = {
   tilbud: "Tilbud",
-  active: "Aktiv",
   working: "I arbeid",
+  on_hold: "På vent",
   completed: "Ferdig",
   cancelled: "Kansellert",
 };
@@ -322,7 +323,7 @@ export interface DashboardMetrics {
   totalInvoiced: number;
   totalValue: number;
   recentOffers: any[];
-  recentProjects: any[];
+  recentOrders: any[];
   recentActivities: any[];
   topCustomers: any[];
 }

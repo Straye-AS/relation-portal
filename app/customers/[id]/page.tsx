@@ -5,8 +5,6 @@ import { AppLayout } from "@/components/layout/app-layout";
 import {
   useCustomerWithDetails,
   useCustomerContacts,
-  useCustomerOffers,
-  useCustomerProjects,
   useUpdateCustomer,
   useUpdateCustomerAddress,
   useUpdateCustomerPostalCode,
@@ -14,12 +12,6 @@ import {
 } from "@/hooks/useCustomers";
 import { InlineEdit } from "@/components/ui/inline-edit";
 import { toast } from "sonner";
-import { OfferStatusBadge } from "@/components/offers/offer-status-badge";
-import { ProjectPhaseBadge } from "@/components/projects/project-phase-badge";
-import type {
-  DomainOfferDTO,
-  DomainProjectDTO,
-} from "@/lib/.generated/data-contracts";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -45,9 +37,9 @@ import {
 import { format } from "date-fns";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useRouter } from "next/navigation";
-import { AddOfferModal } from "@/components/offers/add-offer-modal";
-import { AddProjectModal } from "@/components/projects/add-project-modal";
+import { CustomerProjectsTab } from "@/components/customers/customer-projects-tab";
+import { CustomerOffersTab } from "@/components/customers/customer-offers-tab";
+import { AddCustomerContactModal } from "@/components/customers/add-customer-contact-modal";
 
 // Local interface for contact to satisfy TS and expected usage
 interface CustomerContact {
@@ -63,56 +55,65 @@ export default function CustomerDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const router = useRouter();
   const resolvedParams = use(params);
-  /* State for active tab to control lazy fetching */
-  const [activeTab, setActiveTab] = useState("overview");
+  const [, setActiveTab] = useState("overview");
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
 
   const { data: customer, isLoading: isLoadingCustomer } =
     useCustomerWithDetails(resolvedParams.id);
-  const { data: contactsData } = useCustomerContacts(resolvedParams.id);
-
-  // Lazy fetch projects and offers only when their tabs are active
-  const { data: offersData, isLoading: isLoadingOffers } = useCustomerOffers(
-    resolvedParams.id,
-    {
-      pageSize: 50,
-      sortOrder: "desc" as any,
-      sortBy: "updatedAt" as any,
-    },
-    { enabled: activeTab === "offers" }
-  );
-
-  const { data: projectsData, isLoading: isLoadingProjects } =
-    useCustomerProjects(
-      resolvedParams.id,
-      {
-        pageSize: 50,
-        sortOrder: "desc" as any,
-        sortBy: "updatedAt" as any,
-      },
-      { enabled: activeTab === "projects" }
-    );
+  const { data: contactsData, isLoading: isLoadingContacts } =
+    useCustomerContacts(resolvedParams.id);
 
   const updateCustomer = useUpdateCustomer();
   const updateAddress = useUpdateCustomerAddress();
   const updatePostalCode = useUpdateCustomerPostalCode();
   const updateCity = useUpdateCustomerCity();
 
-  // Cast contactsData to local interface
-  const contacts = (contactsData as unknown as CustomerContact[]) || [];
+  // Map contactsData to local interface properly
+  // Robustly handle potential pagination wrapper or diverse return types
+  // Map contactsData to local interface properly
+  // Robustly handle potential pagination wrapper or diverse return types
+  const contacts: CustomerContact[] = (() => {
+    let rawList: any[] = [];
 
-  const tabOffers = (offersData?.data || []) as DomainOfferDTO[];
-  const tabProjects = (projectsData?.data || []) as DomainProjectDTO[];
+    // Try to get list from contactsData (dedicated endpoint)
+    if (contactsData) {
+      if (Array.isArray(contactsData)) {
+        rawList = contactsData;
+      } else if (
+        (contactsData as any).data &&
+        Array.isArray((contactsData as any).data)
+      ) {
+        rawList = (contactsData as any).data;
+      }
+    }
+
+    // Fallback to customer.contacts if dedicated list is empty or unavailable
+    // The customer details payload often includes the contacts list
+    if (
+      rawList.length === 0 &&
+      customer?.contacts &&
+      Array.isArray(customer.contacts)
+    ) {
+      rawList = customer.contacts;
+    }
+
+    return rawList.map((c: any) => ({
+      id: c.id || "",
+      name:
+        c.fullName ||
+        `${c.firstName || ""} ${c.lastName || ""}`.trim() ||
+        c.name ||
+        "Ukjent navn",
+      email: c.email,
+      phone: c.phone || c.mobile,
+      role: c.title || c.contactType || c.role,
+    }));
+  })();
 
   // Calculate economics using data available on the customer object for the overview
   // We use customer.activeProjects for project stats as it's included in the detail view
   const activeProjectsList = customer?.activeProjects || [];
-
-  const activeProjectsValue = activeProjectsList.reduce(
-    (acc: number, curr: DomainProjectDTO) => acc + (curr.value || 0),
-    0
-  );
 
   const activeProjectsCount =
     customer?.stats?.activeProjects || activeProjectsList.length || 0;
@@ -124,7 +125,8 @@ export default function CustomerDetailPage({
   // Note: totalValue in stats is usually won/invoiced value.
   // We'll use totalValue from stats as a proxy for specific pipeline values if needed,
   // or show 0/placeholder if we strictly don't fetch offers.
-  const totalOfferValue = customer?.stats?.totalValue || 0;
+  const totalOfferValueWon = customer?.stats?.totalValueWon || 0;
+  const totalOfferValueActive = customer?.stats?.totalValueActive || 0;
 
   if (isLoadingCustomer) {
     return (
@@ -228,27 +230,16 @@ export default function CustomerDetailPage({
                       <div className="mt-2 text-2xl font-bold">
                         {activeProjectsCount}
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        Verdi:{" "}
-                        {new Intl.NumberFormat("nb-NO", {
-                          style: "currency",
-                          currency: "NOK",
-                          maximumFractionDigits: 0,
-                        }).format(activeProjectsValue)}
-                      </div>
                     </div>
                     <div className="rounded-lg border bg-card p-4 shadow-sm transition-all hover:shadow-md">
                       <div className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <div className="text-sm font-medium text-muted-foreground">
-                          Vunnede tilbud
+                          Aktive ordre
                         </div>
                         <Users className="h-4 w-4 text-muted-foreground" />
                       </div>
                       <div className="mt-2 text-2xl font-bold">
                         {wonOffersCount}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        Totalt
                       </div>
                     </div>
                     <div className="rounded-lg border bg-card p-4 shadow-sm transition-all hover:shadow-md">
@@ -263,24 +254,46 @@ export default function CustomerDetailPage({
                           notation: "compact",
                           compactDisplay: "short",
                           maximumFractionDigits: 1,
-                        }).format(totalOfferValue)}
+                        }).format(totalOfferValueActive)}
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        Totalt pipeline
+                        Active ordre
                       </div>
                     </div>
                     <div className="rounded-lg border bg-card p-4 shadow-sm transition-all hover:shadow-md">
                       <div className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <div className="text-sm font-medium text-muted-foreground">
-                          Antall tilbud
+                          Totalverdi
                         </div>
-                        <Mail className="h-4 w-4 text-muted-foreground" />
+                        <Banknote className="h-4 w-4 text-muted-foreground" />
                       </div>
                       <div className="mt-2 text-2xl font-bold">
-                        {customer.stats?.activeOffers || 0}
+                        {new Intl.NumberFormat("nb-NO", {
+                          notation: "compact",
+                          compactDisplay: "short",
+                          maximumFractionDigits: 1,
+                        }).format(totalOfferValueWon)}
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        Aktive tilbud
+                        Vunnede tilbud
+                      </div>
+                    </div>
+                    <div className="rounded-lg border bg-card p-4 shadow-sm transition-all hover:shadow-md">
+                      <div className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <div className="text-sm font-medium text-muted-foreground">
+                          Totalverdi
+                        </div>
+                        <Banknote className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <div className="mt-2 text-2xl font-bold">
+                        {new Intl.NumberFormat("nb-NO", {
+                          notation: "compact",
+                          compactDisplay: "short",
+                          maximumFractionDigits: 1,
+                        }).format(totalOfferValueWon - totalOfferValueActive)}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Utførte ordre
                       </div>
                     </div>
                   </div>
@@ -412,10 +425,10 @@ export default function CustomerDetailPage({
                     </div>
                   </div>
 
-                  <div className="border-t pt-4 text-xs text-muted-foreground">
+                  <div className="flex flex-col gap-2 border-t pt-4 text-xs text-muted-foreground">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1">
-                        Opprettet av{" "}
+                      <div className="flex items-center gap-2">
+                        <span className="w-28 shrink-0">Opprettet av</span>
                         {customer.createdByName ?? (
                           <Badge
                             variant="secondary"
@@ -435,8 +448,8 @@ export default function CustomerDetailPage({
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1">
-                        Sist oppdatert av{" "}
+                      <div className="flex items-center gap-2">
+                        <span className="w-28 shrink-0">Sist oppdatert av</span>
                         {customer.updatedByName ?? (
                           <Badge
                             variant="secondary"
@@ -469,10 +482,10 @@ export default function CustomerDetailPage({
               <TabsList>
                 <TabsTrigger value="overview">Oversikt</TabsTrigger>
                 <TabsTrigger value="projects">
-                  Prosjekter ({customer.stats?.activeProjects ?? "?"})
+                  Prosjekter ({customer.stats?.totalProjects ?? "?"})
                 </TabsTrigger>
                 <TabsTrigger value="offers">
-                  Tilbud ({customer.stats?.activeOffers ?? "?"})
+                  Tilbud ({customer.stats?.totalOffers ?? "?"})
                 </TabsTrigger>
                 <TabsTrigger value="contacts">
                   Kontakter ({contacts.length})
@@ -485,13 +498,14 @@ export default function CustomerDetailPage({
                     <CardHeader>
                       <CardTitle>Siste aktivitet</CardTitle>
                       <CardDescription>
-                        Nylige aktiviteter knyttet til denne kunden
+                        Nylige endringer og interaksjoner knyttet til denne
+                        kunden
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-4">
                         <p className="py-8 text-center text-sm text-muted-foreground">
-                          Ingen nylige aktiviteter funnet.
+                          Ingen nylige endringer funnet.
                         </p>
                         {/* Placeholder for future activity feed integration */}
                       </div>
@@ -506,43 +520,58 @@ export default function CustomerDetailPage({
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-4">
-                        {contacts
-                          .slice(0, 3)
-                          .map((contact: CustomerContact) => (
-                            <div
-                              key={contact.id}
-                              className="flex items-center justify-between"
-                            >
-                              <div className="flex items-center gap-3">
-                                <Avatar className="h-9 w-9">
-                                  <AvatarFallback>
-                                    {contact.name
-                                      ?.substring(0, 2)
-                                      .toUpperCase()}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <div>
-                                  <p className="text-sm font-medium leading-none">
-                                    {contact.name}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">
-                                    {contact.role || "Ingen rolle"}
-                                  </p>
-                                </div>
-                              </div>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
+                        {isLoadingContacts && (
+                          <div className="py-8 text-center text-sm text-muted-foreground">
+                            Laster kontakter...
+                          </div>
+                        )}
+                        {!isLoadingContacts &&
+                          contacts
+                            .slice(0, 3)
+                            .map((contact: CustomerContact) => (
+                              <div
+                                key={contact.id}
+                                className="flex items-center justify-between"
                               >
-                                <Mail className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          ))}
-                        {contacts.length === 0 && (
-                          <p className="py-4 text-center text-sm text-muted-foreground">
-                            Ingen kontakter registrert
-                          </p>
+                                <div className="flex items-center gap-3">
+                                  <Avatar className="h-9 w-9">
+                                    <AvatarFallback>
+                                      {contact.name
+                                        ?.substring(0, 2)
+                                        .toUpperCase()}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                    <p className="text-sm font-medium leading-none">
+                                      {contact.name}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {contact.role || "Ingen rolle"}
+                                    </p>
+                                  </div>
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                >
+                                  <Mail className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ))}
+                        {!isLoadingContacts && contacts.length === 0 && (
+                          <div className="flex flex-col items-center justify-center gap-2 py-4 text-center">
+                            <p className="text-sm text-muted-foreground">
+                              Ingen kontakter registrert
+                            </p>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setIsContactModalOpen(true)}
+                            >
+                              Legg til kontakt
+                            </Button>
+                          </div>
                         )}
                         {contacts.length > 3 && (
                           <Button
@@ -566,127 +595,11 @@ export default function CustomerDetailPage({
               </TabsContent>
 
               <TabsContent value="projects">
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between">
-                    <div>
-                      <CardTitle>Prosjekter</CardTitle>
-                      <CardDescription>
-                        Liste over alle prosjekter for denne kunden
-                      </CardDescription>
-                    </div>
-                    <AddProjectModal
-                      defaultCustomerId={customer.id}
-                      lockedCustomerId={customer.id}
-                    />
-                  </CardHeader>
-                  <CardContent>
-                    {isLoadingProjects ? (
-                      <div className="py-8 text-center text-muted-foreground">
-                        Laster prosjekter...
-                      </div>
-                    ) : tabProjects.length === 0 ? (
-                      <p className="py-8 text-center text-muted-foreground">
-                        Ingen prosjekter registrert.
-                      </p>
-                    ) : (
-                      <div className="space-y-2">
-                        {tabProjects.map((project: DomainProjectDTO) => (
-                          <div
-                            key={project.id}
-                            className="flex cursor-pointer items-center justify-between rounded-lg border p-4 transition-colors hover:bg-muted/50"
-                            onClick={() =>
-                              router.push(`/projects/${project.id}`)
-                            }
-                          >
-                            <div className="grid gap-1">
-                              <div className="flex items-center gap-2">
-                                <h3 className="font-semibold">
-                                  {project.name}
-                                </h3>
-                                <ProjectPhaseBadge
-                                  phase={project.phase ?? ""}
-                                />
-                              </div>
-                              <p className="text-sm text-muted-foreground">
-                                Leder: {project.managerName || "Ikke tildelt"}
-                              </p>
-                            </div>
-                            <div className="text-right">
-                              <div className="font-medium">
-                                {new Intl.NumberFormat("nb-NO", {
-                                  style: "currency",
-                                  currency: "NOK",
-                                  maximumFractionDigits: 0,
-                                }).format(project.value || 0)}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                <CustomerProjectsTab customerId={resolvedParams.id} />
               </TabsContent>
 
               <TabsContent value="offers">
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between">
-                    <div>
-                      <CardTitle>Tilbud</CardTitle>
-                      <CardDescription>
-                        Oversikt over alle tilbud gitt til kunden
-                      </CardDescription>
-                    </div>
-                    <AddOfferModal
-                      defaultCustomerId={customer.id}
-                      lockedCustomerId={customer.id}
-                      showCustomerWarning={false}
-                    />
-                  </CardHeader>
-                  <CardContent>
-                    {isLoadingOffers ? (
-                      <div className="py-8 text-center text-muted-foreground">
-                        Laster tilbud...
-                      </div>
-                    ) : tabOffers.length === 0 ? (
-                      <p className="py-8 text-center text-muted-foreground">
-                        Ingen tilbud registrert.
-                      </p>
-                    ) : (
-                      <div className="space-y-2">
-                        {tabOffers.map((offer: DomainOfferDTO) => (
-                          <div
-                            key={offer.id}
-                            className="flex cursor-pointer items-center justify-between rounded-lg border p-4 transition-colors hover:bg-muted/50"
-                            onClick={() => router.push(`/offers/${offer.id}`)}
-                          >
-                            <div className="grid gap-1">
-                              <div className="flex items-center gap-2">
-                                <h3 className="font-semibold">{offer.title}</h3>
-                                <OfferStatusBadge
-                                  phase={offer.phase || "draft"}
-                                />
-                              </div>
-                              <p className="text-sm text-muted-foreground">
-                                Ansvarlig:{" "}
-                                {offer.responsibleUserName || "Ikke tildelt"}
-                              </p>
-                            </div>
-                            <div className="text-right">
-                              <div className="font-medium">
-                                {new Intl.NumberFormat("nb-NO", {
-                                  style: "currency",
-                                  currency: "NOK",
-                                  maximumFractionDigits: 0,
-                                }).format(offer.value || 0)}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                <CustomerOffersTab customerId={resolvedParams.id} />
               </TabsContent>
 
               <TabsContent value="contacts">
@@ -698,13 +611,20 @@ export default function CustomerDetailPage({
                         Alle kontaktpersoner tilknyttet kunden
                       </CardDescription>
                     </div>
-                    <Button size="sm">
+                    <Button
+                      size="sm"
+                      onClick={() => setIsContactModalOpen(true)}
+                    >
                       <Users className="mr-2 h-4 w-4" />
                       Ny kontakt
                     </Button>
                   </CardHeader>
                   <CardContent>
-                    {contacts.length === 0 ? (
+                    {isLoadingContacts ? (
+                      <div className="py-8 text-center text-muted-foreground">
+                        Laster kontakter...
+                      </div>
+                    ) : contacts.length === 0 ? (
                       <div className="py-8 text-center">
                         <p className="mb-4 text-muted-foreground">
                           Ingen kontakter registrert.
@@ -763,6 +683,11 @@ export default function CustomerDetailPage({
             </Tabs>
           </div>
         </div>
+        <AddCustomerContactModal
+          customerId={resolvedParams.id}
+          open={isContactModalOpen}
+          onOpenChange={setIsContactModalOpen}
+        />
       </div>
     </AppLayout>
   );

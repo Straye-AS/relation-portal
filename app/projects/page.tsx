@@ -2,7 +2,8 @@
 
 import { AppLayout } from "@/components/layout/app-layout";
 import { useProjects, useDeleteProject } from "@/hooks/useProjects";
-import type { DomainProjectDTO } from "@/lib/.generated/data-contracts";
+
+import type { Project } from "@/lib/api/types";
 import { Button } from "@/components/ui/button";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
 import Link from "next/link";
@@ -43,36 +44,37 @@ export default function ProjectsPage() {
   });
 
   const deleteProject = useDeleteProject();
-  const projects = useMemo(
-    () => (data?.data ?? []) as DomainProjectDTO[],
-    [data?.data]
-  );
+  const projects = useMemo(() => {
+    const list = [...((data?.data ?? []) as Project[])];
+    return list.sort((a, b) => {
+      const dateA = new Date(a.updatedAt ?? 0).getTime();
+      const dateB = new Date(b.updatedAt ?? 0).getTime();
+      if (dateA !== dateB) return dateB - dateA;
+      return (b.projectNumber ?? "").localeCompare(
+        a.projectNumber ?? "",
+        undefined,
+        { numeric: true }
+      );
+    });
+  }, [data?.data]);
 
   const filteredProjects = useMemo(() => {
     return projects.filter((project) => {
-      // 1. Phase Filter
+      // Phase Filter
       // Note: We also send this to API, but filtering here ensures consistency if API ignores it
       if (phaseFilter !== "all" && project.phase !== phaseFilter) return false;
 
-      // 2. Company Filter
-      if (companyFilter !== "all" && project.companyId !== companyFilter)
-        return false;
-
       return true;
     });
-  }, [projects, phaseFilter, companyFilter]);
+  }, [projects, phaseFilter]);
 
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [projectToDelete, setProjectToDelete] =
-    useState<DomainProjectDTO | null>(null);
+  const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
 
   const [selectedProjectForOffer, setSelectedProjectForOffer] =
-    useState<DomainProjectDTO | null>(null);
+    useState<Project | null>(null);
 
-  const handleDeleteClick = (
-    project: DomainProjectDTO,
-    e: React.MouseEvent
-  ) => {
+  const handleDeleteClick = (project: Project, e: React.MouseEvent) => {
     e.stopPropagation();
     setProjectToDelete(project);
     setIsDeleteModalOpen(true);
@@ -236,7 +238,7 @@ export default function ProjectsPage() {
               }}
               onConfirm={handleDeleteConfirm}
               title="Slett prosjekt"
-              description="Er du sikker på at du vil slette dette prosjektet? Dette vil fjerne prosjektet, alle relaterte timer og data permanent."
+              description="Er du sikker på at du vil slette dette prosjektet? Dette vil fjerne prosjektet, all data, og alle linker til tilknyttede tilbud permanent."
               itemTitle={projectToDelete?.name}
               isLoading={deleteProject.isPending}
             />

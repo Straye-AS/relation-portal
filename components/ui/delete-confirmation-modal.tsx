@@ -91,7 +91,8 @@ export function DeleteConfirmationModal({
         <div className="space-y-4 py-4">
           <div className="rounded-md border border-orange-200 bg-orange-50 p-4 dark:border-orange-800/30 dark:bg-orange-900/10">
             <p className="text-sm font-medium text-orange-800 dark:text-orange-300">
-              Sikkerhetskontroll: Skriv inn koden for å bekrefte sletting.
+              <strong>Sikkerhetskontroll:</strong>
+              <br /> Skriv inn koden for å bekrefte sletting.
             </p>
             <div className="mt-3 flex justify-center">
               <span className="select-none rounded bg-white px-4 py-1.5 text-xl font-bold tracking-widest text-slate-900 shadow-sm dark:bg-slate-950 dark:text-slate-100">

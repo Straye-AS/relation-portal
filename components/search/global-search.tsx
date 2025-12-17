@@ -15,8 +15,11 @@ import {
   Clock,
   Loader2,
   DollarSign,
+  MapPin,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ProjectPhaseBadge } from "../projects/project-phase-badge";
+import { OfferStatusBadge } from "../offers/offer-status-badge";
 
 interface GlobalSearchProps {
   open: boolean;
@@ -74,10 +77,10 @@ const typeConfig: Record<
 interface SearchResultItem {
   id: string;
   title: string;
-  subtitle?: string;
+  subtitle?: React.ReactNode;
   header?: string;
   type: string;
-  metadata?: string;
+  metadata?: React.ReactNode;
 }
 
 export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
@@ -117,9 +120,18 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
         ...response.customers.map((item) => ({
           id: item.id,
           title: item.name,
-          subtitle: item.orgNumber,
+          subtitle: (
+            <Badge variant="outline" className="font-normal">
+              {item.orgNumber ? `Org.nr: ${item.orgNumber}` : "Privatperson"}
+            </Badge>
+          ),
           type: "customer",
-          metadata: item.status,
+          metadata: (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <MapPin className="h-3 w-3" />
+              <span>{item.city}</span>
+            </div>
+          ),
         }))
       );
     }
@@ -127,17 +139,13 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
     if (response.projects?.length) {
       mappedResults.push(
         ...response.projects.map((item) => {
-          const extRef = item.externalReference
-            ? ` • Ref: ${item.externalReference}`
-            : "";
-
           return {
             id: item.id,
             title: item.name || item.title,
             header: item.projectNumber,
-            subtitle: `${item.customerName}${extRef}`,
+            subtitle: `${item.customerName ?? ""}`,
             type: "project",
-            metadata: item.status,
+            metadata: <ProjectPhaseBadge phase={item.phase} />,
           };
         })
       );
@@ -153,10 +161,17 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
           return {
             id: item.id,
             title: item.title,
-            header: item.offerNumber,
-            subtitle: `${item.customerName}${extRef}`,
+            header: item.offerNumber + extRef,
+            subtitle: `${item.customerName}`,
             type: "offer",
-            metadata: `${(item.value || 0).toLocaleString()} NOK`,
+            metadata: (
+              <div className="flex items-center gap-2">
+                <OfferStatusBadge phase={item.phase} />
+                <span className="hidden min-w-[120px] text-right md:block">
+                  {(item.value || 0).toLocaleString()} NOK
+                </span>
+              </div>
+            ),
           };
         })
       );
@@ -289,6 +304,7 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
     return (
       <motion.div
         key={`${result.type}-${result.id}`}
+        id={`search-result-${globalIndex}`}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: globalIndex * 0.02 }}
@@ -325,6 +341,14 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
       </motion.div>
     );
   };
+
+  // Scroll active item into view
+  useEffect(() => {
+    const element = document.getElementById(`search-result-${selectedIndex}`);
+    if (element) {
+      element.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+  }, [selectedIndex]);
 
   const hasResults = results.length > 0;
   const isSearchingMode = query.trim().length > 0;

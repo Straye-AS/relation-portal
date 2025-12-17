@@ -13,7 +13,6 @@ import { Trash2, FileText } from "lucide-react";
 
 import { ProjectPhaseBadge } from "@/components/projects/project-phase-badge";
 import { NewBadge } from "@/components/ui/new-badge";
-import { CompanyBadge } from "@/components/ui/company-badge";
 import { formatDistanceToNow, format } from "date-fns";
 import { nb } from "date-fns/locale";
 import {
@@ -21,13 +20,13 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { DomainProjectDTO } from "@/lib/.generated/data-contracts";
+import type { Project } from "@/lib/api/types";
 
 interface ProjectListTableProps {
-  projects: DomainProjectDTO[];
-  onProjectClick: (project: DomainProjectDTO) => void;
-  onDeleteClick?: (project: DomainProjectDTO, e: React.MouseEvent) => void;
-  onCreateOfferClick?: (project: DomainProjectDTO, e: React.MouseEvent) => void;
+  projects: Project[];
+  onProjectClick: (project: Project) => void;
+  onDeleteClick?: (project: Project, e: React.MouseEvent) => void;
+  onCreateOfferClick?: (project: Project, e: React.MouseEvent) => void;
   showRelativeDate?: boolean;
 }
 
@@ -36,7 +35,6 @@ export function ProjectListTable({
   onProjectClick,
   onDeleteClick,
   onCreateOfferClick,
-  compact = false,
   showRelativeDate = false,
 }: ProjectListTableProps & { compact?: boolean; showRelativeDate?: boolean }) {
   return (
@@ -47,25 +45,14 @@ export function ProjectListTable({
             <TableHead>Nr.</TableHead>
             <TableHead>Navn</TableHead>
             <TableHead>Kunde</TableHead>
-            <TableHead>Selskap</TableHead>
             <TableHead>Fase</TableHead>
-            {!compact && (
-              <>
-                <TableHead>Prosjektleder</TableHead>
-                <TableHead>Verdi</TableHead>
-                <TableHead>DG</TableHead>
-              </>
-            )}
+            <TableHead className="text-center">Antall tilbud</TableHead>
             {showRelativeDate && <TableHead>Oppdatert</TableHead>}
             <TableHead className="w-[100px]"></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {projects.map((project) => {
-            const value = project.value ?? 0;
-
-            const marginPercentage = project.marginPercent ?? 0;
-
             return (
               <TableRow
                 key={project.id}
@@ -83,43 +70,11 @@ export function ProjectListTable({
                   {project.customerName}
                 </TableCell>
                 <TableCell>
-                  <CompanyBadge companyId={project.companyId} />
-                </TableCell>
-                <TableCell>
                   <ProjectPhaseBadge phase={project.phase ?? ""} />
                 </TableCell>
-                {!compact && (
-                  <>
-                    <TableCell className="whitespace-nowrap">
-                      {project.managerName || (
-                        <span className="italic text-muted-foreground">
-                          Ikke satt
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap">
-                      {new Intl.NumberFormat("nb-NO", {
-                        style: "currency",
-                        currency: "NOK",
-                        maximumFractionDigits: 0,
-                      }).format(value)}
-                    </TableCell>
-                    <TableCell>
-                      <span
-                        className={`font-medium ${
-                          marginPercentage < 0
-                            ? "text-destructive"
-                            : "text-green-600"
-                        }`}
-                      >
-                        {new Intl.NumberFormat("nb-NO", {
-                          style: "percent",
-                          maximumFractionDigits: 1,
-                        }).format(marginPercentage / 100)}
-                      </span>
-                    </TableCell>
-                  </>
-                )}
+                <TableCell className="text-center">
+                  {project.offerCount ?? 0}
+                </TableCell>
                 {showRelativeDate && (
                   <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
                     {project.updatedAt ? (

@@ -18,6 +18,7 @@ import {
   ChevronLeft,
   ChevronRight,
   FileQuestion,
+  Calendar,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import {
@@ -58,6 +59,11 @@ const navigation = [
     name: "Varsler",
     href: "/notifications",
     icon: Bell,
+  },
+  {
+    name: "Aktivitetslogg",
+    href: "/activities",
+    icon: Calendar,
   },
   {
     name: "Innstillinger",

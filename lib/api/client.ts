@@ -343,7 +343,8 @@ export const dashboardApi = {
         : mockProjects;
 
     const activeOffers = offers.filter((o) => o.status === "active");
-    const wonOffers = offers.filter((o) => o.phase === "won");
+    const orderOffers = offers.filter((o) => o.phase === "order");
+    const completedOffers = offers.filter((o) => o.phase === "completed");
     const lostOffers = offers.filter((o) => o.phase === "lost");
 
     const totalValue = activeOffers.reduce((sum, o) => sum + o.value, 0);
@@ -368,7 +369,8 @@ export const dashboardApi = {
       "draft",
       "in_progress",
       "sent",
-      "won",
+      "order",
+      "completed",
       "lost",
       "expired",
     ];
@@ -428,7 +430,7 @@ export const dashboardApi = {
       };
       existing.offerCount += 1;
       existing.totalValue += offer.value;
-      if (offer.phase === "won") {
+      if (offer.phase === "order" || offer.phase === "completed") {
         existing.wonCount += 1;
         existing.wonValue += offer.value;
       }
@@ -470,11 +472,12 @@ export const dashboardApi = {
       .filter((p) => p.status === "active" || p.status === "planning")
       .slice(0, 5);
 
-    // Calculate win rate
-    const totalDecidedOffers = wonOffers.length + lostOffers.length;
+    // Calculate win rate (order + completed = won)
+    const completedOrderOffers = [...orderOffers, ...completedOffers];
+    const totalDecidedOffers = completedOrderOffers.length + lostOffers.length;
     const winRate =
       totalDecidedOffers > 0
-        ? (wonOffers.length / totalDecidedOffers) * 100
+        ? (completedOrderOffers.length / totalDecidedOffers) * 100
         : 0;
 
     // Revenue forecast (simplified)
@@ -494,7 +497,7 @@ export const dashboardApi = {
     return {
       totalOffers: offers.length,
       activeOffers: activeOffers.length,
-      wonOffers: wonOffers.length,
+      wonOffers: completedOrderOffers.length,
       lostOffers: lostOffers.length,
       totalValue,
       weightedValue,

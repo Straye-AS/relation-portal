@@ -24,7 +24,16 @@ import type {
 /**
  * Fetch paginated list of activities
  */
-export function useActivities(params?: Partial<ActivitiesListParams>) {
+// Extended params to support manual additions not yet in generated types
+interface ExtendedActivitiesListParams extends Partial<ActivitiesListParams> {
+  from?: string;
+  to?: string;
+}
+
+/**
+ * Fetch paginated list of activities
+ */
+export function useActivities(params?: ExtendedActivitiesListParams) {
   const api = useApi();
   const { isAuthenticated } = useAuth();
   const { selectedCompanyId } = useCompanyStore();
@@ -32,7 +41,8 @@ export function useActivities(params?: Partial<ActivitiesListParams>) {
   return useQuery({
     queryKey: ["activities", params, selectedCompanyId],
     queryFn: async () => {
-      const response = await api.activities.activitiesList(params ?? {});
+      // Cast to any to bypass strict type checking until generated types are updated
+      const response = await api.activities.activitiesList(params as any);
       return response.data;
     },
     enabled: isAuthenticated,

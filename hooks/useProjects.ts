@@ -15,7 +15,6 @@ import { useCompanyStore } from "@/store/company-store";
 import type {
   DomainUpdateProjectNameRequest,
   DomainUpdateProjectDescriptionRequest,
-  DomainUpdateProjectManagerRequest,
   ProjectsListParams,
 } from "@/lib/.generated/data-contracts";
 import type {
@@ -80,23 +79,7 @@ export function useProject(id: string) {
   });
 }
 
-/**
- * Fetch project budget summary
- */
-export function useProjectBudget(projectId: string) {
-  const api = useApi();
-  const { isAuthenticated } = useAuth();
-  const { selectedCompanyId } = useCompanyStore();
-
-  return useQuery({
-    queryKey: ["projects", projectId, "budget", selectedCompanyId],
-    queryFn: async () => {
-      const response = await api.projects.budgetList({ id: projectId });
-      return response.data;
-    },
-    enabled: !!projectId && isAuthenticated,
-  });
-}
+// Note: useProjectBudget removed - budget tracking has moved to offers
 
 /**
  * Fetch offers linked to a project
@@ -130,6 +113,8 @@ export function useCreateProject() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["customers"] });
+      queryClient.invalidateQueries({ queryKey: ["offers"] });
       toast.success("Prosjekt opprettet");
     },
     onError: (error: Error) => {
@@ -159,6 +144,8 @@ export function useUpdateProject() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["customers"] });
+      queryClient.invalidateQueries({ queryKey: ["offers"] });
       queryClient.invalidateQueries({ queryKey: ["projects", variables.id] });
       toast.success("Prosjekt oppdatert");
     },
@@ -189,6 +176,8 @@ export function useUpdateProjectName() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["customers"] });
+      queryClient.invalidateQueries({ queryKey: ["offers"] });
       queryClient.invalidateQueries({ queryKey: ["projects", variables.id] });
       toast.success("Prosjektnavn oppdatert");
     },
@@ -242,6 +231,8 @@ export function useDeleteProject() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["customers"] });
+      queryClient.invalidateQueries({ queryKey: ["offers"] });
       toast.success("Prosjekt slettet");
     },
     onError: (error: Error) => {
@@ -275,6 +266,8 @@ export function useUpdateProjectPhase() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["customers"] });
+      queryClient.invalidateQueries({ queryKey: ["offers"] });
       queryClient.invalidateQueries({ queryKey: ["projects", variables.id] });
       toast.success("Prosjektfase oppdatert");
     },
@@ -285,93 +278,7 @@ export function useUpdateProjectPhase() {
   });
 }
 
-/**
- * Inherit budget from linked offer
- */
-export function useInheritProjectBudget() {
-  const queryClient = useQueryClient();
-  const api = useApi();
+// Note: useInheritProjectBudget and useResyncProjectFromOffer removed
+// Budget and execution tracking has moved from projects to offers
 
-  return useMutation({
-    mutationFn: async ({ id, offerId }: { id: string; offerId: string }) => {
-      const response = await api.projects.inheritBudgetCreate(
-        { id },
-        { offerId }
-      );
-      return response.data;
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
-      queryClient.invalidateQueries({ queryKey: ["projects", variables.id] });
-      queryClient.invalidateQueries({
-        queryKey: ["projects", variables.id, "budget"],
-      });
-      toast.success("Verdi arvet fra tilbud");
-    },
-    onError: (error: Error) => {
-      console.error("Failed to inherit budget:", error);
-      toast.error("Kunne ikke arve verdi");
-    },
-  });
-}
-
-/**
- * Resync project values from best offer
- */
-export function useResyncProjectFromOffer() {
-  const queryClient = useQueryClient();
-  const api = useApi();
-
-  return useMutation({
-    mutationFn: async ({ id }: { id: string }) => {
-      const response = await api.projects.resyncFromOfferCreate({ id });
-      return response.data;
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
-      queryClient.invalidateQueries({ queryKey: ["projects", variables.id] });
-      queryClient.invalidateQueries({
-        queryKey: ["projects", variables.id, "budget"],
-      });
-      toast.success("Prosjekt oppdatert fra beste tilbud");
-    },
-    onError: (error: any) => {
-      console.error("Failed to resync project:", error);
-      if (error.status === 403 || error.response?.status === 403) {
-        toast.error("Du har ikke tilgang. Kun prosjektleder kan gjøre dette.");
-      } else {
-        toast.error("Kunne ikke oppdatere prosjekt fra tilbud");
-      }
-    },
-  });
-}
-
-/**
- * Update project manager
- */
-export function useUpdateProjectManager() {
-  const queryClient = useQueryClient();
-  const api = useApi();
-
-  return useMutation({
-    mutationFn: async ({
-      id,
-      data,
-    }: {
-      id: string;
-      data: DomainUpdateProjectManagerRequest;
-    }) => {
-      const response = await api.projects.managerUpdate({ id }, data);
-      return response.data;
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
-      queryClient.invalidateQueries({ queryKey: ["projects", variables.id] });
-      toast.success("Prosjektleder oppdatert");
-    },
-    onError: (error: Error) => {
-      console.error("Failed to update project manager:", error);
-      toast.error("Kunne ikke oppdatere prosjektleder");
-    },
-  });
-}
+// Note: useUpdateProjectManager removed - manager update not available in current API

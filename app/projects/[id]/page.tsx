@@ -3,9 +3,7 @@
 import { AppLayout } from "@/components/layout/app-layout";
 import {
   useProject,
-  useUpdateProjectManager,
   useUpdateProjectName,
-  useResyncProjectFromOffer,
   useProjectOffers,
 } from "@/hooks/useProjects";
 import { Button } from "@/components/ui/button";
@@ -14,7 +12,7 @@ import { CardSkeleton } from "@/components/ui/card-skeleton";
 import { AddOfferModal } from "@/components/offers/add-offer-modal";
 
 import Link from "next/link";
-import { ArrowLeft, Check, RefreshCw, CalendarDays, Plus } from "lucide-react";
+import { ArrowLeft, CalendarDays, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { nb } from "date-fns/locale";
 import { use, useState } from "react";
@@ -29,31 +27,9 @@ import { OfferRow } from "@/components/offers/offer-row";
 import { ProjectPhaseBadge } from "@/components/projects/project-phase-badge";
 import { useUsers } from "@/hooks/useUsers";
 
-import { CompanyBadge } from "@/components/ui/company-badge";
 import { Badge } from "@/components/ui/badge";
 import { InlineEdit } from "@/components/ui/inline-edit";
 import { ProjectDescription } from "@/components/projects/project-description";
-import {
-  CommandDialog,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandSeparator,
-} from "@/components/ui/command";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { cn } from "@/lib/utils";
-import { Progress } from "@/components/ui/progress";
 
 export default function ProjectDetailPage({
   params,
@@ -64,12 +40,8 @@ export default function ProjectDetailPage({
   const { data: project, isLoading } = useProject(resolvedParams.id);
   const { data: connectedOffers = [] } = useProjectOffers(resolvedParams.id);
 
-  const { data: users } = useUsers();
-  const updateProjectManager = useUpdateProjectManager();
+  useUsers();
   const updateProjectName = useUpdateProjectName();
-  const resyncFromOffer = useResyncProjectFromOffer();
-  const [isManagerModalOpen, setIsManagerModalOpen] = useState(false);
-  const [isResyncModalOpen, setIsResyncModalOpen] = useState(false);
   const [isCreateOfferModalOpen, setIsCreateOfferModalOpen] = useState(false);
 
   if (isLoading) {
@@ -96,20 +68,8 @@ export default function ProjectDetailPage({
     );
   }
 
-  const budget = project.value ?? 0;
-  const totalCost = project.cost ?? 0;
-  const spent = project.spent ?? 0;
-  const spentPercentage = budget > 0 ? (spent / budget) * 100 : 0;
-  const remaining = totalCost - spent;
-
-  const invoiced = project.invoiced ?? 0;
-  const invoicedPercentage = budget > 0 ? (invoiced / budget) * 100 : 0;
-  const invoiceDiff = invoiced - spent;
-
-  // Calculate advanced metrics
-  // Check if budgetData has totalCost, otherwise default to 0
-  const profit = budget - totalCost; // DB
-  const margin = budget > 0 ? (profit / budget) * 100 : 0; // DG
+  // Note: Finance tracking has moved to offers
+  // Projects now focus on structure and offer management
 
   return (
     <AppLayout disableScroll>
@@ -161,7 +121,7 @@ export default function ProjectDetailPage({
 
         <div className="flex-1 overflow-y-auto px-4 py-6 md:px-8">
           <div className="space-y-6">
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid gap-6 md:grid-cols-1">
               <Card>
                 <CardHeader>
                   <CardTitle>Prosjektinformasjon</CardTitle>
@@ -183,107 +143,7 @@ export default function ProjectDetailPage({
                       className="mt-1"
                     />
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">
-                      Prosjektleder
-                    </p>
-                    <div className="group flex items-center gap-2">
-                      <div
-                        role="button"
-                        onClick={() => setIsManagerModalOpen(true)}
-                        className="-ml-1 flex cursor-pointer items-center gap-2 rounded border border-transparent p-1 hover:border-input hover:bg-transparent"
-                      >
-                        <span className="font-medium">
-                          {project.managerName || (
-                            <span className="italic text-muted-foreground">
-                              Sett prosjektleder
-                            </span>
-                          )}
-                        </span>
-                      </div>
-
-                      <CommandDialog
-                        open={isManagerModalOpen}
-                        onOpenChange={setIsManagerModalOpen}
-                      >
-                        <CommandInput placeholder="Søk etter ansatt..." />
-                        <CommandList>
-                          <CommandEmpty>Ingen ansatte funnet.</CommandEmpty>
-                          <CommandGroup heading="Handlinger">
-                            <CommandItem
-                              onSelect={() => {
-                                if (!project.id) return;
-                                updateProjectManager.mutate({
-                                  id: project.id,
-                                  data: {
-                                    managerId: undefined, // Sending undefined or empty string usually clears it, checking API contract best practice
-                                  },
-                                });
-                                setIsManagerModalOpen(false);
-                              }}
-                            >
-                              <span
-                                className={cn(
-                                  "mr-2 flex h-4 w-4 items-center justify-center opacity-0",
-                                  !project.managerId && "opacity-100"
-                                )}
-                              >
-                                <Check className="h-4 w-4" />
-                              </span>
-                              Ingen (Fjern ansvarlig)
-                            </CommandItem>
-                          </CommandGroup>
-                          <CommandSeparator />
-                          <CommandGroup heading="Ansatte">
-                            {(users || []).map((user) => (
-                              <CommandItem
-                                key={user.id}
-                                value={user.name}
-                                onSelect={() => {
-                                  if (!project.id || !user.id) return;
-                                  updateProjectManager.mutate({
-                                    id: project.id,
-                                    data: {
-                                      managerId: user.id,
-                                    },
-                                  });
-                                  setIsManagerModalOpen(false);
-                                }}
-                              >
-                                <span
-                                  className={cn(
-                                    "mr-2 flex h-4 w-4 items-center justify-center opacity-0",
-                                    project.managerId === user.id &&
-                                      "opacity-100"
-                                  )}
-                                >
-                                  <Check className="h-4 w-4" />
-                                </span>
-                                <div className="flex flex-col">
-                                  <span>{user.name}</span>
-                                  {user.email && (
-                                    <span className="text-xs text-muted-foreground">
-                                      {user.email}
-                                    </span>
-                                  )}
-                                </div>
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </CommandDialog>
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Selskap</p>
-                    <div className="mt-1">
-                      <CompanyBadge
-                        companyId={project.companyId}
-                        variant="secondary"
-                        className="text-sm font-medium"
-                      />
-                    </div>
-                  </div>
+                  {/* Note: Manager field removed - not in current API schema */}
 
                   <div>
                     <p className="text-sm text-muted-foreground">Periode</p>
@@ -309,10 +169,10 @@ export default function ProjectDetailPage({
                     </div>
                   </div>
 
-                  <div className="border-t pt-4 text-xs text-muted-foreground">
+                  <div className="flex flex-col gap-2 border-t pt-4 text-xs text-muted-foreground">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1">
-                        Opprettet av{" "}
+                      <div className="flex items-center gap-2">
+                        <span className="w-28 shrink-0">Opprettet av</span>
                         {project.createdByName ?? (
                           <Badge
                             variant="secondary"
@@ -332,8 +192,8 @@ export default function ProjectDetailPage({
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1">
-                        Sist oppdatert av{" "}
+                      <div className="flex items-center gap-2">
+                        <span className="w-28 shrink-0">Sist oppdatert av</span>
                         {project.updatedByName ?? (
                           <Badge
                             variant="secondary"
@@ -356,176 +216,7 @@ export default function ProjectDetailPage({
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle>Økonomi</CardTitle>
-                  {connectedOffers.length > 0 &&
-                    (project.phase as string) === "tilbud" && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-8 gap-2"
-                        onClick={() => setIsResyncModalOpen(true)}
-                        title="Resynkroniser verdier fra beste tilbud"
-                      >
-                        <RefreshCw className="h-3.5 w-3.5 text-muted-foreground" />
-                        <span className="text-xs text-muted-foreground">
-                          Sync
-                          <span className="hidden xl:inline"> fra tilbud</span>
-                        </span>
-                      </Button>
-                    )}
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="flex flex-wrap gap-4">
-                    <div className="min-w-[200px] flex-1 space-y-1">
-                      <p className="text-sm text-muted-foreground">
-                        Total kostnad
-                      </p>
-                      <p className="text-2xl font-bold">
-                        {new Intl.NumberFormat("nb-NO", {
-                          style: "currency",
-                          currency: "NOK",
-                          maximumFractionDigits: 0,
-                        }).format(totalCost)}
-                      </p>
-                    </div>
-                    <div className="min-w-[200px] flex-1 space-y-1">
-                      <p className="text-sm text-muted-foreground">
-                        Total pris
-                      </p>
-                      <p className="text-2xl font-bold">
-                        {new Intl.NumberFormat("nb-NO", {
-                          style: "currency",
-                          currency: "NOK",
-                          maximumFractionDigits: 0,
-                        }).format(budget)}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4 rounded-lg bg-muted/50 p-4">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium text-muted-foreground">
-                        <span className="hidden xl:inline">Margin (DG)</span>
-                        <span className="inline xl:hidden">DG</span>
-                      </p>
-                      <p className="text-2xl font-bold">
-                        {margin.toFixed(1)} %
-                      </p>
-                    </div>
-                    <div className="flex items-center justify-between border-t pt-2">
-                      <p className="text-sm text-muted-foreground">
-                        <span className="hidden sm:inline">
-                          Dekningsbidrag (DB)
-                        </span>
-                        <span className="inline sm:hidden">DB</span>
-                      </p>
-                      <p className="font-mono font-medium text-green-600">
-                        {new Intl.NumberFormat("nb-NO", {
-                          style: "currency",
-                          currency: "NOK",
-                          maximumFractionDigits: 0,
-                        }).format(profit)}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4 pt-2">
-                    {/* Brukt av budsjett */}
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">
-                          Hittil påløpte kostnader
-                        </span>
-                        <span className="font-medium">
-                          {new Intl.NumberFormat("nb-NO", {
-                            style: "currency",
-                            currency: "NOK",
-                            maximumFractionDigits: 0,
-                          }).format(spent)}{" "}
-                          ({spentPercentage.toFixed(1)}%)
-                        </span>
-                      </div>
-                      <Progress
-                        value={spentPercentage}
-                        className="h-2"
-                        indicatorClassName={
-                          spentPercentage > 100
-                            ? "bg-red-600"
-                            : spentPercentage > 80
-                              ? "bg-orange-500"
-                              : "bg-green-600"
-                        }
-                      />
-                    </div>
-
-                    {/* Hittil fakturert */}
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">
-                          Hittil fakturert
-                        </span>
-                        <span className="font-medium">
-                          {new Intl.NumberFormat("nb-NO", {
-                            style: "currency",
-                            currency: "NOK",
-                            maximumFractionDigits: 0,
-                          }).format(invoiced)}{" "}
-                          ({invoicedPercentage.toFixed(1)}%)
-                        </span>
-                      </div>
-                      <Progress
-                        value={invoicedPercentage}
-                        className="h-2"
-                        indicatorClassName="bg-blue-600"
-                      />
-                    </div>
-
-                    <div className="mt-4 flex items-center justify-between border-t pt-4">
-                      <div className="space-y-1">
-                        <span className="text-xs text-muted-foreground">
-                          Differanse
-                        </span>
-                        <p
-                          className={`font-mono text-lg font-bold ${
-                            invoiceDiff === 0
-                              ? "text-gray-600"
-                              : invoiceDiff > 0
-                                ? "text-green-600"
-                                : "text-red-600"
-                          }`}
-                        >
-                          {invoiceDiff === 0
-                            ? "Ingen tall finnes"
-                            : new Intl.NumberFormat("nb-NO", {
-                                style: "currency",
-                                currency: "NOK",
-                                maximumFractionDigits: 0,
-                                signDisplay: "exceptZero",
-                              }).format(invoiceDiff)}
-                        </p>
-                      </div>
-                      <div className="space-y-1 text-right">
-                        <span className="text-xs text-muted-foreground">
-                          Gjenstående
-                        </span>
-                        <p
-                          className={`font-mono text-lg font-bold ${
-                            remaining < 0 ? "text-red-600" : "text-green-600"
-                          }`}
-                        >
-                          {new Intl.NumberFormat("nb-NO", {
-                            style: "currency",
-                            currency: "NOK",
-                            maximumFractionDigits: 0,
-                          }).format(remaining)}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              {/* Finance card removed - finance tracking has moved to offers */}
             </div>
 
             <ProjectDescription
@@ -560,6 +251,7 @@ export default function ProjectDetailPage({
                           <TableHead>Kunde</TableHead>
                           <TableHead>Selskap</TableHead>
                           <TableHead>Fase</TableHead>
+                          <TableHead>Sendt</TableHead>
                           <TableHead>Frist</TableHead>
                           <TableHead>Verdi</TableHead>
                           <TableHead>Margin (DG)</TableHead>
@@ -612,34 +304,8 @@ export default function ProjectDetailPage({
         open={isCreateOfferModalOpen}
         onOpenChange={setIsCreateOfferModalOpen}
         defaultProjectId={project.id}
-        defaultCustomerId={project.customerId}
         hideTrigger
       />
-
-      <AlertDialog open={isResyncModalOpen} onOpenChange={setIsResyncModalOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Resynkroniser fra tilbud?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Dette vil oppdatere prosjektets økonomiske tall basert på det
-              beste tilgjengelige tilbudet. Eksisterende manuelle justeringer
-              vil bli overskrevet.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Avbryt</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                if (!project.id) return;
-                resyncFromOffer.mutate({ id: project.id });
-                setIsResyncModalOpen(false);
-              }}
-            >
-              Oppdater
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </AppLayout>
   );
 }

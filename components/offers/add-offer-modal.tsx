@@ -15,6 +15,7 @@ import { OfferForm } from "./offer-form";
 import { useCreateOffer } from "@/hooks/useOffers";
 import type { DomainCreateOfferRequest } from "@/lib/.generated/data-contracts";
 import { OfferStatusBadge } from "./offer-status-badge";
+import { useCompanyStore } from "@/store/company-store";
 
 export interface AddOfferModalProps {
   open?: boolean;
@@ -42,6 +43,13 @@ export function AddOfferModal({
   const setOpen = controlledOnOpenChange ?? setInternalOpen;
 
   const createOffer = useCreateOffer();
+  const selectedCompanyId = useCompanyStore((state) => state.selectedCompanyId);
+
+  // If the currently selected company is "all" or "gruppen", we force the user to choose a specific company
+  // otherwise we default to the currently selected company
+  const isGenericContext =
+    selectedCompanyId === "all" || selectedCompanyId === "gruppen";
+  const defaultCompanyId = isGenericContext ? "" : selectedCompanyId;
 
   const handleSubmit = async (data: DomainCreateOfferRequest) => {
     try {
@@ -87,7 +95,9 @@ export function AddOfferModal({
               initialData={{
                 customerId: defaultCustomerId,
                 projectId: defaultProjectId,
+                companyId: defaultCompanyId,
               }}
+              showCompanySelect
               showCustomerWarning={showCustomerWarning}
               lockedCustomerId={lockedCustomerId}
             />

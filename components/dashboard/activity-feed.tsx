@@ -92,10 +92,10 @@ export function ActivityFeed({ activities }: ActivityFeedProps) {
         </div>
         <div className="mt-4 shrink-0 border-t pt-3">
           <Link
-            href="/notifications"
+            href="/activities"
             className="text-sm font-medium text-primary hover:underline"
           >
-            Se alle aktiviteter →
+            Se aktivitetslogg →
           </Link>
         </div>
       </CardContent>

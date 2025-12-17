@@ -9,6 +9,7 @@ import {
   useUpdateOfferResponsible,
   useUpdateOfferProject,
   useDeleteOfferProject,
+  useDeleteOffer,
   useAcceptOffer,
   useRejectOffer,
   useSendOffer,
@@ -19,7 +20,13 @@ import {
   useUpdateOfferExpirationDate,
   useUpdateOfferCost,
   useAdvanceOffer,
+  useAcceptOrder,
+  useCompleteOffer,
+  useUpdateOfferHealth,
+  useUpdateOfferSpent,
+  useUpdateOfferInvoiced,
 } from "@/hooks/useOffers";
+import { useCompanyStore } from "@/store/company-store"; // Imported for company access
 import { useAllCustomers } from "@/hooks/useCustomers";
 
 import confetti from "canvas-confetti";
@@ -54,11 +61,11 @@ import { OfferStatusBadge } from "@/components/offers/offer-status-badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   Link as LinkIcon,
   Info,
-  X,
   Check,
   ChevronDown,
   Trophy,
@@ -66,6 +73,8 @@ import {
   Send,
   Pencil,
   Undo2,
+  Trash2,
+  MoreVertical,
 } from "lucide-react";
 import { formatDistanceToNow, addDays, format } from "date-fns";
 import { nb } from "date-fns/locale";
@@ -96,14 +105,17 @@ import { CustomerListTable } from "@/components/customers/customer-list-table";
 import { cn, formatOfferNumber } from "@/lib/utils";
 import { SmartDatePicker } from "@/components/ui/smart-date-picker";
 import type { DomainProjectDTO } from "@/lib/.generated/data-contracts";
+import type { Project } from "@/lib/api/types";
 
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 
 import { OfferDescription } from "@/components/offers/offer-description";
-import { ProjectPhaseBadge } from "@/components/projects/project-phase-badge";
+import { OfferHealthBadge } from "@/components/offers/offer-health-badge";
+import { Progress } from "@/components/ui/progress";
 
 import { Badge } from "@/components/ui/badge";
+import { DeleteConfirmationModal } from "@/components/ui/delete-confirmation-modal";
 
 export default function OfferDetailPage({
   params,
@@ -111,7 +123,9 @@ export default function OfferDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const resolvedParams = use(params);
+  const router = useRouter();
   const { data: offer, isLoading } = useOfferWithDetails(resolvedParams.id);
+  const { userCompany } = useCompanyStore();
   const { data: users } = useUsers();
   const { data: customers } = useAllCustomers();
 
@@ -164,6 +178,12 @@ export default function OfferDetailPage({
   const rejectOffer = useRejectOffer();
   const sendOffer = useSendOffer();
   const advanceOffer = useAdvanceOffer();
+  const acceptOrder = useAcceptOrder();
+  const completeOffer = useCompleteOffer();
+  const updateHealth = useUpdateOfferHealth();
+  const updateSpent = useUpdateOfferSpent();
+  const updateInvoiced = useUpdateOfferInvoiced();
+  const deleteOffer = useDeleteOffer();
 
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [isResponsibleModalOpen, setIsResponsibleModalOpen] = useState(false);
@@ -192,7 +212,7 @@ export default function OfferDetailPage({
   >(null);
 
   const [projectCreationName, setProjectCreationName] = useState("");
-  const [showLockedAlert, setShowLockedAlert] = useState(true);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     if (confirmationAction === "win" && offer) {
@@ -217,8 +237,13 @@ export default function OfferDetailPage({
 
   const isLocked =
     (offer?.phase as string) === "won" ||
+    (offer?.phase as string) === "order" ||
+    (offer?.phase as string) === "completed" ||
     (offer?.phase as string) === "lost" ||
     (offer?.phase as string) === "archived";
+
+  const isOrderPhase = (offer?.phase as string) === "order";
+  const isCompletedPhase = (offer?.phase as string) === "completed";
 
   if (isLoading) {
     return (
@@ -300,271 +325,266 @@ export default function OfferDetailPage({
                 </div>
               </div>
               {/* Status actions */}
-              {(offer.phase === "draft" || offer.phase === "in_progress") && (
-                <Button
-                  className="bg-purple-600 text-white hover:bg-purple-700"
-                  onClick={() => {
-                    const today = new Date();
-                    setSendDate(today);
-                    setExpirationDate(addDays(today, 60));
-                    setIsSendDetailsModalOpen(true);
-                  }}
-                >
-                  <Send className="mr-2 h-4 w-4" />
-                  Marker som sendt
-                </Button>
-              )}
+              <div className="flex items-center gap-2">
+                {(offer.phase === "draft" || offer.phase === "in_progress") && (
+                  <Button
+                    className="bg-purple-600 text-white hover:bg-purple-700"
+                    onClick={() => {
+                      const today = new Date();
+                      setSendDate(today);
+                      setExpirationDate(addDays(today, 60));
+                      setIsSendDetailsModalOpen(true);
+                    }}
+                  >
+                    <Send className="mr-2 h-4 w-4" />
+                    Marker som sendt
+                  </Button>
+                )}
 
-              {offer.phase === "sent" && (
+                {offer.phase === "sent" && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline">
+                        Avgjør skjebne <ChevronDown className="ml-2 h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        className="cursor-pointer text-green-600 focus:bg-green-50 focus:text-green-600"
+                        onClick={() => setConfirmationAction("win")}
+                      >
+                        <Trophy className="mr-2 h-4 w-4" />
+                        Konverter til ordre
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="cursor-pointer text-red-600 focus:bg-red-50 focus:text-red-600"
+                        onClick={() => setConfirmationAction("loss")}
+                      >
+                        <XCircle className="mr-2 h-4 w-4" />
+                        Tapt
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="cursor-pointer text-muted-foreground focus:bg-gray-100"
+                        onClick={() =>
+                          advanceOffer.mutate({
+                            id: offer.id!,
+                            phase: "in_progress",
+                          })
+                        }
+                      >
+                        <Undo2 className="mr-2 h-4 w-4" />
+                        Tilbake til <OfferStatusBadge phase="in_progress" />
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+
+                {offer.phase === "order" && (
+                  <Button
+                    className="bg-slate-600 text-white hover:bg-slate-700"
+                    onClick={() => completeOffer.mutate(offer.id!)}
+                  >
+                    <Check className="mr-2 h-4 w-4" />
+                    Marker som ferdig
+                  </Button>
+                )}
+
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline">
-                      Avgjør skjebne <ChevronDown className="ml-2 h-4 w-4" />
+                    <Button variant="ghost" size="icon">
+                      <MoreVertical className="h-5 w-5 text-muted-foreground" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem
-                      className="cursor-pointer text-green-600 focus:bg-green-50 focus:text-green-600"
-                      onClick={() => setConfirmationAction("win")}
-                    >
-                      <Trophy className="mr-2 h-4 w-4" />
-                      Vunnet
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
                       className="cursor-pointer text-red-600 focus:bg-red-50 focus:text-red-600"
-                      onClick={() => setConfirmationAction("loss")}
+                      onClick={() => setShowDeleteConfirm(true)}
                     >
-                      <XCircle className="mr-2 h-4 w-4" />
-                      Tapt
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      className="cursor-pointer text-muted-foreground focus:bg-gray-100"
-                      onClick={() =>
-                        advanceOffer.mutate({
-                          id: offer.id!,
-                          phase: "in_progress",
-                        })
-                      }
-                    >
-                      <Undo2 className="mr-2 h-4 w-4" />
-                      Tilbake til <OfferStatusBadge phase="in_progress" />
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Slett tilbud
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-              )}
 
-              {/* Confirmation Dialog */}
-              <AlertDialog
-                open={!!confirmationAction}
-                onOpenChange={(open) => !open && setConfirmationAction(null)}
-              >
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>
-                      {confirmationAction === "win" && "Marker som vunnet?"}
-                      {confirmationAction === "loss" && "Marker som tapt?"}
-                    </AlertDialogTitle>
-                    <AlertDialogDescription asChild>
-                      <div className="space-y-4">
-                        {confirmationAction === "win" && (
-                          <>
-                            {!offer.projectId ? (
-                              <>
-                                <p>
-                                  Gratulerer! Siden dette tilbudet ikke er
-                                  koblet til et prosjekt, vil et prosjekt bli
-                                  opprettet automatisk når du bekrefter.
-                                </p>
-                                <p className="text-sm text-muted-foreground">
-                                  Dette vil være standardnavnet, men du kan
-                                  valgfritt endre det i inntastingsfeltet
-                                  nedenfor.
-                                </p>
-                                <div className="pt-2">
-                                  <Label htmlFor="project-name">
-                                    Prosjektnavn
-                                  </Label>
-                                  <Input
-                                    id="project-name"
-                                    value={projectCreationName}
-                                    onChange={(e) => {
-                                      const val = e.target.value;
-                                      // Capitalize first letter logic
-                                      const washed =
-                                        val.charAt(0).toUpperCase() +
-                                        val.slice(1);
-                                      setProjectCreationName(washed);
-                                    }}
-                                    className="mt-1"
-                                    placeholder="Prosjektnavn..."
-                                  />
-                                  {projectCreationName.length <= 2 && (
-                                    <p className="mt-1 text-xs text-red-500">
-                                      Navnet må være lenger enn 2 tegn
-                                    </p>
-                                  )}
-                                </div>
-                              </>
-                            ) : (
-                              <>
-                                <p>
-                                  Herlig! Er du sikker på at du vil markere
-                                  tilbudet som vunnet?
-                                </p>
-                                <Alert className="mt-4 border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
-                                  <Info className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                                  <AlertTitle className="ml-2 text-amber-900 dark:text-amber-100">
-                                    Obs: Andre tilbud vil utløpe
-                                  </AlertTitle>
-                                  <AlertDescription className="ml-2 text-amber-800 dark:text-amber-200">
-                                    Dette tilbudet er en del av et prosjekt.
-                                    Hvis du vinner dette, vil alle andre aktive
-                                    tilbud i samme prosjekt automatisk settes
-                                    til &apos;Utgått&apos;.
-                                  </AlertDescription>
-                                </Alert>
-                                <div className="mt-2 text-sm text-muted-foreground">
-                                  Tilbudet vil bli låst for redigering for å
-                                  sikre historikken. Prosjektet overtar som{" "}
-                                  <ProjectPhaseBadge phase="active" /> fase, og
-                                  alle videre endringer gjøres der.
-                                </div>
-                              </>
-                            )}
-                          </>
+                {/* Confirmation Dialog */}
+                <AlertDialog
+                  open={!!confirmationAction}
+                  onOpenChange={(open) => !open && setConfirmationAction(null)}
+                >
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        {confirmationAction === "win" && "Konverter til ordre?"}
+                        {confirmationAction === "loss" && "Marker som tapt?"}
+                      </AlertDialogTitle>
+                      <AlertDialogDescription asChild>
+                        <div className="space-y-4">
+                          {confirmationAction === "win" && (
+                            <>
+                              {!offer.projectId ? (
+                                <>
+                                  <p>
+                                    <strong>Gratulerer!</strong>
+                                    <br /> Siden dette tilbudet ikke er koblet
+                                    til et prosjekt, vil et prosjekt bli
+                                    opprettet automatisk nar du bekrefter.
+                                  </p>
+                                  <p className="text-sm text-muted-foreground">
+                                    Dette vil være standardnavnet, men du kan
+                                    valgfritt endre det nedenfor til noe som gir
+                                    mer mening.
+                                  </p>
+                                  <div className="pt-2">
+                                    <Label htmlFor="project-name">
+                                      Prosjektnavn
+                                    </Label>
+                                    <Input
+                                      id="project-name"
+                                      value={projectCreationName}
+                                      onChange={(e) => {
+                                        const val = e.target.value;
+                                        // Capitalize first letter logic
+                                        const washed =
+                                          val.charAt(0).toUpperCase() +
+                                          val.slice(1);
+                                        setProjectCreationName(washed);
+                                      }}
+                                      className="mt-1"
+                                      placeholder="Prosjektnavn..."
+                                    />
+                                    {projectCreationName.length <= 2 && (
+                                      <p className="mt-1 text-xs text-red-500">
+                                        Navnet ma vaere lenger enn 2 tegn
+                                      </p>
+                                    )}
+                                  </div>
+                                </>
+                              ) : (
+                                <>
+                                  <p>
+                                    Herlig! Er du sikker pa at du vil konvertere
+                                    tilbudet som ordre?
+                                  </p>
+                                  <Alert className="mt-4 border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+                                    <Info className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                                    <AlertTitle className="ml-2 text-amber-900 dark:text-amber-100">
+                                      Obs! Andre tilbud vil utlope
+                                    </AlertTitle>
+                                    <AlertDescription className="ml-2 text-amber-800 dark:text-amber-200">
+                                      Dette tilbudet er en del av et prosjekt.
+                                      Hvis du gjør om tilbudet til ordre, vil
+                                      alle andre aktive tilbud for{" "}
+                                      <span
+                                        className="font-medium"
+                                        style={{ color: userCompany?.color }}
+                                      >
+                                        {userCompany?.name || "oss"}
+                                      </span>{" "}
+                                      i samme prosjekt automatisk settes til{" "}
+                                      <OfferStatusBadge phase="expired" />
+                                    </AlertDescription>
+                                  </Alert>
+                                  <div className="mt-2 text-sm text-muted-foreground">
+                                    Tilbudet gar over til ordrefase. Du kan
+                                    følge opp okonomi og fremdrift direkte pa
+                                    tilbudet.
+                                  </div>
+                                </>
+                              )}
+                            </>
+                          )}
+                          {confirmationAction === "loss" && (
+                            <>
+                              <p>
+                                Det var kjedelig! Er du sikker på at du vil
+                                markere tilbudet som tapt?
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                Tilbudet låses for redigering for å sikre
+                                historikk, og tas ut av aktiv pipeline.
+                              </p>
+                            </>
+                          )}
+                        </div>
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Avbryt</AlertDialogCancel>
+                      <AlertDialogAction
+                        className={cn(
+                          confirmationAction === "win" &&
+                            "bg-green-600 hover:bg-green-700",
+                          confirmationAction === "loss" &&
+                            "bg-red-600 hover:bg-red-700"
                         )}
-                        {confirmationAction === "loss" && (
-                          <>
-                            <p>
-                              Det var kjedelig! Er du sikker på at du vil
-                              markere tilbudet som tapt?
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                              Tilbudet låses for redigering for å sikre
-                              historikk, og tas ut av aktiv pipeline.
-                            </p>
-                          </>
-                        )}
-                      </div>
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Avbryt</AlertDialogCancel>
-                    <AlertDialogAction
-                      className={cn(
-                        confirmationAction === "win" &&
-                          "bg-green-600 hover:bg-green-700",
-                        confirmationAction === "loss" &&
-                          "bg-red-600 hover:bg-red-700"
-                      )}
-                      disabled={
-                        confirmationAction === "win" &&
-                        !offer.projectId &&
-                        projectCreationName.length <= 2
-                      }
-                      onClick={() => {
-                        if (confirmationAction === "win") {
-                          acceptOffer.mutate({
-                            id: offer.id!,
-                            createProject: !offer.projectId, // Only create if not connected
-                            projectName: !offer.projectId
-                              ? projectCreationName
-                              : undefined,
-                          });
-                          confetti({
-                            particleCount: 100,
-                            spread: 70,
-                            origin: { y: 0.6 },
-                            colors: ["#22c55e", "#16a34a", "#15803d"],
-                          });
-                        } else if (confirmationAction === "loss") {
-                          rejectOffer.mutate({ id: offer.id! });
+                        disabled={
+                          confirmationAction === "win" &&
+                          !offer.projectId &&
+                          projectCreationName.length <= 2
                         }
-                        setConfirmationAction(null);
-                      }}
-                    >
-                      {confirmationAction === "win" &&
-                        "Bekreft at tilbudet er vunnet"}
-                      {confirmationAction === "loss" && "Marker som tapt"}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+                        onClick={() => {
+                          if (confirmationAction === "win") {
+                            if (!offer.projectId) {
+                              // Use acceptOffer which creates a project
+                              acceptOffer.mutate({
+                                id: offer.id!,
+                                createProject: true,
+                                projectName: projectCreationName,
+                              });
+                            } else {
+                              // Use acceptOrder for the sent -> order transition
+                              acceptOrder.mutate({ id: offer.id! });
+                            }
+                            confetti({
+                              particleCount: 100,
+                              spread: 70,
+                              origin: { y: 0.6 },
+                              colors: ["#f59e0b", "#d97706", "#b45309"],
+                            });
+                          } else if (confirmationAction === "loss") {
+                            rejectOffer.mutate({ id: offer.id! });
+                          }
+                          setConfirmationAction(null);
+                        }}
+                      >
+                        {confirmationAction === "win" && "Aksepter som ordre"}
+                        {confirmationAction === "loss" && "Marker som tapt"}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+
+                <DeleteConfirmationModal
+                  isOpen={showDeleteConfirm}
+                  onClose={() => setShowDeleteConfirm(false)}
+                  onConfirm={async () => {
+                    await deleteOffer.mutateAsync(offer.id!);
+                    router.push("/offers");
+                  }}
+                  title="Slett tilbud?"
+                  description="Dette vil slette tilbudet permanent. Handlingen kan ikke angres."
+                />
+              </div>
             </div>
           </div>
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 py-6 md:px-8">
+          {offer.phase === "lost" && (
+            <Alert className="mb-4 border-amber-200 bg-amber-100 text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+              <Info className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              <AlertTitle className="ml-2 text-amber-900 dark:text-amber-100">
+                Tilbudet er tapt
+              </AlertTitle>
+              <AlertDescription className="ml-2 text-amber-800 dark:text-amber-200">
+                Dette tilbudet er i en tapt tilstand, og kan derfor ikke
+                oppdateres. Dette er for å bevare historikken. Du kan fortsatt
+                oppdatere beskrivelsen.
+              </AlertDescription>
+            </Alert>
+          )}
           <div className="w-full space-y-6">
-            {(offer.phase === "won" || offer.phase === "lost") &&
-              showLockedAlert && (
-                <Alert
-                  className={cn(
-                    "relative border pr-12",
-                    offer.phase === "won"
-                      ? "border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20"
-                      : "border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-900/20"
-                  )}
-                >
-                  <Info
-                    className={cn(
-                      "h-4 w-4",
-                      offer.phase === "won"
-                        ? "text-green-800 dark:text-green-300"
-                        : "text-orange-800 dark:text-orange-300"
-                    )}
-                  />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className={cn(
-                      "absolute right-2 top-2 h-8 w-8 !pl-0",
-                      offer.phase === "won"
-                        ? "text-green-800 hover:bg-green-100 hover:text-green-900 dark:text-green-300 dark:hover:bg-green-800/30 dark:hover:text-green-200"
-                        : "text-orange-800 hover:bg-orange-100 hover:text-orange-900 dark:text-orange-300 dark:hover:bg-orange-800/30 dark:hover:text-orange-200"
-                    )}
-                    onClick={() => setShowLockedAlert(false)}
-                  >
-                    <X className="h-4 w-4" />
-                    <span className="sr-only">Lukk</span>
-                  </Button>
-                  <AlertTitle
-                    className={cn(
-                      offer.phase === "won"
-                        ? "text-green-900 dark:text-green-100"
-                        : "text-orange-900 dark:text-orange-100"
-                    )}
-                  >
-                    Tilbudet er {offer.phase === "won" ? "vunnet" : "tapt"}!
-                  </AlertTitle>
-                  <AlertDescription
-                    className={cn(
-                      offer.phase === "won"
-                        ? "text-green-800 dark:text-green-200"
-                        : "text-orange-800 dark:text-orange-200"
-                    )}
-                  >
-                    Du kan ikke endre alle verdiene på tilbudet da det{" "}
-                    {offer.phase === "won"
-                      ? "nå er i hendene på prosjektet"
-                      : "er låst for redigering"}
-                    . Dette for å ikke endre historikken etter at tilbudet ble
-                    lukket.
-                    {offer.phase === "won" && offer.projectId && (
-                      <p>
-                        Det er sannsynligvis prosjektet du har lyst til å endre
-                        om det er det du er ute etter. Her er linken:{" "}
-                        <Link
-                          href={`/projects/${offer.projectId}`}
-                          className="font-medium underline hover:opacity-80"
-                        >
-                          {offer.projectName || "Gå til prosjekt"}
-                        </Link>
-                      </p>
-                    )}
-                  </AlertDescription>
-                </Alert>
-              )}
+            {/* Legacy "won" alert removed - new flow uses order/completed phases */}
             <div className="grid gap-6 md:grid-cols-2">
               <Card>
                 <CardHeader>
@@ -602,7 +622,7 @@ export default function OfferDetailPage({
                       open={isCustomerModalOpen}
                       onOpenChange={setIsCustomerModalOpen}
                     >
-                      <DialogContent className="flex max-h-[80vh] max-w-4xl flex-col">
+                      <DialogContent className="flex max-h-[90vh] w-[95vw] max-w-[95vw] flex-col">
                         <DialogHeader>
                           <DialogTitle>Bytt kunde</DialogTitle>
                           <DialogDescription>
@@ -837,7 +857,8 @@ export default function OfferDetailPage({
                       />
                     </div>
                     {(offer.phase === "sent" ||
-                      offer.phase === "won" ||
+                      offer.phase === "order" ||
+                      offer.phase === "completed" ||
                       offer.phase === "lost") && (
                       <div className="min-w-[200px] flex-1">
                         <p className="mb-1 text-sm text-muted-foreground">
@@ -868,10 +889,10 @@ export default function OfferDetailPage({
                     )}
                   </div>
 
-                  <div className="border-t pt-4 text-xs text-muted-foreground">
+                  <div className="flex flex-col gap-2 border-t pt-4 text-xs text-muted-foreground">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1">
-                        Opprettet av{" "}
+                      <div className="flex items-center gap-2">
+                        <span className="w-28 shrink-0">Opprettet av</span>
                         {offer.createdByName ?? (
                           <Badge
                             variant="secondary"
@@ -891,8 +912,8 @@ export default function OfferDetailPage({
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1">
-                        Sist oppdatert av{" "}
+                      <div className="flex items-center gap-2">
+                        <span className="w-28 shrink-0">Sist oppdatert av</span>
                         {offer.updatedByName ?? (
                           <Badge
                             variant="secondary"
@@ -934,7 +955,11 @@ export default function OfferDetailPage({
                             cost: Number(val),
                           });
                         }}
-                        className="-ml-2 border-transparent p-2 text-2xl font-bold hover:border-input hover:bg-transparent"
+                        disabled={isLocked}
+                        className={cn(
+                          "-ml-2 border-transparent p-2 text-2xl font-bold",
+                          !isLocked && "hover:border-input hover:bg-transparent"
+                        )}
                       />
                     </div>
                     <div className="min-w-[200px] flex-1 space-y-2">
@@ -950,7 +975,11 @@ export default function OfferDetailPage({
                             data: { value: Number(val) },
                           });
                         }}
-                        className="-ml-2 border-transparent p-2 text-2xl font-bold hover:border-input hover:bg-transparent"
+                        disabled={isLocked}
+                        className={cn(
+                          "-ml-2 border-transparent p-2 text-2xl font-bold",
+                          !isLocked && "hover:border-input hover:bg-transparent"
+                        )}
                       />
                     </div>
                   </div>
@@ -1045,7 +1074,7 @@ export default function OfferDetailPage({
                       open={isProjectModalOpen}
                       onOpenChange={setIsProjectModalOpen}
                     >
-                      <DialogContent className="flex max-h-[80vh] max-w-4xl flex-col">
+                      <DialogContent className="flex max-h-[90vh] w-[95vw] max-w-[95vw] flex-col">
                         <DialogHeader>
                           <DialogTitle>Velg prosjekt</DialogTitle>
                         </DialogHeader>
@@ -1059,7 +1088,7 @@ export default function OfferDetailPage({
                           <div className="flex-1 overflow-auto rounded-md border">
                             <ProjectListTable
                               compact={true}
-                              projects={filteredProjects || []}
+                              projects={(filteredProjects as Project[]) || []}
                               onProjectClick={(project) => {
                                 setPendingProject(project);
                                 setShowChangeConfirm(true);
@@ -1205,10 +1234,224 @@ export default function OfferDetailPage({
               </Card>
             </div>
 
+            {/* Execution Tracking Section - Only visible for order/completed phases */}
+            {(isOrderPhase || isCompletedPhase) && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span>Oppfolging av ordre</span>
+                    {offer.health && <OfferHealthBadge health={offer.health} />}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid gap-6 md:grid-cols-2">
+                    {/* Spent tracking */}
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-muted-foreground">
+                        Palopte kostnader
+                      </p>
+                      <InlineEdit
+                        type="currency"
+                        value={offer.spent || 0}
+                        onSave={async (val) => {
+                          await updateSpent.mutateAsync({
+                            id: offer.id!,
+                            spent: Number(val),
+                          });
+                        }}
+                        disabled={isCompletedPhase}
+                        className="-ml-2 border-transparent p-2 text-xl font-bold hover:border-input hover:bg-transparent"
+                      />
+                      {calcPrice > 0 && (
+                        <Progress
+                          value={((offer.spent || 0) / calcPrice) * 100}
+                          className="h-2"
+                          indicatorClassName={
+                            ((offer.spent || 0) / calcPrice) * 100 > 100
+                              ? "bg-red-600"
+                              : ((offer.spent || 0) / calcPrice) * 100 > 80
+                                ? "bg-orange-500"
+                                : "bg-green-600"
+                          }
+                        />
+                      )}
+                    </div>
+
+                    {/* Invoiced tracking */}
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-muted-foreground">
+                        Fakturert
+                      </p>
+                      <InlineEdit
+                        type="currency"
+                        value={offer.invoiced || 0}
+                        onSave={async (val) => {
+                          await updateInvoiced.mutateAsync({
+                            id: offer.id!,
+                            invoiced: Number(val),
+                          });
+                        }}
+                        disabled={isCompletedPhase}
+                        className="-ml-2 border-transparent p-2 text-xl font-bold hover:border-input hover:bg-transparent"
+                      />
+                      {calcPrice > 0 && (
+                        <Progress
+                          value={((offer.invoiced || 0) / calcPrice) * 100}
+                          className="h-2"
+                          indicatorClassName="bg-blue-600"
+                        />
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-6 border-t pt-4">
+                    <div className="min-w-[150px] flex-1">
+                      <p className="text-sm text-muted-foreground">
+                        Ordrereserve
+                      </p>
+                      <p
+                        className={cn(
+                          "font-mono text-lg font-bold",
+                          (offer.orderReserve ??
+                            calcPrice - (offer.invoiced || 0)) < 0
+                            ? "text-red-600"
+                            : "text-green-600"
+                        )}
+                      >
+                        {new Intl.NumberFormat("nb-NO", {
+                          style: "currency",
+                          currency: "NOK",
+                          maximumFractionDigits: 0,
+                        }).format(
+                          offer.orderReserve ??
+                            calcPrice - (offer.invoiced || 0)
+                        )}
+                      </p>
+                    </div>
+                    <div className="min-w-[150px] flex-1">
+                      <p className="text-sm text-muted-foreground">
+                        Differanse (fakturert - palopte)
+                      </p>
+                      <p
+                        className={cn(
+                          "font-mono text-lg font-bold",
+                          (offer.invoiced || 0) - (offer.spent || 0) < 0
+                            ? "text-red-600"
+                            : "text-green-600"
+                        )}
+                      >
+                        {new Intl.NumberFormat("nb-NO", {
+                          style: "currency",
+                          currency: "NOK",
+                          maximumFractionDigits: 0,
+                          signDisplay: "exceptZero",
+                        }).format((offer.invoiced || 0) - (offer.spent || 0))}
+                      </p>
+                    </div>
+                  </div>
+
+                  {isOrderPhase && (
+                    <div className="flex flex-wrap gap-4 border-t pt-4">
+                      <div className="min-w-[200px] flex-1">
+                        <Label className="text-sm text-muted-foreground">
+                          Helsestatus
+                        </Label>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className="mt-1 w-full justify-between"
+                            >
+                              {offer.health ? (
+                                <OfferHealthBadge health={offer.health} />
+                              ) : (
+                                <span className="text-muted-foreground">
+                                  Velg status...
+                                </span>
+                              )}
+                              <ChevronDown className="ml-2 h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent
+                            align="start"
+                            className="w-[200px]"
+                          >
+                            <DropdownMenuItem
+                              onClick={() =>
+                                updateHealth.mutate({
+                                  id: offer.id!,
+                                  health: "on_track",
+                                })
+                              }
+                            >
+                              <OfferHealthBadge health="on_track" />
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                updateHealth.mutate({
+                                  id: offer.id!,
+                                  health: "at_risk",
+                                })
+                              }
+                            >
+                              <OfferHealthBadge health="at_risk" />
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                updateHealth.mutate({
+                                  id: offer.id!,
+                                  health: "delayed",
+                                })
+                              }
+                            >
+                              <OfferHealthBadge health="delayed" />
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                updateHealth.mutate({
+                                  id: offer.id!,
+                                  health: "over_budget",
+                                })
+                              }
+                            >
+                              <OfferHealthBadge health="over_budget" />
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                      <div className="min-w-[200px] flex-1">
+                        <Label className="text-sm text-muted-foreground">
+                          Ferdigstillelse: {offer.completionPercent ?? 0}%
+                        </Label>
+                        <Slider
+                          value={[offer.completionPercent ?? 0]}
+                          max={100}
+                          min={0}
+                          step={5}
+                          className="mt-3"
+                          onValueCommit={(val) => {
+                            updateHealth.mutate({
+                              id: offer.id!,
+                              health:
+                                (offer.health as
+                                  | "on_track"
+                                  | "at_risk"
+                                  | "delayed"
+                                  | "over_budget") || "on_track",
+                              completionPercent: val[0],
+                            });
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
             <OfferDescription
               offerId={offer.id!}
               initialDescription={offer.description || ""}
-              readOnly={offer.phase === "won"}
             />
 
             {offer.notes && (
@@ -1233,7 +1476,14 @@ export default function OfferDetailPage({
           <DialogHeader>
             <DialogTitle>Send tilbud</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
+          <div className="grid gap-4">
+            <p className="text-sm text-muted-foreground">
+              Dette vil sette tilbudet til fasen{" "}
+              <OfferStatusBadge phase="sent" />. For å gjøre dette trenger vi å
+              vite når tilbudet er sendt, og hvor lenge det er gyldig for
+              kunden. Nedenfor ser du default verdiene for sendt dato og
+              vedståelsesfrist. Disse kan du endre som du vil.
+            </p>
             <div className="grid gap-2">
               <Label htmlFor="sent-date">Sendt dato</Label>
               <Input

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Check, X, Loader2, Edit2 } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
 
-interface InlineEditProps {
+export interface InlineEditProps {
   value: string | number;
   onSave: (value: string | number) => Promise<void>;
   type?: "text" | "number" | "currency" | "percent" | "email" | "tel";
@@ -14,6 +14,7 @@ interface InlineEditProps {
   label?: string;
   placeholder?: string;
   editClassName?: string;
+  disabled?: boolean;
 }
 
 export function InlineEdit({
@@ -24,6 +25,7 @@ export function InlineEdit({
   label,
   placeholder,
   editClassName,
+  disabled = false,
 }: InlineEditProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [value, setValue] = useState(initialValue);
@@ -149,9 +151,11 @@ export function InlineEdit({
 
   return (
     <div
-      onClick={() => setIsEditing(true)}
+      onClick={() => !disabled && setIsEditing(true)}
       className={cn(
-        "group -ml-2 flex cursor-pointer items-center gap-2 rounded border border-transparent px-2 py-1 transition-colors hover:border-border hover:bg-muted/50",
+        "group -ml-2 flex items-center gap-2 rounded border border-transparent px-2 py-1 transition-colors",
+        !disabled && "cursor-pointer hover:border-border hover:bg-muted/50",
+        disabled && "cursor-default opacity-70",
         className
       )}
     >
@@ -164,9 +168,11 @@ export function InlineEdit({
         {displayValue() !== "-"
           ? displayValue()
           : placeholder ||
-            (label ? `Sett ${label.toLowerCase()}` : "Klikk for å redigere")}
+            (label ? `Sett ${label.toLowerCase()}` : "Klikk for a redigere")}
       </span>
-      <Edit2 className="h-3 w-3 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-50" />
+      {!disabled && (
+        <Edit2 className="h-3 w-3 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-50" />
+      )}
     </div>
   );
 }

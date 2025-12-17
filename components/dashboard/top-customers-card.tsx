@@ -9,8 +9,11 @@ import { formatCurrency } from "@/lib/utils";
 
 interface TopCustomer extends Partial<Customer> {
   customerId?: string; // Add fallback for ID
-  offerCount?: number;
-  economicValue?: number;
+  wonOfferCount?: number;
+  wonOfferValue?: number;
+  offerCount?: number; // Keeping for backward compatibility if needed, though prompt says "previously: all offers count"
+  economicValue?: number; // Keeping for backward compatibility
+  totalValue?: number; // Keeping for backward compatibility
 }
 
 interface TopCustomersCardProps {
@@ -33,8 +36,11 @@ export function TopCustomersCard({ customers }: TopCustomersCardProps) {
           )}
           {customers
             .sort((a, b) => {
-              const valA = a.economicValue ?? a.totalValue ?? 0;
-              const valB = b.economicValue ?? b.totalValue ?? 0;
+              // Priority: wonOfferValue -> economicValue -> totalValue
+              const valA =
+                a.wonOfferValue ?? a.economicValue ?? a.totalValue ?? 0;
+              const valB =
+                b.wonOfferValue ?? b.economicValue ?? b.totalValue ?? 0;
               return valB - valA;
             })
             .map((customer, index) => {
@@ -56,15 +62,21 @@ export function TopCustomersCard({ customers }: TopCustomersCardProps) {
                         {customer.name}
                       </h3>
                       <p className="text-xs text-muted-foreground">
-                        {customer.offerCount ?? customer.activeOffers ?? 0}{" "}
-                        tilbud
+                        {customer.wonOfferCount ??
+                          customer.offerCount ??
+                          customer.activeOffers ??
+                          0}{" "}
+                        vunnet
                       </p>
                     </div>
                   </div>
                   <div className="ml-4 text-right">
                     <p className="text-sm font-bold">
                       {formatCurrency(
-                        customer.economicValue ?? customer.totalValue ?? 0
+                        customer.wonOfferValue ??
+                          customer.economicValue ??
+                          customer.totalValue ??
+                          0
                       )}
                     </p>
                     <p className="text-xs text-muted-foreground">

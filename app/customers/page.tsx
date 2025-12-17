@@ -49,6 +49,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { NewBadge } from "@/components/ui/new-badge";
 import { PaginationControls } from "@/components/pagination-controls";
+import { Badge } from "@/components/ui/badge";
 
 type ViewMode = "list" | "card";
 
@@ -212,11 +213,14 @@ export default function CustomersPage() {
                                     {customer.name}
                                     <NewBadge createdAt={customer.createdAt} />
                                   </div>
-                                  <div className="text-xs text-muted-foreground">
+                                  <Badge
+                                    variant="outline"
+                                    className="font-normal"
+                                  >
                                     {customer.orgNumber
-                                      ? `Org: ${customer.orgNumber}`
+                                      ? `Org.nr: ${customer.orgNumber}`
                                       : "Privatperson"}
-                                  </div>
+                                  </Badge>
                                 </div>
                               </div>
                             </TableCell>

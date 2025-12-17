@@ -12,18 +12,19 @@ import { useApi } from "@/lib/api/api-provider";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useCompanyStore } from "@/store/company-store";
-import type {
-  DomainCreateOfferRequest,
-  DomainUpdateOfferRequest,
-  OffersListParams,
-  DomainUpdateOfferTitleRequest,
-  DomainUpdateOfferValueRequest,
-  DomainUpdateOfferProbabilityRequest,
-  DomainUpdateOfferResponsibleRequest,
-  DomainUpdateOfferProjectRequest,
-  DomainUpdateOfferDescriptionRequest,
-  DomainUpdateOfferDueDateRequest,
-  DomainUpdateOfferCustomerRequest,
+import {
+  DomainUpdateOfferHealthRequestHealthEnum,
+  type DomainCreateOfferRequest,
+  type DomainUpdateOfferRequest,
+  type OffersListParams,
+  type DomainUpdateOfferTitleRequest,
+  type DomainUpdateOfferValueRequest,
+  type DomainUpdateOfferProbabilityRequest,
+  type DomainUpdateOfferResponsibleRequest,
+  type DomainUpdateOfferProjectRequest,
+  type DomainUpdateOfferDescriptionRequest,
+  type DomainUpdateOfferDueDateRequest,
+  type DomainUpdateOfferCustomerRequest,
 } from "@/lib/.generated/data-contracts";
 import { ContentType } from "@/lib/.generated/http-client";
 import { Offer, OfferDetail } from "@/lib/api/types";
@@ -137,6 +138,8 @@ export function useCreateOffer() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["offers"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["customers"] });
       toast.success("Tilbud opprettet");
     },
     onError: (error: Error) => {
@@ -166,6 +169,8 @@ export function useUpdateOffer() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["offers"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["customers"] });
       queryClient.invalidateQueries({ queryKey: ["offers", variables.id] });
       toast.success("Tilbud oppdatert");
     },
@@ -189,6 +194,8 @@ export function useDeleteOffer() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["offers"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["customers"] });
       toast.success("Tilbud slettet");
     },
     onError: (error: Error) => {
@@ -219,6 +226,8 @@ export function useAdvanceOffer() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["offers"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["customers"] });
       queryClient.invalidateQueries({ queryKey: ["offers", variables.id] });
       toast.success("Tilbud avansert til neste fase");
     },
@@ -297,6 +306,7 @@ export function useAcceptOffer() {
       queryClient.invalidateQueries({ queryKey: ["offers"] });
       queryClient.invalidateQueries({ queryKey: ["offers", variables.id] });
       queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["customers"] });
       toast.success("Tilbud akseptert");
     },
     onError: (error: Error) => {
@@ -320,6 +330,8 @@ export function useRejectOffer() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["offers"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["customers"] });
       queryClient.invalidateQueries({ queryKey: ["offers", variables.id] });
       toast.info("Tilbud avvist");
     },
@@ -403,6 +415,8 @@ export function useUpdateOfferValue() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["offers"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["customers"] });
       queryClient.invalidateQueries({ queryKey: ["offers", variables.id] });
       toast.success("Verdi oppdatert");
     },
@@ -584,6 +598,8 @@ export function useUpdateOfferProject() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["offers"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["customers"] });
       queryClient.invalidateQueries({ queryKey: ["offers", variables.id] });
       toast.success("Prosjekt oppdatert");
     },
@@ -615,6 +631,8 @@ export function useDeleteOfferProject() {
     },
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ["offers"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["customers"] });
       queryClient.invalidateQueries({ queryKey: ["offers", id] });
       toast.success("Prosjektlink fjernet");
     },
@@ -764,6 +782,8 @@ export function useUpdateOfferCustomer() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["offers"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["customers"] });
       queryClient.invalidateQueries({ queryKey: ["offers", variables.id] });
       toast.success("Kunde oppdatert");
     },
@@ -829,5 +849,147 @@ export function useOfferNextNumber(companyId?: string) {
       return response.data as string;
     },
     enabled: !!companyId && isAuthenticated,
+  });
+}
+
+/**
+ * Accept offer as order (sent -> order phase transition)
+ */
+export function useAcceptOrder() {
+  const queryClient = useQueryClient();
+  const api = useApi();
+
+  return useMutation({
+    mutationFn: async ({ id, notes }: { id: string; notes?: string }) => {
+      const response = await api.offers.acceptOrderCreate({ id }, { notes });
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["offers"] });
+      queryClient.invalidateQueries({ queryKey: ["offers", variables.id] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      toast.success("Tilbud akseptert som ordre");
+    },
+    onError: (error: Error) => {
+      console.error("Failed to accept order:", error);
+      toast.error("Kunne ikke akseptere som ordre");
+    },
+  });
+}
+
+/**
+ * Complete an offer (order -> completed phase transition)
+ */
+export function useCompleteOffer() {
+  const queryClient = useQueryClient();
+  const api = useApi();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const response = await api.offers.completeCreate({ id });
+      return response.data;
+    },
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: ["offers"] });
+      queryClient.invalidateQueries({ queryKey: ["offers", id] });
+      toast.success("Ordre markert som ferdig");
+    },
+    onError: (error: Error) => {
+      console.error("Failed to complete offer:", error);
+      toast.error("Kunne ikke markere som ferdig");
+    },
+  });
+}
+
+/**
+ * Update offer health status and completion percentage
+ */
+export function useUpdateOfferHealth() {
+  const queryClient = useQueryClient();
+  const api = useApi();
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      health,
+      completionPercent,
+    }: {
+      id: string;
+      health: "on_track" | "at_risk" | "delayed" | "over_budget";
+      completionPercent?: number;
+    }) => {
+      // Map string health to enum
+      const healthEnumMap: Record<
+        string,
+        DomainUpdateOfferHealthRequestHealthEnum
+      > = {
+        on_track: DomainUpdateOfferHealthRequestHealthEnum.OnTrack,
+        at_risk: DomainUpdateOfferHealthRequestHealthEnum.AtRisk,
+        delayed: DomainUpdateOfferHealthRequestHealthEnum.Delayed,
+        over_budget: DomainUpdateOfferHealthRequestHealthEnum.OverBudget,
+      };
+      const response = await api.offers.healthUpdate(
+        { id },
+        { health: healthEnumMap[health], completionPercent }
+      );
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["offers"] });
+      queryClient.invalidateQueries({ queryKey: ["offers", variables.id] });
+      toast.success("Helsestatus oppdatert");
+    },
+    onError: (error: Error) => {
+      console.error("Failed to update health:", error);
+      toast.error("Kunne ikke oppdatere helsestatus");
+    },
+  });
+}
+
+/**
+ * Update offer spent amount
+ */
+export function useUpdateOfferSpent() {
+  const queryClient = useQueryClient();
+  const api = useApi();
+
+  return useMutation({
+    mutationFn: async ({ id, spent }: { id: string; spent: number }) => {
+      const response = await api.offers.spentUpdate({ id }, { spent });
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["offers"] });
+      queryClient.invalidateQueries({ queryKey: ["offers", variables.id] });
+      toast.success("Kostnader oppdatert");
+    },
+    onError: (error: Error) => {
+      console.error("Failed to update spent:", error);
+      toast.error("Kunne ikke oppdatere kostnader");
+    },
+  });
+}
+
+/**
+ * Update offer invoiced amount
+ */
+export function useUpdateOfferInvoiced() {
+  const queryClient = useQueryClient();
+  const api = useApi();
+
+  return useMutation({
+    mutationFn: async ({ id, invoiced }: { id: string; invoiced: number }) => {
+      const response = await api.offers.invoicedUpdate({ id }, { invoiced });
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["offers"] });
+      queryClient.invalidateQueries({ queryKey: ["offers", variables.id] });
+      toast.success("Fakturert belopp oppdatert");
+    },
+    onError: (error: Error) => {
+      console.error("Failed to update invoiced:", error);
+      toast.error("Kunne ikke oppdatere fakturert belopp");
+    },
   });
 }

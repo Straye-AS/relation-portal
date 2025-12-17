@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { DomainProjectDTO } from "@/lib/.generated/data-contracts";
 import { Briefcase } from "lucide-react";
 import Link from "next/link";
-import { formatCurrency, formatRelativeDate } from "@/lib/utils";
+import { formatRelativeDate } from "@/lib/utils";
 import { ProjectPhaseBadge } from "@/components/projects/project-phase-badge";
 
 interface RecentProjectsCardProps {
@@ -31,7 +31,7 @@ export function RecentProjectsCard({ projects }: RecentProjectsCardProps) {
                   key={project.id}
                   className="grid grid-cols-12 items-center gap-4 rounded-lg px-2 py-3 text-sm transition-colors hover:bg-muted/50"
                 >
-                  <div className="col-span-12 flex min-w-0 flex-col justify-center sm:col-span-5">
+                  <div className="col-span-12 flex min-w-0 flex-col justify-center sm:col-span-6">
                     <Link
                       href={`/projects/${project.id}`}
                       className="block truncate font-medium hover:underline"
@@ -44,14 +44,11 @@ export function RecentProjectsCard({ projects }: RecentProjectsCardProps) {
                   </div>
                   <div className="col-span-6 flex items-center sm:col-span-3">
                     <ProjectPhaseBadge
-                      phase={project.phase || "active"}
+                      phase={project.phase || "tilbud"}
                       className="max-w-full truncate"
                     />
                   </div>
-                  <div className="col-span-3 flex items-center justify-end font-medium sm:col-span-2">
-                    {formatCurrency(project.value ?? 0)}
-                  </div>
-                  <div className="col-span-3 flex items-center justify-end text-xs text-muted-foreground sm:col-span-2">
+                  <div className="col-span-6 flex items-center justify-end text-xs text-muted-foreground sm:col-span-3">
                     {formatRelativeDate(project.updatedAt)}
                   </div>
                 </div>

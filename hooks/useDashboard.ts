@@ -17,6 +17,9 @@ import { useAuth } from "@/hooks/useAuth";
  */
 export interface DashboardParams {
   timeRange?: "rolling12months" | "allTime";
+  fromDate?: string;
+  toDate?: string;
+  enabled?: boolean;
 }
 
 /**
@@ -26,17 +29,37 @@ export function useDashboard(params: DashboardParams = {}) {
   const api = useApi();
   const { selectedCompanyId } = useCompanyStore();
   const { isAuthenticated } = useAuth();
-  const { timeRange = "rolling12months" } = params;
+  const { timeRange, fromDate, toDate, enabled = true } = params;
+
+  // Determine effective time range logic for query key
+  // If dates are present, they override the preset
+  const effectiveTimeRange =
+    fromDate || toDate ? "custom" : (timeRange ?? "rolling12months");
 
   return useQuery({
-    queryKey: ["dashboard", selectedCompanyId, timeRange],
+    queryKey: [
+      "dashboard",
+      selectedCompanyId,
+      effectiveTimeRange,
+      fromDate,
+      toDate,
+    ],
     queryFn: async () => {
-      const response = await api.dashboard.metricsList({
-        query: { timeRange },
-      } as any);
+      // If we have custom dates, we don't send timeRange
+      // If we don't have custom dates, we send timeRange (defaulting to rolling12months if undefined)
+      const queryParams: any = {};
+
+      if (fromDate) queryParams.fromDate = fromDate;
+      if (toDate) queryParams.toDate = toDate;
+
+      if (!fromDate && !toDate) {
+        queryParams.timeRange = timeRange ?? "rolling12months";
+      }
+
+      const response = await api.dashboard.metricsList(queryParams);
       return response.data;
     },
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && enabled,
     refetchInterval: 60000, // Refresh every minute
     staleTime: 30000, // Consider fresh for 30 seconds
   });

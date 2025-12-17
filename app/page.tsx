@@ -1,7 +1,7 @@
 "use client";
 
 import { AppLayout } from "@/components/layout/app-layout";
-import { useDashboard } from "@/hooks/useDashboard";
+import { useDashboard, DashboardParams } from "@/hooks/useDashboard";
 import { CardSkeleton } from "@/components/ui/card-skeleton";
 import { useCompanyStore } from "@/store/company-store";
 import { PipelineOverview } from "@/components/dashboard/pipeline-overview";
@@ -9,12 +9,15 @@ import { OfferReserveCard } from "@/components/dashboard/offer-reserve-card";
 import { OfferStatsCard } from "@/components/dashboard/offer-stats-card";
 import { ProjectOrderReserveCard } from "@/components/dashboard/project-order-reserve-card";
 import { RecentOffersCard } from "@/components/dashboard/recent-offers-card";
-import { RecentProjectsCard } from "@/components/dashboard/recent-projects-card";
+import { RecentOrdersCard } from "@/components/dashboard/recent-orders-card";
 import { TopCustomersCard } from "@/components/dashboard/top-customers-card";
 import { QuickActions } from "@/components/dashboard/quick-actions";
 import { ActivityFeed } from "@/components/dashboard/activity-feed";
 import { motion } from "framer-motion";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DatePickerWithRange } from "@/components/ui/date-range-picker";
+import { format } from "date-fns";
+import { DateRange } from "react-day-picker";
 
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useEffect, useState, useMemo } from "react";
@@ -27,10 +30,33 @@ import { SortByEnum2, SortOrderEnum1 } from "@/lib/.generated/data-contracts";
 
 export default function DashboardPage() {
   const { userCompany } = useCompanyStore();
-  const [timeRange, setTimeRange] = useState<"rolling12months" | "allTime">(
-    "rolling12months"
-  );
-  const { data: rawMetrics, isLoading } = useDashboard({ timeRange });
+  const [timeRange, setTimeRange] = useState<
+    "rolling12months" | "allTime" | "custom"
+  >("rolling12months");
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
+
+  /*
+   * Active Query Params
+   * We decouple the UI state (dateRange/timeRange) from the query params
+   * to avoid flashing empty states while the user is selecting a date range.
+   */
+  const [activeParams, setActiveParams] = useState<DashboardParams>({
+    timeRange: "rolling12months",
+  });
+
+  useEffect(() => {
+    if (timeRange !== "custom") {
+      setActiveParams({ timeRange });
+    } else if (dateRange?.from && dateRange?.to) {
+      setActiveParams({
+        timeRange: undefined,
+        fromDate: format(dateRange.from, "yyyy-MM-dd"),
+        toDate: format(dateRange.to, "yyyy-MM-dd"),
+      });
+    }
+  }, [timeRange, dateRange]);
+
+  const { data: rawMetrics, isLoading } = useDashboard(activeParams);
   const metrics = rawMetrics as unknown as DashboardMetrics;
   const { refetch: refetchUser } = useCurrentUser();
   const [selectedPhase, setSelectedPhase] = useState<string | null>(null);
@@ -118,11 +144,21 @@ export default function DashboardPage() {
               </p>
             </div>
             <div className="flex items-center gap-2">
+              <DatePickerWithRange
+                date={dateRange}
+                setDate={(range) => {
+                  setDateRange(range);
+                  if (range) {
+                    setTimeRange("custom");
+                  }
+                }}
+              />
               <Tabs
                 value={timeRange}
-                onValueChange={(v) =>
-                  setTimeRange(v as "rolling12months" | "allTime")
-                }
+                onValueChange={(v) => {
+                  setTimeRange(v as "rolling12months" | "allTime");
+                  setDateRange(undefined);
+                }}
               >
                 <TabsList>
                   <TabsTrigger value="rolling12months">
@@ -151,6 +187,9 @@ export default function DashboardPage() {
                 >[0]["pipeline"]
               }
               onPhaseClick={setSelectedPhase}
+              periodLabel={
+                timeRange === "rolling12months" ? "Siste 12 mnd" : undefined
+              }
             />
 
             {/* Key Metrics Row */}
@@ -189,10 +228,10 @@ export default function DashboardPage() {
             <div className="grid gap-4 pb-6 md:grid-cols-2">
               <RecentOffersCard
                 offers={(metrics.recentOffers ?? []).filter(
-                  (o: DomainOfferDTO) => o.phase !== "draft"
+                  (o: DomainOfferDTO) => o.phase === "in_progress"
                 )}
               />
-              <RecentProjectsCard projects={metrics.recentProjects ?? []} />
+              <RecentOrdersCard orders={metrics.recentOrders ?? []} />
               <TopCustomersCard
                 customers={
                   metrics.topCustomers as Parameters<

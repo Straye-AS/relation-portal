@@ -4,7 +4,8 @@ export type OfferPhase =
   | "draft"
   | "in_progress"
   | "sent"
-  | "won"
+  | "order" // Customer accepted, work in progress
+  | "completed" // Work finished
   | "lost"
   | "expired";
 
@@ -13,7 +14,7 @@ export type OfferStatus = "active" | "inactive" | "archived";
 export type ProjectPhase =
   | "tilbud"
   | "working"
-  | "active"
+  | "on_hold"
   | "completed"
   | "cancelled";
 
@@ -60,6 +61,19 @@ export interface Offer {
   items: OfferItem[];
   description?: string;
   notes?: string;
+
+  // Execution tracking (for order/completed phases)
+  managerId?: string;
+  managerName?: string;
+  teamMembers?: string[];
+  spent?: number;
+  invoiced?: number;
+  orderReserve?: number;
+  health?: "on_track" | "at_risk" | "delayed" | "over_budget";
+  completionPercent?: number;
+  startDate?: string;
+  endDate?: string;
+  estimatedCompletionDate?: string;
 }
 
 export interface Customer {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -27,7 +27,6 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -53,38 +52,39 @@ import { useAllProjects } from "@/hooks/useProjects";
 import { useOfferNextNumber } from "@/hooks/useOffers";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { Search } from "lucide-react";
-import { COMPANIES } from "@/lib/api/types";
+import { COMPANIES, type CompanyId } from "@/lib/api/types";
 import { Slider } from "@/components/ui/slider";
 import { SmartDatePicker } from "@/components/ui/smart-date-picker";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Info } from "lucide-react";
+import type { Project } from "@/lib/api/types";
 
 // ... imports
 
-const offerSchema = z
-  .object({
-    title: z
-      .string()
-      .min(2, "Tittel må være minst 2 tegn")
-      .max(200, "Tittel kan ikke være mer enn 200 tegn"),
-    customerId: z.string().optional(),
-    projectId: z.string().optional(),
-    companyId: z.string().optional(), // Make optional so existing usage doesn't break if we handle it in submit
-    description: z.string().optional(),
-    dueDate: z.date().optional(),
-    expirationDate: z.date().optional(),
-    probability: z.coerce
-      .number()
-      .min(0, "Sannsynlighet må være minst 0%")
-      .max(100, "Sannsynlighet må være maks 100%")
-      .optional(),
-  })
-  .refine((data) => data.customerId || data.projectId, {
-    message: "Du må velge enten kunde eller prosjekt",
-    path: ["customerId"],
-  });
+const formShape = {
+  title: z
+    .string()
+    .min(2, "Tittel må være minst 2 tegn")
+    .max(200, "Tittel kan ikke være mer enn 200 tegn"),
+  customerId: z.string().optional(),
+  projectId: z.string().optional(),
+  description: z.string().optional(),
+  dueDate: z.date().optional(),
+  expirationDate: z.date().optional(),
+  probability: z.coerce
+    .number()
+    .min(0, "Sannsynlighet må være minst 0%")
+    .max(100, "Sannsynlighet må være maks 100%")
+    .optional(),
+};
 
-type OfferFormValues = z.infer<typeof offerSchema>;
+// Type schema for form values (actual validation schema is built in component with refinement)
+const _offerSchemaForType = z.object({
+  ...formShape,
+  companyId: z.string().optional(),
+});
+
+type OfferFormValues = z.infer<typeof _offerSchemaForType>;
 
 interface OfferFormProps {
   onSubmit: (
@@ -109,11 +109,23 @@ export function OfferForm({
   const { data: projects } = useAllProjects();
   const { user } = useCurrentUser();
 
+  const formSchema = z
+    .object({
+      ...formShape,
+      companyId: showCompanySelect
+        ? z.string().min(1, "Du må velge et selskap")
+        : z.string().optional(),
+    })
+    .refine((data) => data.customerId || data.projectId, {
+      message: "Du må velge enten kunde eller prosjekt",
+      path: ["customerId"],
+    });
+
   // We need to watch companyId to fetch the next number
   // Form might not have it set initially if it depends on user data loading, but user data is loaded in parent or here?
   // user.company.id is available.
   const form = useForm<OfferFormValues>({
-    resolver: zodResolver(offerSchema),
+    resolver: zodResolver(formSchema),
     defaultValues: {
       title: initialData?.title ?? "",
       customerId: lockedCustomerId ?? initialData?.customerId ?? "",
@@ -140,25 +152,6 @@ export function OfferForm({
 
   // Effect: When project is selected, if it has a customer, we could auto-select the customer
   // This supports "Scenario C" where both are sent, but UI makes it easy.
-  useEffect(() => {
-    if (selectedProjectId && projects) {
-      const project = projects.find((p) => p.id === selectedProjectId);
-      if (project?.customerId && !selectedCustomerId) {
-        // If user hasn't selected a customer yet, auto-select the project's customer
-        form.setValue("customerId", project.customerId, {
-          shouldValidate: true,
-        });
-      } else if (
-        project?.customerId &&
-        selectedCustomerId &&
-        project.customerId !== selectedCustomerId
-      ) {
-        // Warning: Project belongs to different customer?
-        // Ideally we shouldn't allow selecting such mismatch.
-        // The project filter below will handle "valid" choices, but if they pick project first, then customer...
-      }
-    }
-  }, [selectedProjectId, projects, form, selectedCustomerId]);
 
   const filteredProjects = projects?.filter((p) => {
     // Only show projects in 'tilbud' phase
@@ -261,15 +254,39 @@ export function OfferForm({
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Velg selskap" />
+                        {field.value ? (
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="h-2 w-2 rounded-full"
+                              style={{
+                                backgroundColor:
+                                  COMPANIES[field.value as CompanyId]?.color ??
+                                  "gray",
+                              }}
+                            />
+                            <span>
+                              {COMPANIES[field.value as CompanyId]?.name}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">
+                            Velg selskap
+                          </span>
+                        )}
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       {Object.values(COMPANIES)
-                        .filter((c) => c.id !== "all")
+                        .filter((c) => c.id !== "all" && c.id !== "gruppen")
                         .map((company) => (
                           <SelectItem key={company.id} value={company.id}>
-                            {company.name}
+                            <div className="flex items-center gap-2">
+                              <div
+                                className="h-2 w-2 rounded-full"
+                                style={{ backgroundColor: company.color }}
+                              />
+                              <span>{company.name}</span>
+                            </div>
                           </SelectItem>
                         ))}
                     </SelectContent>
@@ -280,17 +297,18 @@ export function OfferForm({
             />
           )}
 
-          {showCustomerWarning && (
-            <Alert className="border-blue-200 bg-blue-50 text-blue-900">
-              <Info className="h-4 w-4 text-blue-900" />
-              <AlertDescription>
-                Vi har fylt ut kunde automatisk, men kanskje dette tilbudet er
-                til en annen kunde? Å ha to tilbud til samme kunde på samme
-                prosjekt er kanskje ikke det du ønsker? Husk å endre det til
-                riktig kunde i så fall.
-              </AlertDescription>
-            </Alert>
-          )}
+          {showCustomerWarning &&
+            selectedCustomerId === (initialData?.customerId ?? "") && (
+              <Alert className="border-blue-200 bg-blue-50 text-blue-900">
+                <Info className="h-4 w-4 text-blue-900" />
+                <AlertDescription>
+                  Kunde er fylt ut automatisk, men kanskje dette tilbudet er til
+                  en annen kunde? Å ha to tilbud til samme kunde på samme
+                  prosjekt er kanskje ikke det du ønsker? Husk å endre det til
+                  riktig kunde i så fall.
+                </AlertDescription>
+              </Alert>
+            )}
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <FormField
@@ -349,6 +367,14 @@ export function OfferForm({
                       selectedProjectId={field.value}
                       onSelect={(projectId) => {
                         field.onChange(projectId);
+                        const project = projects?.find(
+                          (p) => p.id === projectId
+                        );
+                        if (project?.customerId) {
+                          form.setValue("customerId", project.customerId, {
+                            shouldValidate: true,
+                          });
+                        }
                       }}
                     />
                   </FormControl>
@@ -495,7 +521,7 @@ function CustomerSelectionModal({
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="flex max-h-[90vh] max-w-[800px] flex-col p-0">
+      <DialogContent className="flex max-h-[90vh] w-[95vw] max-w-[95vw] flex-col p-0">
         <DialogHeader className="border-b p-4 pb-2">
           <DialogTitle>Velg kunde</DialogTitle>
           <div className="relative mt-2">
@@ -578,10 +604,10 @@ function ProjectSelectionModal({
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="flex max-h-[90vh] max-w-[1000px] flex-col p-0">
+      <DialogContent className="flex max-h-[90vh] w-[95vw] max-w-[95vw] flex-col p-0">
         <DialogHeader className="border-b p-4 pb-2">
-          <DialogTitle>Velg prosjekt</DialogTitle>
-          <div className="relative mt-2">
+          <DialogTitle className="mb-2">Velg prosjekt</DialogTitle>
+          <div className="relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Søk etter prosjekt..."
@@ -593,7 +619,7 @@ function ProjectSelectionModal({
         </DialogHeader>
         <div className="flex-1 overflow-y-auto p-4">
           <ProjectListTable
-            projects={filtered}
+            projects={(filtered as Project[]) ?? []}
             onProjectClick={(p) => {
               onSelect(p.id ?? "");
               setOpen(false);
