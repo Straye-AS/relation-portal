@@ -24,7 +24,10 @@ import type {
 /**
  * Fetch paginated list of customers
  */
-export function useCustomers(params?: Partial<CustomersListParams>) {
+export function useCustomers(
+  params?: Partial<CustomersListParams>,
+  options?: { enabled?: boolean }
+) {
   const api = useApi();
   const { isAuthenticated } = useAuth();
   const { selectedCompanyId } = useCompanyStore();
@@ -35,14 +38,14 @@ export function useCustomers(params?: Partial<CustomersListParams>) {
       const response = await api.customers.customersList(params ?? {});
       return response.data;
     },
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && (options?.enabled ?? true),
   });
 }
 
 /**
  * Fetch all customers (non-paginated, for dropdowns etc.)
  */
-export function useAllCustomers() {
+export function useAllCustomers(options?: { enabled?: boolean }) {
   const api = useApi();
   const { isAuthenticated } = useAuth();
   const { selectedCompanyId } = useCompanyStore();
@@ -54,7 +57,7 @@ export function useAllCustomers() {
       const response = await api.customers.customersList({ pageSize: 1000 });
       return response.data?.data ?? [];
     },
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && (options?.enabled ?? true),
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
 }

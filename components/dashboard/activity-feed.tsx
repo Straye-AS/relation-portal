@@ -14,6 +14,7 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import { nb } from "date-fns/locale";
 import Link from "next/link";
+import { ActivityBody } from "@/components/activities/activity-body";
 
 interface ActivityFeedProps {
   activities: Activity[];
@@ -69,9 +70,12 @@ export function ActivityFeed({ activities }: ActivityFeedProps) {
                     {activity.title}
                   </h3>
                 </div>
-                <p className="line-clamp-2 text-xs text-muted-foreground">
-                  {activity.body || "Ingen beskrivelse"}
-                </p>
+                <div className="line-clamp-2 text-xs text-muted-foreground">
+                  <ActivityBody
+                    title={activity.title || ""}
+                    body={activity.body || ""}
+                  />
+                </div>
                 <div className="mt-1 flex items-center justify-between">
                   <p className="text-xs text-muted-foreground">
                     {activity.creatorName && `${activity.creatorName} • `}

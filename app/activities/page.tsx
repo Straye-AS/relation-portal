@@ -21,6 +21,7 @@ import type { Activity } from "@/lib/api/types";
 import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 import { DateRange } from "react-day-picker";
 import { Button } from "@/components/ui/button";
+import { ActivityBody } from "@/components/activities/activity-body";
 
 const typeIcons: Record<string, React.ReactNode> = {
   meeting: <Calendar className="h-4 w-4" />,
@@ -129,9 +130,12 @@ export default function ActivitiesPage() {
                             {activity.title}
                           </h3>
                         </div>
-                        <p className="line-clamp-2 text-sm text-muted-foreground">
-                          {activity.body || "Ingen beskrivelse"}
-                        </p>
+                        <div className="line-clamp-2 text-sm text-muted-foreground">
+                          <ActivityBody
+                            title={activity.title || ""}
+                            body={activity.body || ""}
+                          />
+                        </div>
                         <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
                           {activity.creatorName && (
                             <span>{activity.creatorName}</span>

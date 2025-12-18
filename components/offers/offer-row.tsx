@@ -56,14 +56,15 @@ export function OfferRow({ offer }: OfferRowProps) {
       <TableCell>
         <OfferStatusBadge phase={offer.phase || "draft"} />
       </TableCell>
-      <TableCell className="text-sm">
-        {offer.sentDate
-          ? new Date(offer.sentDate).toLocaleDateString("nb-NO")
-          : "-"}
-      </TableCell>
+
       <TableCell className={cn("text-sm", getDueDateColor(offer.dueDate))}>
         {offer.dueDate
           ? new Date(offer.dueDate).toLocaleDateString("nb-NO")
+          : "-"}
+      </TableCell>
+      <TableCell className="text-sm">
+        {offer.sentDate
+          ? new Date(offer.sentDate).toLocaleDateString("nb-NO")
           : "-"}
       </TableCell>
       <TableCell>

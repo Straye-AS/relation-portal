@@ -16,7 +16,7 @@ interface OfferListTableProps {
 
 export function OfferListTable({ offers }: OfferListTableProps) {
   return (
-    <div className="rounded-lg border">
+    <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
       <Table>
         <TableHeader>
           <TableRow>
@@ -25,8 +25,8 @@ export function OfferListTable({ offers }: OfferListTableProps) {
             <TableHead>Kunde</TableHead>
             <TableHead>Selskap</TableHead>
             <TableHead>Fase</TableHead>
-            <TableHead>Sendt</TableHead>
             <TableHead>Frist</TableHead>
+            <TableHead>Sendt</TableHead>
             <TableHead>Verdi</TableHead>
             <TableHead>DG</TableHead>
             <TableHead>Oppdatert</TableHead>

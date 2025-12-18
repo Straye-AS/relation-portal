@@ -38,7 +38,7 @@ export function ProjectListTable({
   showRelativeDate = false,
 }: ProjectListTableProps & { compact?: boolean; showRelativeDate?: boolean }) {
   return (
-    <div className="rounded-lg border">
+    <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
       <Table>
         <TableHeader>
           <TableRow>
@@ -67,7 +67,13 @@ export function ProjectListTable({
                   <NewBadge createdAt={project.createdAt} />
                 </TableCell>
                 <TableCell className="whitespace-nowrap">
-                  {project.customerName}
+                  {project.customerName ?? (
+                    <span className="text-muted-foreground">
+                      {project.offerCount && project.offerCount > 1
+                        ? "Flere"
+                        : "Ikke satt"}
+                    </span>
+                  )}
                 </TableCell>
                 <TableCell>
                   <ProjectPhaseBadge phase={project.phase ?? ""} />

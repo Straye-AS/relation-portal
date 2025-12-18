@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
+  CardFooter,
   CardHeader,
   CardTitle,
   CardDescription,
@@ -219,8 +220,9 @@ export default function CustomerDetailPage({
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-4">
-                    <div className="rounded-lg border bg-card p-4 shadow-sm transition-all hover:shadow-md">
+                  <div className="grid gap-4 sm:grid-cols-6">
+                    {/* Top row - 2 cards */}
+                    <div className="rounded-lg border bg-card p-4 shadow-sm transition-all hover:shadow-md sm:col-span-3">
                       <div className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <div className="text-sm font-medium text-muted-foreground">
                           Aktive prosjekter
@@ -231,7 +233,7 @@ export default function CustomerDetailPage({
                         {activeProjectsCount}
                       </div>
                     </div>
-                    <div className="rounded-lg border bg-card p-4 shadow-sm transition-all hover:shadow-md">
+                    <div className="rounded-lg border bg-card p-4 shadow-sm transition-all hover:shadow-md sm:col-span-3">
                       <div className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <div className="text-sm font-medium text-muted-foreground">
                           Aktive ordre
@@ -242,7 +244,8 @@ export default function CustomerDetailPage({
                         {wonOffersCount}
                       </div>
                     </div>
-                    <div className="rounded-lg border bg-card p-4 shadow-sm transition-all hover:shadow-md">
+                    {/* Bottom row - 3 cards */}
+                    <div className="rounded-lg border bg-card p-4 shadow-sm transition-all hover:shadow-md sm:col-span-2">
                       <div className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <div className="text-sm font-medium text-muted-foreground">
                           Totalverdi
@@ -257,10 +260,10 @@ export default function CustomerDetailPage({
                         }).format(totalOfferValueActive)}
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        Active ordre
+                        Aktive ordre
                       </div>
                     </div>
-                    <div className="rounded-lg border bg-card p-4 shadow-sm transition-all hover:shadow-md">
+                    <div className="rounded-lg border bg-card p-4 shadow-sm transition-all hover:shadow-md sm:col-span-2">
                       <div className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <div className="text-sm font-medium text-muted-foreground">
                           Totalverdi
@@ -278,7 +281,7 @@ export default function CustomerDetailPage({
                         Vunnede tilbud
                       </div>
                     </div>
-                    <div className="rounded-lg border bg-card p-4 shadow-sm transition-all hover:shadow-md">
+                    <div className="rounded-lg border bg-card p-4 shadow-sm transition-all hover:shadow-md sm:col-span-2">
                       <div className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <div className="text-sm font-medium text-muted-foreground">
                           Totalverdi
@@ -424,52 +427,51 @@ export default function CustomerDetailPage({
                       </div>
                     </div>
                   </div>
-
-                  <div className="flex flex-col gap-2 border-t pt-4 text-xs text-muted-foreground">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="w-28 shrink-0">Opprettet av</span>
-                        {customer.createdByName ?? (
-                          <Badge
-                            variant="secondary"
-                            className="h-4 px-1 text-[10px]"
-                          >
-                            System
-                          </Badge>
-                        )}
-                      </div>
-                      <span>
-                        {customer.createdAt
-                          ? format(
-                              new Date(customer.createdAt),
-                              "dd.MM.yyyy HH:mm"
-                            )
-                          : "Ukjent"}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="w-28 shrink-0">Sist oppdatert av</span>
-                        {customer.updatedByName ?? (
-                          <Badge
-                            variant="secondary"
-                            className="h-4 px-1 text-[10px]"
-                          >
-                            System
-                          </Badge>
-                        )}
-                      </div>
-                      <span>
-                        {customer.updatedAt
-                          ? format(
-                              new Date(customer.updatedAt),
-                              "dd.MM.yyyy HH:mm"
-                            )
-                          : "Ukjent"}
-                      </span>
-                    </div>
-                  </div>
                 </CardContent>
+                <CardFooter className="flex flex-col gap-2 border-t bg-muted/30 px-6 py-4 text-xs text-muted-foreground">
+                  <div className="flex w-full items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="w-28 shrink-0">Opprettet av</span>
+                      {customer.createdByName ?? (
+                        <Badge
+                          variant="secondary"
+                          className="h-4 px-1 text-[10px]"
+                        >
+                          System
+                        </Badge>
+                      )}
+                    </div>
+                    <span>
+                      {customer.createdAt
+                        ? format(
+                            new Date(customer.createdAt),
+                            "dd.MM.yyyy HH:mm"
+                          )
+                        : "Ukjent"}
+                    </span>
+                  </div>
+                  <div className="flex w-full items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="w-28 shrink-0">Sist oppdatert av</span>
+                      {customer.updatedByName ?? (
+                        <Badge
+                          variant="secondary"
+                          className="h-4 px-1 text-[10px]"
+                        >
+                          System
+                        </Badge>
+                      )}
+                    </div>
+                    <span>
+                      {customer.updatedAt
+                        ? format(
+                            new Date(customer.updatedAt),
+                            "dd.MM.yyyy HH:mm"
+                          )
+                        : "Ukjent"}
+                    </span>
+                  </div>
+                </CardFooter>
               </Card>
             </div>
 

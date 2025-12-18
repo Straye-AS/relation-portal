@@ -133,7 +133,13 @@ export default function ProjectDetailPage({
                       href={`/customers/${project.customerId}`}
                       className="font-medium hover:underline"
                     >
-                      {project.customerName}
+                      {project.customerName ?? (
+                        <span className="text-muted-foreground">
+                          {project.offerCount && project.offerCount > 1
+                            ? "Flere"
+                            : "Ikke satt"}
+                        </span>
+                      )}
                     </Link>
                   </div>
                   <div>

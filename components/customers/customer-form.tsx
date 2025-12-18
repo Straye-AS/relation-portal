@@ -259,13 +259,13 @@ export function CustomerForm({
                       key={company.organisasjonsnummer}
                       value={company.organisasjonsnummer}
                       onSelect={() => selectCompany(company)}
-                      className="flex flex-col items-start gap-1 py-3"
+                      className="group flex flex-col items-start gap-1 py-3"
                     >
                       <div className="flex items-center gap-2 font-medium">
-                        <Building2 className="h-4 w-4 text-muted-foreground" />
+                        <Building2 className="h-4 w-4 text-muted-foreground group-data-[selected=true]:text-accent-foreground" />
                         {company.navn}
                       </div>
-                      <div className="flex items-center gap-2 pl-6 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-2 pl-6 text-xs text-muted-foreground group-data-[selected=true]:text-accent-foreground/70">
                         <span>Org: {company.organisasjonsnummer}</span>
                         {company.forretningsadresse?.poststed && (
                           <span className="flex items-center gap-1">

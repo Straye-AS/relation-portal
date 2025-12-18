@@ -326,16 +326,14 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
           )}
           <p className="truncate text-sm font-semibold">{result.title}</p>
           {result.subtitle && (
-            <p className="truncate text-xs text-muted-foreground">
+            <div className="truncate text-xs text-muted-foreground">
               {result.subtitle}
-            </p>
+            </div>
           )}
         </div>
         {result.metadata && (
-          <div className="text-right">
-            <p className="truncate text-xs text-muted-foreground">
-              {result.metadata}
-            </p>
+          <div className="text-right text-xs text-muted-foreground">
+            {result.metadata}
           </div>
         )}
       </motion.div>

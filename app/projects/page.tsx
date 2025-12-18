@@ -120,7 +120,7 @@ export default function ProjectsPage() {
                 setPage(1);
               }}
             >
-              <SelectTrigger className="w-[200px]">
+              <SelectTrigger className="w-[200px] bg-card">
                 <SelectValue placeholder="Selskap" />
               </SelectTrigger>
               <SelectContent>
@@ -148,7 +148,7 @@ export default function ProjectsPage() {
                 setPage(1);
               }}
             >
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-[180px] bg-card">
                 <SelectValue placeholder="Fase" />
               </SelectTrigger>
               <SelectContent>

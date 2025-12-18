@@ -43,7 +43,10 @@ export default function OffersPage() {
     sortBy: sortBy as any,
     sortOrder: sortOrder as any,
     // Pass filters to API
-    phase: phaseFilter === "all" ? undefined : (phaseFilter as any),
+    phase:
+      phaseFilter === "all" || phaseFilter === "gruppen"
+        ? undefined
+        : (phaseFilter as any),
   });
 
   // Extract offers from paginated response
@@ -72,10 +75,19 @@ export default function OffersPage() {
       // if (offer.status !== DomainOfferStatus.OfferStatusActive) return false;
 
       // 2. Phase Filter
-      if (phaseFilter !== "all" && offer.phase !== phaseFilter) return false;
+      if (
+        phaseFilter !== "all" &&
+        phaseFilter !== "gruppen" &&
+        offer.phase !== phaseFilter
+      )
+        return false;
 
       // 3. Company Filter
-      if (companyFilter !== "all" && offer.companyId !== companyFilter)
+      if (
+        companyFilter !== "all" &&
+        companyFilter !== "gruppen" &&
+        offer.companyId !== companyFilter
+      )
         return false;
 
       // 4. Exclude Expired (unless toggled)
@@ -121,7 +133,7 @@ export default function OffersPage() {
                 setPage(1);
               }}
             >
-              <SelectTrigger className="w-[200px]">
+              <SelectTrigger className="w-[200px] bg-card">
                 <SelectValue placeholder="Selskap" />
               </SelectTrigger>
               <SelectContent>
@@ -147,7 +159,7 @@ export default function OffersPage() {
                 setPage(1);
               }}
             >
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-[180px] bg-card">
                 <SelectValue placeholder="Fase" />
               </SelectTrigger>
               <SelectContent>

@@ -110,9 +110,14 @@ export default function CustomersPage() {
         <div className="flex-none space-y-4 border-b bg-background px-4 py-4 md:px-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">Kunder</h1>
+              <h1 className="text-3xl font-bold tracking-tight">
+                Kunder{" "}
+                <span className="text-sm text-muted-foreground">
+                  ({data?.total ?? 0})
+                </span>
+              </h1>
               <p className="text-muted-foreground">
-                Oversikt over alle kunder og deres aktivitet
+                Oversikt over alle kunder og deres informasjon
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -308,7 +313,7 @@ export default function CustomersPage() {
                     {customers.map((customer) => (
                       <Card
                         key={customer.id}
-                        className="overflow-hidden transition-all duration-200 hover:shadow-md"
+                        className="flex flex-col overflow-hidden transition-all duration-200 hover:shadow-md"
                       >
                         <CardHeader className="flex flex-row items-center gap-4 bg-muted/40 pb-4">
                           <Avatar className="h-12 w-12 border-2 border-background">
@@ -336,7 +341,7 @@ export default function CustomersPage() {
                             </CardDescription>
                           </div>
                         </CardHeader>
-                        <CardContent className="grid gap-4 p-6">
+                        <CardContent className="flex flex-1 flex-col gap-4 p-6">
                           <div className="grid gap-2 text-sm">
                             {customer.email && (
                               <div className="flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground">
@@ -373,9 +378,14 @@ export default function CustomersPage() {
                             )}
                           </div>
 
-                          <div className="mt-2 flex items-center justify-between border-t pt-4">
+                          <div className="mt-auto flex items-center justify-between border-t pt-4">
                             <span className="text-xs text-muted-foreground">
-                              Opprettet {new Date().toLocaleDateString()}
+                              Opprettet{" "}
+                              {customer.createdAt
+                                ? new Date(
+                                    customer.createdAt
+                                  ).toLocaleDateString("nb-NO")
+                                : "-"}
                             </span>
                             <Link href={`/customers/${customer.id}`}>
                               <Button

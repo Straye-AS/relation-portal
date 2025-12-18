@@ -985,11 +985,40 @@ export function useUpdateOfferInvoiced() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["offers"] });
       queryClient.invalidateQueries({ queryKey: ["offers", variables.id] });
-      toast.success("Fakturert belopp oppdatert");
+      toast.success("Fakturert beløp oppdatert");
     },
     onError: (error: Error) => {
       console.error("Failed to update invoiced:", error);
-      toast.error("Kunne ikke oppdatere fakturert belopp");
+      toast.error("Kunne ikke oppdatere fakturert beløp");
+    },
+  });
+}
+
+/**
+ * Reopen a completed offer (completed -> order phase transition)
+ */
+export function useReopenOffer() {
+  const queryClient = useQueryClient();
+  const api = useApi();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const response = await api.offers.http.request({
+        path: `/offers/${id}/reopen`,
+        method: "POST",
+        secure: true,
+        type: ContentType.Json,
+      });
+      return response.data;
+    },
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: ["offers"] });
+      queryClient.invalidateQueries({ queryKey: ["offers", id] });
+      toast.success("Ordre gjenåpnet");
+    },
+    onError: (error: Error) => {
+      console.error("Failed to reopen offer:", error);
+      toast.error("Kunne ikke gjenåpne ordre");
     },
   });
 }

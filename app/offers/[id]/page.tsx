@@ -22,12 +22,13 @@ import {
   useAdvanceOffer,
   useAcceptOrder,
   useCompleteOffer,
+  useReopenOffer,
   useUpdateOfferHealth,
   useUpdateOfferSpent,
   useUpdateOfferInvoiced,
 } from "@/hooks/useOffers";
 import { useCompanyStore } from "@/store/company-store"; // Imported for company access
-import { useAllCustomers } from "@/hooks/useCustomers";
+import { useCustomers } from "@/hooks/useCustomers";
 
 import confetti from "canvas-confetti";
 import {
@@ -75,7 +76,9 @@ import {
   Undo2,
   Trash2,
   MoreVertical,
+  Loader2,
 } from "lucide-react";
+import { PaginationControls } from "@/components/pagination-controls";
 import { formatDistanceToNow, addDays, format } from "date-fns";
 import { nb } from "date-fns/locale";
 import { use, useState, useEffect } from "react";
@@ -113,6 +116,11 @@ import { Slider } from "@/components/ui/slider";
 import { OfferDescription } from "@/components/offers/offer-description";
 import { OfferHealthBadge } from "@/components/offers/offer-health-badge";
 import { Progress } from "@/components/ui/progress";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 import { Badge } from "@/components/ui/badge";
 import { DeleteConfirmationModal } from "@/components/ui/delete-confirmation-modal";
@@ -127,7 +135,36 @@ export default function OfferDetailPage({
   const { data: offer, isLoading } = useOfferWithDetails(resolvedParams.id);
   const { userCompany } = useCompanyStore();
   const { data: users } = useUsers();
-  const { data: customers } = useAllCustomers();
+
+  // Modal states - declared early so they can be used in query hooks
+  const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
+
+  // Customer search and pagination state
+  const [customerSearch, setCustomerSearch] = useState("");
+  const [debouncedCustomerSearch, setDebouncedCustomerSearch] = useState("");
+  const [customerPage, setCustomerPage] = useState(1);
+  const customerPageSize = 10;
+
+  // Debounce customer search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedCustomerSearch(customerSearch);
+      setCustomerPage(1); // Reset to first page on new search
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [customerSearch]);
+
+  // Only fetch customers when modal is open (lazy loading) with server-side search
+  const { data: customersData, isLoading: isLoadingCustomers } = useCustomers(
+    {
+      page: customerPage,
+      pageSize: customerPageSize,
+      search: debouncedCustomerSearch || undefined,
+      sortBy: "name" as any,
+      sortOrder: "asc" as any,
+    },
+    { enabled: isCustomerModalOpen }
+  );
 
   // Fetch all projects (no filter in useProjects) so we can filter locally for "not completed"
   const { data: rawProjects } = useProjects();
@@ -135,7 +172,6 @@ export default function OfferDetailPage({
   // Filter projects client-side: anything not "completed" is allowed.
   // Also support search.
   const [projectSearch, setProjectSearch] = useState("");
-  const [customerSearch, setCustomerSearch] = useState("");
 
   const projects = (
     rawProjects?.data as DomainProjectDTO[] | undefined
@@ -150,15 +186,11 @@ export default function OfferDetailPage({
     return nameMatch || numberMatch || customerMatch;
   });
 
-  const filteredCustomers = (customers || []).filter((c) => {
-    if (!customerSearch) return true;
-    const searchLower = customerSearch.toLowerCase();
-    return (
-      c.name?.toLowerCase().includes(searchLower) ||
-      c.city?.toLowerCase().includes(searchLower) ||
-      c.orgNumber?.toString().includes(searchLower)
-    );
-  });
+  // Extract customers from paginated response
+  const customers = customersData?.data ?? [];
+  const customerTotalPages = Math.ceil(
+    (customersData?.total ?? 0) / customerPageSize
+  );
 
   // Mutations
   const updateTitle = useUpdateOfferTitle();
@@ -180,6 +212,7 @@ export default function OfferDetailPage({
   const advanceOffer = useAdvanceOffer();
   const acceptOrder = useAcceptOrder();
   const completeOffer = useCompleteOffer();
+  const reopenOffer = useReopenOffer();
   const updateHealth = useUpdateOfferHealth();
   const updateSpent = useUpdateOfferSpent();
   const updateInvoiced = useUpdateOfferInvoiced();
@@ -187,7 +220,6 @@ export default function OfferDetailPage({
 
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [isResponsibleModalOpen, setIsResponsibleModalOpen] = useState(false);
-  const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
 
   const [isSendDetailsModalOpen, setIsSendDetailsModalOpen] = useState(false);
   const [isProbabilityPromptOpen, setIsProbabilityPromptOpen] = useState(false);
@@ -200,6 +232,7 @@ export default function OfferDetailPage({
     addDays(new Date(), 60)
   );
   const [localProbability, setLocalProbability] = useState(0);
+  const [localCompletionPercent, setLocalCompletionPercent] = useState(0);
 
   // Project confirmation state
   const [pendingProject, setPendingProject] = useState<any>(null);
@@ -213,6 +246,8 @@ export default function OfferDetailPage({
 
   const [projectCreationName, setProjectCreationName] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showReopenConfirm, setShowReopenConfirm] = useState(false);
+  const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
 
   useEffect(() => {
     if (confirmationAction === "win" && offer) {
@@ -220,11 +255,14 @@ export default function OfferDetailPage({
     }
   }, [confirmationAction, offer]);
 
-  // Sync local probability when offer loads or updates
+  // Sync local probability and completion when offer loads or updates
   useEffect(() => {
     if (offer) {
       if (offer.probability !== undefined) {
         setLocalProbability(offer.probability);
+      }
+      if (offer.completionPercent !== undefined) {
+        setLocalCompletionPercent(offer.completionPercent);
       }
     }
   }, [offer]);
@@ -238,6 +276,13 @@ export default function OfferDetailPage({
   const isLocked =
     (offer?.phase as string) === "won" ||
     (offer?.phase as string) === "order" ||
+    (offer?.phase as string) === "completed" ||
+    (offer?.phase as string) === "lost" ||
+    (offer?.phase as string) === "archived";
+
+  // Partial lock allows editing external_reference and responsible in order phase
+  const isPartiallyLocked =
+    (offer?.phase as string) === "won" ||
     (offer?.phase as string) === "completed" ||
     (offer?.phase as string) === "lost" ||
     (offer?.phase as string) === "archived";
@@ -382,7 +427,7 @@ export default function OfferDetailPage({
                 {offer.phase === "order" && (
                   <Button
                     className="bg-slate-600 text-white hover:bg-slate-700"
-                    onClick={() => completeOffer.mutate(offer.id!)}
+                    onClick={() => setShowCompleteConfirm(true)}
                   >
                     <Check className="mr-2 h-4 w-4" />
                     Marker som ferdig
@@ -396,6 +441,15 @@ export default function OfferDetailPage({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
+                    {isCompletedPhase && (
+                      <DropdownMenuItem
+                        className="cursor-pointer text-amber-600 focus:bg-amber-50 focus:text-amber-600"
+                        onClick={() => setShowReopenConfirm(true)}
+                      >
+                        <Undo2 className="mr-2 h-4 w-4" />
+                        Gjenåpne som ordre
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem
                       className="cursor-pointer text-red-600 focus:bg-red-50 focus:text-red-600"
                       onClick={() => setShowDeleteConfirm(true)}
@@ -564,6 +618,150 @@ export default function OfferDetailPage({
                   title="Slett tilbud?"
                   description="Dette vil slette tilbudet permanent. Handlingen kan ikke angres."
                 />
+
+                {/* Reopen Confirmation Dialog */}
+                <AlertDialog
+                  open={showReopenConfirm}
+                  onOpenChange={setShowReopenConfirm}
+                >
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Gjenåpne som ordre?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Er du sikker på at du vil gjenåpne dette tilbudet som en
+                        aktiv ordre? Dette vil flytte tilbudet tilbake til
+                        ordrefasen slik at du kan fortsette å oppdatere
+                        kostnader, fakturering og fremdrift.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Avbryt</AlertDialogCancel>
+                      <AlertDialogAction
+                        className="bg-amber-600 hover:bg-amber-700"
+                        onClick={() => {
+                          reopenOffer.mutate(offer.id!);
+                          setShowReopenConfirm(false);
+                        }}
+                      >
+                        Gjenåpne som ordre
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+
+                {/* Complete Confirmation Dialog */}
+                <AlertDialog
+                  open={showCompleteConfirm}
+                  onOpenChange={setShowCompleteConfirm}
+                >
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Marker som ferdig?</AlertDialogTitle>
+                      <AlertDialogDescription asChild>
+                        <div className="space-y-4">
+                          {/* Check for potential issues */}
+                          {(() => {
+                            const invoicedPercent =
+                              calcPrice > 0
+                                ? ((offer.invoiced || 0) / calcPrice) * 100
+                                : 0;
+                            const spentPercent =
+                              calcCost > 0
+                                ? ((offer.spent || 0) / calcCost) * 100
+                                : 0;
+                            const completionPercent =
+                              offer.completionPercent || 0;
+
+                            const hasWarnings =
+                              invoicedPercent < 100 ||
+                              spentPercent < 80 ||
+                              completionPercent < 100;
+
+                            if (hasWarnings) {
+                              return (
+                                <>
+                                  <Alert className="border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+                                    <Info className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                                    <AlertTitle className="ml-2 text-amber-900 dark:text-amber-100">
+                                      Er du sikker?
+                                    </AlertTitle>
+                                    <AlertDescription className="ml-2 text-amber-800 dark:text-amber-200">
+                                      Tallene indikerer at ordren kanskje ikke
+                                      er helt ferdig:
+                                    </AlertDescription>
+                                  </Alert>
+                                  <ul className="ml-4 list-disc space-y-1 text-sm text-muted-foreground">
+                                    {invoicedPercent < 100 && (
+                                      <li>
+                                        Fakturert:{" "}
+                                        <span className="font-medium text-foreground">
+                                          {Math.round(invoicedPercent)}%
+                                        </span>{" "}
+                                        av total pris (
+                                        {new Intl.NumberFormat("nb-NO", {
+                                          style: "currency",
+                                          currency: "NOK",
+                                          maximumFractionDigits: 0,
+                                        }).format(offer.invoiced || 0)}{" "}
+                                        av{" "}
+                                        {new Intl.NumberFormat("nb-NO", {
+                                          style: "currency",
+                                          currency: "NOK",
+                                          maximumFractionDigits: 0,
+                                        }).format(calcPrice)}
+                                        )
+                                      </li>
+                                    )}
+                                    {spentPercent < 80 && (
+                                      <li>
+                                        Påløpte kostnader:{" "}
+                                        <span className="font-medium text-foreground">
+                                          {Math.round(spentPercent)}%
+                                        </span>{" "}
+                                        av beregnet kostnad
+                                      </li>
+                                    )}
+                                    {completionPercent < 100 && (
+                                      <li>
+                                        Ferdigstillelse:{" "}
+                                        <span className="font-medium text-foreground">
+                                          {completionPercent}%
+                                        </span>
+                                      </li>
+                                    )}
+                                  </ul>
+                                </>
+                              );
+                            }
+                            return (
+                              <p>
+                                Tallene ser bra ut! Ordren ser ut til å være
+                                fullført.
+                              </p>
+                            );
+                          })()}
+                          <p className="text-sm text-muted-foreground">
+                            Når ordren er markert som ferdig vil den låses for
+                            videre redigering. Du kan senere gjenåpne den via
+                            menyen hvis nødvendig.
+                          </p>
+                        </div>
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Avbryt</AlertDialogCancel>
+                      <AlertDialogAction
+                        className="bg-slate-600 hover:bg-slate-700"
+                        onClick={() => {
+                          completeOffer.mutate(offer.id!);
+                          setShowCompleteConfirm(false);
+                        }}
+                      >
+                        Marker som ferdig
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </div>
           </div>
@@ -620,7 +818,14 @@ export default function OfferDetailPage({
 
                     <Dialog
                       open={isCustomerModalOpen}
-                      onOpenChange={setIsCustomerModalOpen}
+                      onOpenChange={(open) => {
+                        setIsCustomerModalOpen(open);
+                        if (!open) {
+                          // Reset search and page when closing
+                          setCustomerSearch("");
+                          setCustomerPage(1);
+                        }
+                      }}
                     >
                       <DialogContent className="flex max-h-[90vh] w-[95vw] max-w-[95vw] flex-col">
                         <DialogHeader>
@@ -632,24 +837,46 @@ export default function OfferDetailPage({
                         </DialogHeader>
                         <div className="flex flex-1 flex-col space-y-4 overflow-hidden">
                           <Input
-                            placeholder="Søk etter kunde..."
+                            placeholder="Søk etter kunde (navn eller org.nr)..."
                             value={customerSearch}
                             onChange={(e) => setCustomerSearch(e.target.value)}
                             className="focus-visible:border-primary focus-visible:ring-0 focus-visible:ring-offset-0"
                           />
                           <div className="flex-1 overflow-auto rounded-md border">
-                            <CustomerListTable
-                              compact={true}
-                              customers={filteredCustomers}
-                              onCustomerClick={(customer) => {
-                                updateOfferCustomer.mutate({
-                                  id: offer.id!,
-                                  data: { customerId: customer.id! },
-                                });
-                                setIsCustomerModalOpen(false);
-                              }}
-                            />
+                            {isLoadingCustomers ? (
+                              <div className="flex items-center justify-center py-12">
+                                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                              </div>
+                            ) : customers.length === 0 ? (
+                              <div className="py-12 text-center text-muted-foreground">
+                                {customerSearch
+                                  ? "Ingen kunder funnet"
+                                  : "Ingen kunder"}
+                              </div>
+                            ) : (
+                              <CustomerListTable
+                                compact={true}
+                                customers={customers}
+                                onCustomerClick={(customer) => {
+                                  updateOfferCustomer.mutate({
+                                    id: offer.id!,
+                                    data: { customerId: customer.id! },
+                                  });
+                                  setIsCustomerModalOpen(false);
+                                }}
+                              />
+                            )}
                           </div>
+                          {customerTotalPages > 1 && (
+                            <PaginationControls
+                              currentPage={customerPage}
+                              totalPages={customerTotalPages}
+                              onPageChange={setCustomerPage}
+                              pageSize={customerPageSize}
+                              totalCount={customersData?.total ?? 0}
+                              entityName="kunder"
+                            />
+                          )}
                           <div className="flex justify-start">
                             <Button
                               variant="outline"
@@ -683,23 +910,17 @@ export default function OfferDetailPage({
                     <p className="mb-1 text-sm text-muted-foreground">
                       Ekstern referanse
                     </p>
-                    {isLocked ? (
-                      <span className="font-medium">
-                        {(offer as any).externalReference || "-"}
-                      </span>
-                    ) : (
-                      <InlineEdit
-                        value={(offer as any).externalReference || ""}
-                        placeholder="Legg til ekstern ref..."
-                        onSave={async (val) => {
-                          await updateExternalReference.mutateAsync({
-                            id: offer.id!,
-                            externalReference: String(val),
-                          });
-                        }}
-                        className="-ml-1 w-full border-transparent p-1 px-1 font-medium hover:border-input hover:bg-transparent"
-                      />
-                    )}
+                    <InlineEdit
+                      value={(offer as any).externalReference || ""}
+                      placeholder="Legg til ekstern ref..."
+                      onSave={async (val) => {
+                        await updateExternalReference.mutateAsync({
+                          id: offer.id!,
+                          externalReference: String(val),
+                        });
+                      }}
+                      className="-ml-1 w-full border-transparent p-1 px-1 font-medium hover:border-input hover:bg-transparent"
+                    />
                   </div>
 
                   <div>
@@ -708,16 +929,9 @@ export default function OfferDetailPage({
                     </p>
                     <div className="group flex items-center gap-2">
                       <div
-                        role={isLocked ? undefined : "button"}
-                        onClick={() =>
-                          !isLocked && setIsResponsibleModalOpen(true)
-                        }
-                        className={cn(
-                          "-ml-1 rounded border border-transparent p-1 px-1 font-medium transition-colors",
-                          isLocked
-                            ? "cursor-default"
-                            : "cursor-pointer hover:border-input hover:bg-transparent"
-                        )}
+                        role="button"
+                        onClick={() => setIsResponsibleModalOpen(true)}
+                        className="-ml-1 cursor-pointer rounded border border-transparent p-1 px-1 font-medium transition-colors hover:border-input hover:bg-transparent"
                       >
                         {offer.responsibleUserId ? (
                           (users || []).find(
@@ -772,6 +986,7 @@ export default function OfferDetailPage({
                                 });
                                 setIsResponsibleModalOpen(false);
                               }}
+                              className="group"
                             >
                               <span
                                 className={cn(
@@ -785,7 +1000,7 @@ export default function OfferDetailPage({
                               <div className="flex flex-col">
                                 <span>{user.name}</span>
                                 {user.email && (
-                                  <span className="text-xs text-muted-foreground">
+                                  <span className="text-xs text-muted-foreground group-data-[selected=true]:text-accent-foreground/70">
                                     {user.email}
                                   </span>
                                 )}
@@ -797,97 +1012,117 @@ export default function OfferDetailPage({
                     </CommandDialog>
                   </div>
 
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm text-muted-foreground">
-                        Kunde har vunnet sitt prosjekt?
-                      </p>
-                    </div>
-                    <div className="mt-1 flex items-center gap-2">
-                      <Checkbox
-                        id="customer-won"
-                        checked={offer.customerHasWonProject || false}
-                        onCheckedChange={(checked) => {
-                          const isChecked = !!checked;
-                          updateCustomerHasWonOffer.mutate({
-                            id: offer.id!,
-                            customerHasWonProject: isChecked,
-                          });
-                          setProbabilityContext(isChecked ? "won" : "reverted");
-                          setPendingProbability(localProbability);
-                          setIsProbabilityPromptOpen(true);
-                        }}
-                        disabled={isLocked}
-                        className={cn(
-                          "h-5 w-5",
-                          offer.customerHasWonProject
-                            ? "border-green-600 bg-green-600 text-primary-foreground data-[state=checked]:border-green-600 data-[state=checked]:bg-green-600"
-                            : "border-muted-foreground"
-                        )}
-                      />
-                      <label
-                        htmlFor="customer-won"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        {offer.customerHasWonProject ? "Ja" : "Nei"}
-                      </label>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap gap-6">
-                    <div className="min-w-[200px] flex-1">
-                      <p className="mb-1 text-sm text-muted-foreground">
-                        Frist <span className="text-xs">(valgfritt)</span>
-                      </p>
-                      <SmartDatePicker
-                        value={
-                          offer.dueDate ? new Date(offer.dueDate) : undefined
-                        }
-                        onSelect={(date) => {
-                          updateDueDate.mutate({
-                            id: offer.id!,
-                            data: {
-                              dueDate: date ? date.toISOString() : undefined,
-                            },
-                          });
-                        }}
-                        disabled={isLocked}
-                        disabledDates={(date) => date < new Date("1900-01-01")}
-                        className="w-full"
-                      />
-                    </div>
-                    {(offer.phase === "sent" ||
-                      offer.phase === "order" ||
-                      offer.phase === "completed" ||
-                      offer.phase === "lost") && (
-                      <div className="min-w-[200px] flex-1">
-                        <p className="mb-1 text-sm text-muted-foreground">
-                          Vedståelsesfrist{" "}
-                          <span className="text-xs">(valgfritt)</span>
+                  {!isOrderPhase && !isCompletedPhase && (
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm text-muted-foreground">
+                          Kunde har vunnet sitt prosjekt?
                         </p>
-                        <SmartDatePicker
-                          value={
-                            offer.expirationDate
-                              ? new Date(offer.expirationDate)
-                              : undefined
-                          }
-                          onSelect={(date) => {
-                            updateExpirationDate.mutate({
+                      </div>
+                      <div className="mt-1 flex items-center gap-2">
+                        <Checkbox
+                          id="customer-won"
+                          checked={offer.customerHasWonProject || false}
+                          onCheckedChange={(checked) => {
+                            const isChecked = !!checked;
+                            updateCustomerHasWonOffer.mutate({
                               id: offer.id!,
-                              expirationDate: date
-                                ? date.toISOString()
-                                : undefined,
+                              customerHasWonProject: isChecked,
                             });
+                            setProbabilityContext(
+                              isChecked ? "won" : "reverted"
+                            );
+                            setPendingProbability(localProbability);
+                            setIsProbabilityPromptOpen(true);
                           }}
                           disabled={isLocked}
-                          disabledDates={(date) =>
-                            date < new Date("1900-01-01")
-                          }
-                          className="w-full"
+                          className={cn(
+                            "h-5 w-5",
+                            offer.customerHasWonProject
+                              ? "border-green-600 bg-green-600 text-primary-foreground data-[state=checked]:border-green-600 data-[state=checked]:bg-green-600"
+                              : "border-muted-foreground"
+                          )}
                         />
+                        <label
+                          htmlFor="customer-won"
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          {offer.customerHasWonProject ? "Ja" : "Nei"}
+                        </label>
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
+
+                  {/* In order/completed phase, only show date fields if they have values */}
+                  {((!isOrderPhase && !isCompletedPhase) ||
+                    offer.dueDate ||
+                    offer.expirationDate) && (
+                    <div className="flex flex-wrap gap-6">
+                      {/* Frist: always show in non-order phases, or if set in order phase */}
+                      {(!isOrderPhase && !isCompletedPhase) || offer.dueDate ? (
+                        <div className="min-w-[200px] flex-1">
+                          <p className="mb-1 text-sm text-muted-foreground">
+                            Frist <span className="text-xs">(valgfritt)</span>
+                          </p>
+                          <SmartDatePicker
+                            value={
+                              offer.dueDate
+                                ? new Date(offer.dueDate)
+                                : undefined
+                            }
+                            onSelect={(date) => {
+                              updateDueDate.mutate({
+                                id: offer.id!,
+                                data: {
+                                  dueDate: date
+                                    ? date.toISOString()
+                                    : undefined,
+                                },
+                              });
+                            }}
+                            disabled={isLocked}
+                            disabledDates={(date) =>
+                              date < new Date("1900-01-01")
+                            }
+                            className="w-full"
+                          />
+                        </div>
+                      ) : null}
+                      {/* Vedståelsesfrist: show in sent/order/completed/lost, but in order/completed only if set */}
+                      {(offer.phase === "sent" ||
+                        offer.phase === "lost" ||
+                        ((offer.phase === "order" ||
+                          offer.phase === "completed") &&
+                          offer.expirationDate)) && (
+                        <div className="min-w-[200px] flex-1">
+                          <p className="mb-1 text-sm text-muted-foreground">
+                            Vedståelsesfrist{" "}
+                            <span className="text-xs">(valgfritt)</span>
+                          </p>
+                          <SmartDatePicker
+                            value={
+                              offer.expirationDate
+                                ? new Date(offer.expirationDate)
+                                : undefined
+                            }
+                            onSelect={(date) => {
+                              updateExpirationDate.mutate({
+                                id: offer.id!,
+                                expirationDate: date
+                                  ? date.toISOString()
+                                  : undefined,
+                              });
+                            }}
+                            disabled={isLocked}
+                            disabledDates={(date) =>
+                              date < new Date("1900-01-01")
+                            }
+                            className="w-full"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   <div className="flex flex-col gap-2 border-t pt-4 text-xs text-muted-foreground">
                     <div className="flex items-center justify-between">
@@ -955,10 +1190,11 @@ export default function OfferDetailPage({
                             cost: Number(val),
                           });
                         }}
-                        disabled={isLocked}
+                        disabled={isPartiallyLocked}
                         className={cn(
                           "-ml-2 border-transparent p-2 text-2xl font-bold",
-                          !isLocked && "hover:border-input hover:bg-transparent"
+                          !isPartiallyLocked &&
+                            "hover:border-input hover:bg-transparent"
                         )}
                       />
                     </div>
@@ -975,10 +1211,11 @@ export default function OfferDetailPage({
                             data: { value: Number(val) },
                           });
                         }}
-                        disabled={isLocked}
+                        disabled={isPartiallyLocked}
                         className={cn(
                           "-ml-2 border-transparent p-2 text-2xl font-bold",
-                          !isLocked && "hover:border-input hover:bg-transparent"
+                          !isPartiallyLocked &&
+                            "hover:border-input hover:bg-transparent"
                         )}
                       />
                     </div>
@@ -1007,36 +1244,39 @@ export default function OfferDetailPage({
                     </div>
                   </div>
 
-                  <div className="space-y-6 border-t pt-6">
-                    <div>
-                      <div className="mb-2 text-sm text-muted-foreground">
-                        <div>Sannsynlighet: {localProbability}%</div>
-                        <div className="text-xs text-orange-500">
-                          {isLocked
-                            ? "Slik den var når tilbudet ble lukket"
-                            : ""}
+                  {/* Hide probability in order/completed phase - it's 100% by definition */}
+                  {!isOrderPhase && !isCompletedPhase && (
+                    <div className="space-y-6 border-t pt-6">
+                      <div>
+                        <div className="mb-2 text-sm text-muted-foreground">
+                          <div>Sannsynlighet: {localProbability}%</div>
+                          <div className="text-xs text-orange-500">
+                            {isLocked
+                              ? "Slik den var når tilbudet ble lukket"
+                              : ""}
+                          </div>
+                        </div>
+                        <div className="w-full">
+                          <Slider
+                            value={[localProbability]}
+                            max={90}
+                            min={10}
+                            step={10}
+                            disabled={isLocked}
+                            onValueChange={(val) => setLocalProbability(val[0])}
+                            onValueCommit={async (val) => {
+                              if (isLocked) return;
+                              await updateProbability.mutateAsync({
+                                id: offer.id!,
+                                data: { probability: val[0] },
+                              });
+                            }}
+                            className="w-full"
+                          />
                         </div>
                       </div>
-                      <div className="w-full">
-                        <Slider
-                          value={[localProbability]}
-                          max={90}
-                          min={10}
-                          step={10}
-                          disabled={isLocked}
-                          onValueChange={(val) => setLocalProbability(val[0])}
-                          onValueCommit={async (val) => {
-                            if (isLocked) return;
-                            await updateProbability.mutateAsync({
-                              id: offer.id!,
-                              data: { probability: val[0] },
-                            });
-                          }}
-                          className="w-full"
-                        />
-                      </div>
                     </div>
-                  </div>
+                  )}
                 </CardContent>
 
                 <CardFooter className="mt-auto flex flex-col items-start p-6 pt-0">
@@ -1058,7 +1298,7 @@ export default function OfferDetailPage({
                           Ikke tilknyttet prosjekt
                         </span>
                       )}
-                      {!isLocked && (
+                      {!isPartiallyLocked && (
                         <Button
                           variant="ghost"
                           size="icon"
@@ -1240,7 +1480,11 @@ export default function OfferDetailPage({
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
                     <span>Oppfolging av ordre</span>
-                    {offer.health && <OfferHealthBadge health={offer.health} />}
+                    {isCompletedPhase ? (
+                      <OfferStatusBadge phase="completed" />
+                    ) : (
+                      offer.health && <OfferHealthBadge health={offer.health} />
+                    )}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -1248,7 +1492,7 @@ export default function OfferDetailPage({
                     {/* Spent tracking */}
                     <div className="space-y-2">
                       <p className="text-sm font-medium text-muted-foreground">
-                        Palopte kostnader
+                        Påløpte kostnader
                       </p>
                       <InlineEdit
                         type="currency"
@@ -1260,20 +1504,66 @@ export default function OfferDetailPage({
                           });
                         }}
                         disabled={isCompletedPhase}
-                        className="-ml-2 border-transparent p-2 text-xl font-bold hover:border-input hover:bg-transparent"
+                        className={cn(
+                          "-ml-2 border-transparent p-2 text-xl font-bold",
+                          !isCompletedPhase &&
+                            "hover:border-input hover:bg-transparent"
+                        )}
                       />
-                      {calcPrice > 0 && (
-                        <Progress
-                          value={((offer.spent || 0) / calcPrice) * 100}
-                          className="h-2"
-                          indicatorClassName={
-                            ((offer.spent || 0) / calcPrice) * 100 > 100
-                              ? "bg-red-600"
-                              : ((offer.spent || 0) / calcPrice) * 100 > 80
-                                ? "bg-orange-500"
-                                : "bg-green-600"
-                          }
-                        />
+                      {calcCost > 0 && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div>
+                              <Progress
+                                value={((offer.spent || 0) / calcCost) * 100}
+                                className="h-2 cursor-help"
+                                indicatorClassName={
+                                  ((offer.spent || 0) / calcCost) * 100 > 100
+                                    ? "bg-red-600"
+                                    : ((offer.spent || 0) / calcCost) * 100 > 80
+                                      ? "bg-orange-500"
+                                      : "bg-green-600"
+                                }
+                              />
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <div className="space-y-1 text-sm">
+                              <div className="flex justify-between gap-4">
+                                <span className="text-muted-foreground">
+                                  Påløpte kostnader:
+                                </span>
+                                <span className="font-medium">
+                                  {new Intl.NumberFormat("nb-NO", {
+                                    style: "currency",
+                                    currency: "NOK",
+                                    maximumFractionDigits: 0,
+                                  }).format(offer.spent || 0)}
+                                </span>
+                              </div>
+                              <div className="flex justify-between gap-4">
+                                <span className="text-muted-foreground">
+                                  Total pris:
+                                </span>
+                                <span className="font-medium">
+                                  {new Intl.NumberFormat("nb-NO", {
+                                    style: "currency",
+                                    currency: "NOK",
+                                    maximumFractionDigits: 0,
+                                  }).format(calcCost)}
+                                </span>
+                              </div>
+                              <div className="border-t pt-1">
+                                <span className="font-medium">
+                                  {Math.round(
+                                    ((offer.spent || 0) / calcCost) * 100
+                                  )}
+                                  % av beregnet kostnad brukt
+                                </span>
+                              </div>
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
                       )}
                     </div>
 
@@ -1292,14 +1582,74 @@ export default function OfferDetailPage({
                           });
                         }}
                         disabled={isCompletedPhase}
-                        className="-ml-2 border-transparent p-2 text-xl font-bold hover:border-input hover:bg-transparent"
+                        className={cn(
+                          "-ml-2 border-transparent p-2 text-xl font-bold",
+                          !isCompletedPhase &&
+                            "hover:border-input hover:bg-transparent"
+                        )}
                       />
                       {calcPrice > 0 && (
-                        <Progress
-                          value={((offer.invoiced || 0) / calcPrice) * 100}
-                          className="h-2"
-                          indicatorClassName="bg-blue-600"
-                        />
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div>
+                              <Progress
+                                value={
+                                  ((offer.invoiced || 0) / calcPrice) * 100
+                                }
+                                className="h-2 cursor-help"
+                                indicatorClassName="bg-primary"
+                              />
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <div className="space-y-1 text-sm">
+                              <div className="flex justify-between gap-4">
+                                <span className="text-muted-foreground">
+                                  Fakturert:
+                                </span>
+                                <span className="font-medium">
+                                  {new Intl.NumberFormat("nb-NO", {
+                                    style: "currency",
+                                    currency: "NOK",
+                                    maximumFractionDigits: 0,
+                                  }).format(offer.invoiced || 0)}
+                                </span>
+                              </div>
+                              <div className="flex justify-between gap-4">
+                                <span className="text-muted-foreground">
+                                  Total pris:
+                                </span>
+                                <span className="font-medium">
+                                  {new Intl.NumberFormat("nb-NO", {
+                                    style: "currency",
+                                    currency: "NOK",
+                                    maximumFractionDigits: 0,
+                                  }).format(calcPrice)}
+                                </span>
+                              </div>
+                              <div className="flex justify-between gap-4">
+                                <span className="text-muted-foreground">
+                                  Gjenstående:
+                                </span>
+                                <span className="font-medium">
+                                  {new Intl.NumberFormat("nb-NO", {
+                                    style: "currency",
+                                    currency: "NOK",
+                                    maximumFractionDigits: 0,
+                                  }).format(calcPrice - (offer.invoiced || 0))}
+                                </span>
+                              </div>
+                              <div className="border-t pt-1">
+                                <span className="font-medium">
+                                  {Math.round(
+                                    ((offer.invoiced || 0) / calcPrice) * 100
+                                  )}
+                                  % av total pris fakturert
+                                </span>
+                              </div>
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
                       )}
                     </div>
                   </div>
@@ -1330,23 +1680,48 @@ export default function OfferDetailPage({
                     </div>
                     <div className="min-w-[150px] flex-1">
                       <p className="text-sm text-muted-foreground">
-                        Differanse (fakturert - palopte)
+                        Differanse (fakturert - påløpte)
                       </p>
-                      <p
-                        className={cn(
-                          "font-mono text-lg font-bold",
-                          (offer.invoiced || 0) - (offer.spent || 0) < 0
-                            ? "text-red-600"
-                            : "text-green-600"
+                      <div className="flex items-center gap-2">
+                        <p
+                          className={cn(
+                            "font-mono text-lg font-bold",
+                            (offer.invoiced || 0) - (offer.spent || 0) < 0
+                              ? "text-red-600"
+                              : "text-green-600"
+                          )}
+                        >
+                          {new Intl.NumberFormat("nb-NO", {
+                            style: "currency",
+                            currency: "NOK",
+                            maximumFractionDigits: 0,
+                            signDisplay: "exceptZero",
+                          }).format((offer.invoiced || 0) - (offer.spent || 0))}
+                        </p>
+                        {!isCompletedPhase && (
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "text-xs",
+                              Math.abs(
+                                (offer.invoiced || 0) - (offer.spent || 0)
+                              ) <= 30000
+                                ? "border-blue-500 text-blue-600"
+                                : (offer.invoiced || 0) - (offer.spent || 0) > 0
+                                  ? "border-green-500 text-green-600"
+                                  : "border-red-500 text-red-600"
+                            )}
+                          >
+                            {Math.abs(
+                              (offer.invoiced || 0) - (offer.spent || 0)
+                            ) <= 30000
+                              ? "I balanse"
+                              : (offer.invoiced || 0) - (offer.spent || 0) > 0
+                                ? "Fremtung"
+                                : "Baktung"}
+                          </Badge>
                         )}
-                      >
-                        {new Intl.NumberFormat("nb-NO", {
-                          style: "currency",
-                          currency: "NOK",
-                          maximumFractionDigits: 0,
-                          signDisplay: "exceptZero",
-                        }).format((offer.invoiced || 0) - (offer.spent || 0))}
-                      </p>
+                      </div>
                     </div>
                   </div>
 
@@ -1421,14 +1796,17 @@ export default function OfferDetailPage({
                       </div>
                       <div className="min-w-[200px] flex-1">
                         <Label className="text-sm text-muted-foreground">
-                          Ferdigstillelse: {offer.completionPercent ?? 0}%
+                          Ferdigstillelse: {localCompletionPercent}%
                         </Label>
                         <Slider
-                          value={[offer.completionPercent ?? 0]}
+                          value={[localCompletionPercent]}
                           max={100}
                           min={0}
                           step={5}
                           className="mt-3"
+                          onValueChange={(val) =>
+                            setLocalCompletionPercent(val[0])
+                          }
                           onValueCommit={(val) => {
                             updateHealth.mutate({
                               id: offer.id!,
