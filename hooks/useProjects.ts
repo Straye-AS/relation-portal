@@ -25,7 +25,10 @@ import type {
 /**
  * Fetch paginated list of projects
  */
-export function useProjects(params?: Partial<ProjectsListParams>) {
+export function useProjects(
+  params?: Partial<ProjectsListParams>,
+  options?: { enabled?: boolean }
+) {
   const api = useApi();
   const { isAuthenticated } = useAuth();
   const { selectedCompanyId } = useCompanyStore();
@@ -37,7 +40,7 @@ export function useProjects(params?: Partial<ProjectsListParams>) {
 
       return response.data;
     },
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && (options?.enabled ?? true),
   });
 }
 

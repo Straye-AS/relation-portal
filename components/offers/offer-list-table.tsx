@@ -25,6 +25,7 @@ export function OfferListTable({ offers }: OfferListTableProps) {
             <TableHead>Kunde</TableHead>
             <TableHead>Selskap</TableHead>
             <TableHead>Fase</TableHead>
+            <TableHead>Eks. ref.</TableHead>
             <TableHead>Frist</TableHead>
             <TableHead>Sendt</TableHead>
             <TableHead>Verdi</TableHead>

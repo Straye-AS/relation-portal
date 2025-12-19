@@ -13,7 +13,7 @@ interface PipelineOverviewProps {
 }
 
 export const phaseLabels: Record<string, string> = {
-  draft: "Forespursel",
+  draft: "Forespørsel",
   in_progress: "I gang",
   sent: "Sendt",
   order: "Ordre",

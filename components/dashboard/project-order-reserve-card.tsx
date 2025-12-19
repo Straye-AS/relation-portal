@@ -29,7 +29,7 @@ export function ProjectOrderReserveCard({
           <div>
             <div className="text-2xl font-bold">{formatCurrency(amount)}</div>
             <p className="min-h-[2.5em] text-xs text-muted-foreground">
-              Gjenstående verdi på vunnede prosjekter
+              Gjenstående å fakturere på aktive ordre
             </p>
           </div>
 

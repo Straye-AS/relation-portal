@@ -24,8 +24,6 @@ import {
   useCompleteOffer,
   useReopenOffer,
   useUpdateOfferHealth,
-  useUpdateOfferSpent,
-  useUpdateOfferInvoiced,
 } from "@/hooks/useOffers";
 import { useCompanyStore } from "@/store/company-store"; // Imported for company access
 import { useCustomers } from "@/hooks/useCustomers";
@@ -77,6 +75,8 @@ import {
   Trash2,
   MoreVertical,
   Loader2,
+  AlertTriangle,
+  CheckCircle2,
 } from "lucide-react";
 import { PaginationControls } from "@/components/pagination-controls";
 import { formatDistanceToNow, addDays, format } from "date-fns";
@@ -101,6 +101,12 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { ProjectListTable } from "@/components/projects/project-list-table";
@@ -116,11 +122,6 @@ import { Slider } from "@/components/ui/slider";
 import { OfferDescription } from "@/components/offers/offer-description";
 import { OfferHealthBadge } from "@/components/offers/offer-health-badge";
 import { Progress } from "@/components/ui/progress";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 import { Badge } from "@/components/ui/badge";
 import { DeleteConfirmationModal } from "@/components/ui/delete-confirmation-modal";
@@ -138,6 +139,7 @@ export default function OfferDetailPage({
 
   // Modal states - declared early so they can be used in query hooks
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
+  const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
 
   // Customer search and pagination state
   const [customerSearch, setCustomerSearch] = useState("");
@@ -167,7 +169,9 @@ export default function OfferDetailPage({
   );
 
   // Fetch all projects (no filter in useProjects) so we can filter locally for "not completed"
-  const { data: rawProjects } = useProjects();
+  const { data: rawProjects } = useProjects(undefined, {
+    enabled: isProjectModalOpen,
+  });
 
   // Filter projects client-side: anything not "completed" is allowed.
   // Also support search.
@@ -214,11 +218,8 @@ export default function OfferDetailPage({
   const completeOffer = useCompleteOffer();
   const reopenOffer = useReopenOffer();
   const updateHealth = useUpdateOfferHealth();
-  const updateSpent = useUpdateOfferSpent();
-  const updateInvoiced = useUpdateOfferInvoiced();
   const deleteOffer = useDeleteOffer();
 
-  const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [isResponsibleModalOpen, setIsResponsibleModalOpen] = useState(false);
 
   const [isSendDetailsModalOpen, setIsSendDetailsModalOpen] = useState(false);
@@ -287,8 +288,23 @@ export default function OfferDetailPage({
     (offer?.phase as string) === "lost" ||
     (offer?.phase as string) === "archived";
 
+  // Cost and price can still be edited in completed phase to adjust calculations
+  const isCostPriceLocked =
+    (offer?.phase as string) === "won" ||
+    (offer?.phase as string) === "lost" ||
+    (offer?.phase as string) === "archived";
+
   const isOrderPhase = (offer?.phase as string) === "order";
   const isCompletedPhase = (offer?.phase as string) === "completed";
+
+  const _dwTotalCost =
+    (offer?.dwMaterialCosts ?? 0) +
+    (offer?.dwEmployeeCosts ?? 0) +
+    (offer?.dwOtherCosts ?? 0);
+
+  const _dwInvoiced = offer?.dwTotalIncome ?? 0;
+
+  const showOrderPhase = false;
 
   if (isLoading) {
     return (
@@ -718,7 +734,25 @@ export default function OfferDetailPage({
                                         <span className="font-medium text-foreground">
                                           {Math.round(spentPercent)}%
                                         </span>{" "}
-                                        av beregnet kostnad
+                                        av beregnet kostnad. <br />
+                                        Dette vil i så fall gi en dekningsgrad
+                                        på{" "}
+                                        <span
+                                          className={`font-medium ${
+                                            (offer.invoiced || 0) <
+                                            (offer.spent || 0)
+                                              ? "text-red-600"
+                                              : "text-green-600"
+                                          }`}
+                                        >
+                                          {Math.round(
+                                            (((offer.invoiced || 0) -
+                                              (offer.spent || 0)) /
+                                              (offer.invoiced || 1)) *
+                                              100
+                                          )}
+                                          %
+                                        </span>
                                       </li>
                                     )}
                                     {completionPercent < 100 && (
@@ -778,6 +812,19 @@ export default function OfferDetailPage({
                 Dette tilbudet er i en tapt tilstand, og kan derfor ikke
                 oppdateres. Dette er for å bevare historikken. Du kan fortsatt
                 oppdatere beskrivelsen.
+              </AlertDescription>
+            </Alert>
+          )}
+          {offer.phase === "completed" && (
+            <Alert className="mb-4 border-green-200 bg-green-100 text-green-900 dark:border-green-800 dark:bg-green-950/30 dark:text-green-200">
+              <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+              <AlertTitle className="ml-2 text-green-900 dark:text-green-100">
+                Ordren er fullført
+              </AlertTitle>
+              <AlertDescription className="ml-2 text-green-800 dark:text-green-200">
+                Denne ordren er ferdigstilt og alle felter kan ikke lenger
+                redigeres. Alle kostnader og fakturaer er bokført. Du kan
+                gjenåpne ordren hvis det er behov for justeringer.
               </AlertDescription>
             </Alert>
           )}
@@ -1076,7 +1123,7 @@ export default function OfferDetailPage({
                                 data: {
                                   dueDate: date
                                     ? date.toISOString()
-                                    : undefined,
+                                    : (null as unknown as undefined),
                                 },
                               });
                             }}
@@ -1110,7 +1157,7 @@ export default function OfferDetailPage({
                                 id: offer.id!,
                                 expirationDate: date
                                   ? date.toISOString()
-                                  : undefined,
+                                  : (null as unknown as undefined),
                               });
                             }}
                             disabled={isLocked}
@@ -1173,7 +1220,7 @@ export default function OfferDetailPage({
 
               <Card className="flex h-full flex-col">
                 <CardHeader>
-                  <CardTitle>Økonomi</CardTitle>
+                  <CardTitle>Totalt kalkulert</CardTitle>
                 </CardHeader>
                 <CardContent className="flex flex-1 flex-col space-y-6">
                   <div className="flex flex-wrap gap-4">
@@ -1190,10 +1237,10 @@ export default function OfferDetailPage({
                             cost: Number(val),
                           });
                         }}
-                        disabled={isPartiallyLocked}
+                        disabled={isCostPriceLocked}
                         className={cn(
                           "-ml-2 border-transparent p-2 text-2xl font-bold",
-                          !isPartiallyLocked &&
+                          !isCostPriceLocked &&
                             "hover:border-input hover:bg-transparent"
                         )}
                       />
@@ -1211,10 +1258,10 @@ export default function OfferDetailPage({
                             data: { value: Number(val) },
                           });
                         }}
-                        disabled={isPartiallyLocked}
+                        disabled={isCostPriceLocked}
                         className={cn(
                           "-ml-2 border-transparent p-2 text-2xl font-bold",
-                          !isPartiallyLocked &&
+                          !isCostPriceLocked &&
                             "hover:border-input hover:bg-transparent"
                         )}
                       />
@@ -1227,7 +1274,7 @@ export default function OfferDetailPage({
                         Forventet DG (%)
                       </p>
                       <p className="text-2xl font-bold">
-                        {calcDG ? Number(calcDG.toFixed(2)) : 0} %
+                        {calcDG ? calcDG.toFixed(2) : "0.00"} %
                       </p>
                     </div>
                     <div className="flex items-center justify-between border-t pt-2">
@@ -1479,7 +1526,12 @@ export default function OfferDetailPage({
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
-                    <span>Oppfolging av ordre</span>
+                    <span className="flex flex-col gap-1">
+                      Oppfølging av ordre
+                      <span className="text-xs">
+                        Bokførte tall hentet fra NXT
+                      </span>
+                    </span>
                     {isCompletedPhase ? (
                       <OfferStatusBadge phase="completed" />
                     ) : (
@@ -1491,25 +1543,53 @@ export default function OfferDetailPage({
                   <div className="grid gap-6 md:grid-cols-2">
                     {/* Spent tracking */}
                     <div className="space-y-2">
-                      <p className="text-sm font-medium text-muted-foreground">
+                      <p className="flex items-center gap-4 text-sm font-medium text-muted-foreground">
                         Påløpte kostnader
                       </p>
-                      <InlineEdit
-                        type="currency"
-                        value={offer.spent || 0}
-                        onSave={async (val) => {
-                          await updateSpent.mutateAsync({
-                            id: offer.id!,
-                            spent: Number(val),
-                          });
-                        }}
-                        disabled={isCompletedPhase}
-                        className={cn(
-                          "-ml-2 border-transparent p-2 text-xl font-bold",
-                          !isCompletedPhase &&
-                            "hover:border-input hover:bg-transparent"
+                      <div className="flex items-center gap-2">
+                        <p className="text-xl font-bold">
+                          {new Intl.NumberFormat("nb-NO", {
+                            style: "currency",
+                            currency: "NOK",
+                            maximumFractionDigits: 0,
+                          }).format(offer.spent || 0)}
+                        </p>
+                        {(offer.spent || 0) > calcCost && calcCost > 0 && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <AlertTriangle className="h-5 w-5 cursor-pointer text-orange-500" />
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-[280px]">
+                              <p className="font-medium">
+                                Påløpte kostnader overstiger kalkulert kostnad
+                              </p>
+                              <p className="mt-1 text-xs text-muted-foreground">
+                                Har det kommet tilleggsarbeid, eller var
+                                budsjettet for stramt? Vurder å oppdatere
+                                kalkulasjonen.
+                              </p>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="mt-2 w-full"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  updateCost.mutate({
+                                    id: offer.id!,
+                                    cost: offer.spent || 0,
+                                  });
+                                }}
+                                disabled={updateCost.isPending}
+                              >
+                                {updateCost.isPending ? (
+                                  <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                                ) : null}
+                                Oppdater kostnad til påløpt beløp
+                              </Button>
+                            </TooltipContent>
+                          </Tooltip>
                         )}
-                      />
+                      </div>
                       {calcCost > 0 && (
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -1531,6 +1611,18 @@ export default function OfferDetailPage({
                             <div className="space-y-1 text-sm">
                               <div className="flex justify-between gap-4">
                                 <span className="text-muted-foreground">
+                                  Total kalkulert kost:
+                                </span>
+                                <span className="font-medium">
+                                  {new Intl.NumberFormat("nb-NO", {
+                                    style: "currency",
+                                    currency: "NOK",
+                                    maximumFractionDigits: 0,
+                                  }).format(calcCost)}
+                                </span>
+                              </div>
+                              <div className="flex justify-between gap-4">
+                                <span className="text-muted-foreground underline">
                                   Påløpte kostnader:
                                 </span>
                                 <span className="font-medium">
@@ -1541,18 +1633,7 @@ export default function OfferDetailPage({
                                   }).format(offer.spent || 0)}
                                 </span>
                               </div>
-                              <div className="flex justify-between gap-4">
-                                <span className="text-muted-foreground">
-                                  Total pris:
-                                </span>
-                                <span className="font-medium">
-                                  {new Intl.NumberFormat("nb-NO", {
-                                    style: "currency",
-                                    currency: "NOK",
-                                    maximumFractionDigits: 0,
-                                  }).format(calcCost)}
-                                </span>
-                              </div>
+
                               <div className="border-t pt-1">
                                 <span className="font-medium">
                                   {Math.round(
@@ -1572,22 +1653,50 @@ export default function OfferDetailPage({
                       <p className="text-sm font-medium text-muted-foreground">
                         Fakturert
                       </p>
-                      <InlineEdit
-                        type="currency"
-                        value={offer.invoiced || 0}
-                        onSave={async (val) => {
-                          await updateInvoiced.mutateAsync({
-                            id: offer.id!,
-                            invoiced: Number(val),
-                          });
-                        }}
-                        disabled={isCompletedPhase}
-                        className={cn(
-                          "-ml-2 border-transparent p-2 text-xl font-bold",
-                          !isCompletedPhase &&
-                            "hover:border-input hover:bg-transparent"
+                      <div className="flex items-center gap-2">
+                        <p className="text-xl font-bold">
+                          {new Intl.NumberFormat("nb-NO", {
+                            style: "currency",
+                            currency: "NOK",
+                            maximumFractionDigits: 0,
+                          }).format(offer.invoiced || 0)}
+                        </p>
+                        {(offer.invoiced || 0) > calcPrice && calcPrice > 0 && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <AlertTriangle className="h-5 w-5 cursor-pointer text-orange-500" />
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-[280px]">
+                              <p className="font-medium">
+                                Fakturert beløp overstiger kalkulert pris
+                              </p>
+                              <p className="mt-1 text-xs text-muted-foreground">
+                                Er dette riktig? Vurder å oppdatere
+                                kalkulasjonen slik at den reflekterer faktisk
+                                pris.
+                              </p>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="mt-2 w-full"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  updateValue.mutate({
+                                    id: offer.id!,
+                                    data: { value: offer.invoiced || 0 },
+                                  });
+                                }}
+                                disabled={updateValue.isPending}
+                              >
+                                {updateValue.isPending ? (
+                                  <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                                ) : null}
+                                Oppdater pris til fakturert beløp
+                              </Button>
+                            </TooltipContent>
+                          </Tooltip>
                         )}
-                      />
+                      </div>
                       {calcPrice > 0 && (
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -1597,24 +1706,12 @@ export default function OfferDetailPage({
                                   ((offer.invoiced || 0) / calcPrice) * 100
                                 }
                                 className="h-2 cursor-help"
-                                indicatorClassName="bg-primary"
+                                indicatorClassName=""
                               />
                             </div>
                           </TooltipTrigger>
                           <TooltipContent>
                             <div className="space-y-1 text-sm">
-                              <div className="flex justify-between gap-4">
-                                <span className="text-muted-foreground">
-                                  Fakturert:
-                                </span>
-                                <span className="font-medium">
-                                  {new Intl.NumberFormat("nb-NO", {
-                                    style: "currency",
-                                    currency: "NOK",
-                                    maximumFractionDigits: 0,
-                                  }).format(offer.invoiced || 0)}
-                                </span>
-                              </div>
                               <div className="flex justify-between gap-4">
                                 <span className="text-muted-foreground">
                                   Total pris:
@@ -1627,6 +1724,19 @@ export default function OfferDetailPage({
                                   }).format(calcPrice)}
                                 </span>
                               </div>
+                              <div className="flex justify-between gap-4">
+                                <span className="text-muted-foreground underline">
+                                  Fakturert:
+                                </span>
+                                <span className="font-medium">
+                                  {new Intl.NumberFormat("nb-NO", {
+                                    style: "currency",
+                                    currency: "NOK",
+                                    maximumFractionDigits: 0,
+                                  }).format(offer.invoiced || 0)}
+                                </span>
+                              </div>
+
                               <div className="flex justify-between gap-4">
                                 <span className="text-muted-foreground">
                                   Gjenstående:
@@ -1656,8 +1766,87 @@ export default function OfferDetailPage({
 
                   <div className="flex flex-wrap gap-6 border-t pt-4">
                     <div className="min-w-[150px] flex-1">
+                      <div className="flex flex-col gap-4">
+                        <div className="flex flex-col gap-2">
+                          <p className="text-sm text-muted-foreground">
+                            {isCompletedPhase
+                              ? "Fullført dekning"
+                              : "Dekning så langt"}
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <p
+                              className={cn(
+                                "font-mono text-lg font-bold",
+                                (offer.invoiced || 0) - (offer.spent || 0) < 0
+                                  ? "text-red-600"
+                                  : "text-green-600"
+                              )}
+                            >
+                              {new Intl.NumberFormat("nb-NO", {
+                                style: "currency",
+                                currency: "NOK",
+                                maximumFractionDigits: 0,
+                                signDisplay: "exceptZero",
+                              }).format(
+                                (offer.invoiced || 0) - (offer.spent || 0)
+                              )}
+                              <span className="ml-2 text-xs text-primary">
+                                {(
+                                  (((offer.invoiced || 0) -
+                                    (offer.spent || 0)) /
+                                    (offer.invoiced || 1)) *
+                                  100
+                                ).toFixed(2)}
+                                %
+                              </span>
+                            </p>
+                          </div>
+                        </div>
+                        {isOrderPhase && (
+                          <div className="flex flex-col gap-2">
+                            <p className="text-sm text-muted-foreground">
+                              Beregnet dekning dersom alt faktureres uten flere
+                              kostnader
+                            </p>
+                            <div className="flex items-center gap-2">
+                              <p
+                                className={cn(
+                                  "font-mono text-lg font-bold",
+                                  (offer.invoiced || 0) - (offer.spent || 0) < 0
+                                    ? "text-red-600"
+                                    : "text-green-600"
+                                )}
+                              >
+                                {new Intl.NumberFormat("nb-NO", {
+                                  style: "currency",
+                                  currency: "NOK",
+                                  maximumFractionDigits: 0,
+                                  signDisplay: "exceptZero",
+                                }).format(
+                                  (offer.value || 0) - (offer.spent || 0)
+                                )}
+                                <span className="ml-2 text-xs text-primary">
+                                  {(
+                                    (((offer.value || 0) - (offer.spent || 0)) /
+                                      (offer.value || 1)) *
+                                    100
+                                  ).toFixed(2)}
+                                  %
+                                </span>
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="min-w-[150px] flex-1">
                       <p className="text-sm text-muted-foreground">
-                        Ordrereserve
+                        {isCompletedPhase
+                          ? (offer.orderReserve ??
+                              calcPrice - (offer.invoiced || 0)) < 0
+                            ? "Overfakturert"
+                            : "Ikke fakturert"
+                          : "Gjenstår å fakturere"}
                       </p>
                       <p
                         className={cn(
@@ -1665,7 +1854,10 @@ export default function OfferDetailPage({
                           (offer.orderReserve ??
                             calcPrice - (offer.invoiced || 0)) < 0
                             ? "text-red-600"
-                            : "text-green-600"
+                            : (offer.orderReserve ??
+                                  calcPrice - (offer.invoiced || 0)) === 0
+                              ? "text-muted-foreground"
+                              : "text-green-600"
                         )}
                       >
                         {new Intl.NumberFormat("nb-NO", {
@@ -1673,59 +1865,16 @@ export default function OfferDetailPage({
                           currency: "NOK",
                           maximumFractionDigits: 0,
                         }).format(
-                          offer.orderReserve ??
-                            calcPrice - (offer.invoiced || 0)
+                          Math.abs(
+                            offer.orderReserve ??
+                              calcPrice - (offer.invoiced || 0)
+                          )
                         )}
                       </p>
-                    </div>
-                    <div className="min-w-[150px] flex-1">
-                      <p className="text-sm text-muted-foreground">
-                        Differanse (fakturert - påløpte)
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <p
-                          className={cn(
-                            "font-mono text-lg font-bold",
-                            (offer.invoiced || 0) - (offer.spent || 0) < 0
-                              ? "text-red-600"
-                              : "text-green-600"
-                          )}
-                        >
-                          {new Intl.NumberFormat("nb-NO", {
-                            style: "currency",
-                            currency: "NOK",
-                            maximumFractionDigits: 0,
-                            signDisplay: "exceptZero",
-                          }).format((offer.invoiced || 0) - (offer.spent || 0))}
-                        </p>
-                        {!isCompletedPhase && (
-                          <Badge
-                            variant="outline"
-                            className={cn(
-                              "text-xs",
-                              Math.abs(
-                                (offer.invoiced || 0) - (offer.spent || 0)
-                              ) <= 30000
-                                ? "border-blue-500 text-blue-600"
-                                : (offer.invoiced || 0) - (offer.spent || 0) > 0
-                                  ? "border-green-500 text-green-600"
-                                  : "border-red-500 text-red-600"
-                            )}
-                          >
-                            {Math.abs(
-                              (offer.invoiced || 0) - (offer.spent || 0)
-                            ) <= 30000
-                              ? "I balanse"
-                              : (offer.invoiced || 0) - (offer.spent || 0) > 0
-                                ? "Fremtung"
-                                : "Baktung"}
-                          </Badge>
-                        )}
-                      </div>
                     </div>
                   </div>
 
-                  {isOrderPhase && (
+                  {isOrderPhase && showOrderPhase && (
                     <div className="flex flex-wrap gap-4 border-t pt-4">
                       <div className="min-w-[200px] flex-1">
                         <Label className="text-sm text-muted-foreground">
@@ -1823,6 +1972,35 @@ export default function OfferDetailPage({
                       </div>
                     </div>
                   )}
+
+                  <div className="flex w-full justify-end text-xs text-muted-foreground">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger className="cursor-default">
+                          Synkronisert:{" "}
+                          {offer.dwLastSyncedAt
+                            ? formatDistanceToNow(
+                                new Date(offer.dwLastSyncedAt),
+                                {
+                                  addSuffix: true,
+                                  locale: nb,
+                                }
+                              )
+                            : "Aldri"}
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>
+                            {offer.dwLastSyncedAt
+                              ? format(
+                                  new Date(offer.dwLastSyncedAt),
+                                  "dd.MM.yyyy HH:mm"
+                                )
+                              : "Aldri synkronisert"}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
                 </CardContent>
               </Card>
             )}

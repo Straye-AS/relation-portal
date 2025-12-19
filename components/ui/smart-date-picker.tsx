@@ -3,7 +3,7 @@
 import * as React from "react";
 import { format, formatDistanceToNow } from "date-fns";
 import { nb } from "date-fns/locale";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, X } from "lucide-react";
 
 import { cn, getDueDateColor } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -65,6 +65,22 @@ export function SmartDatePicker({
           />
         </PopoverContent>
       </Popover>
+      {value && !disabled && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-muted-foreground hover:text-destructive"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onSelect?.(undefined);
+          }}
+          type="button"
+          title="Fjern dato"
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      )}
       {value && (
         <span className={cn("text-sm font-medium", colorClass)}>
           {relativeTime}

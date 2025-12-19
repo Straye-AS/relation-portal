@@ -161,10 +161,7 @@ export function OfferForm({
     if (p.phase !== "tilbud") {
       return false;
     }
-
-    if (selectedCustomerId) {
-      return p.customerId === selectedCustomerId;
-    }
+    // Allow any combination of customer and project - no filtering by customer
     return true;
   });
 
@@ -367,13 +364,17 @@ export function OfferForm({
                       selectedProjectId={field.value}
                       onSelect={(projectId) => {
                         field.onChange(projectId);
-                        const project = projects?.find(
-                          (p) => p.id === projectId
-                        );
-                        if (project?.customerId) {
-                          form.setValue("customerId", project.customerId, {
-                            shouldValidate: true,
-                          });
+                        // Only auto-fill customer if none is selected yet
+                        const currentCustomerId = form.getValues("customerId");
+                        if (!currentCustomerId && projectId) {
+                          const project = projects?.find(
+                            (p) => p.id === projectId
+                          );
+                          if (project?.customerId) {
+                            form.setValue("customerId", project.customerId, {
+                              shouldValidate: true,
+                            });
+                          }
                         }
                       }}
                     />

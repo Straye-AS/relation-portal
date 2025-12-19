@@ -27,7 +27,6 @@ import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import {
   ArrowLeft,
-  Edit,
   Mail,
   Phone,
   MapPin,
@@ -40,6 +39,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CustomerProjectsTab } from "@/components/customers/customer-projects-tab";
 import { CustomerOffersTab } from "@/components/customers/customer-offers-tab";
+import { CustomerDocumentsTab } from "@/components/customers/customer-documents-tab";
 import { AddCustomerContactModal } from "@/components/customers/add-customer-contact-modal";
 
 // Local interface for contact to satisfy TS and expected usage
@@ -200,10 +200,6 @@ export default function CustomerDetailPage({
                 </div>
               </div>
             </div>
-            <Button>
-              <Edit className="mr-2 h-4 w-4" />
-              Rediger kunde
-            </Button>
           </div>
         </div>
 
@@ -216,7 +212,7 @@ export default function CustomerDetailPage({
                 <CardHeader>
                   <CardTitle>Nøkkeltall</CardTitle>
                   <CardDescription>
-                    Oversikt over prosjekt- og tilbudsverdier
+                    Oversikt over utvalgte tall for kundeforholdet
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -489,6 +485,7 @@ export default function CustomerDetailPage({
                 <TabsTrigger value="offers">
                   Tilbud ({customer.stats?.totalOffers ?? "?"})
                 </TabsTrigger>
+                <TabsTrigger value="documents">Dokumenter</TabsTrigger>
                 <TabsTrigger value="contacts">
                   Kontakter ({contacts.length})
                 </TabsTrigger>
@@ -602,6 +599,10 @@ export default function CustomerDetailPage({
 
               <TabsContent value="offers">
                 <CustomerOffersTab customerId={resolvedParams.id} />
+              </TabsContent>
+
+              <TabsContent value="documents">
+                <CustomerDocumentsTab customerId={resolvedParams.id} />
               </TabsContent>
 
               <TabsContent value="contacts">

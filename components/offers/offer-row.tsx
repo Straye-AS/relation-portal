@@ -14,6 +14,7 @@ import { CompanyBadge } from "@/components/ui/company-badge";
 import type { DomainOfferDTO } from "@/lib/.generated/data-contracts";
 import { useRouter } from "next/navigation";
 import { cn, getDueDateColor, formatOfferNumber } from "@/lib/utils";
+import { AlertTriangle } from "lucide-react";
 
 interface OfferRowProps {
   offer: DomainOfferDTO;
@@ -55,6 +56,35 @@ export function OfferRow({ offer }: OfferRowProps) {
       </TableCell>
       <TableCell>
         <OfferStatusBadge phase={offer.phase || "draft"} />
+      </TableCell>
+      <TableCell className="text-sm">
+        <div className="flex items-center gap-2">
+          {(offer as any).externalReference ? (
+            <span
+              className="max-w-[120px] truncate"
+              title={(offer as any).externalReference}
+            >
+              {(offer as any).externalReference}
+            </span>
+          ) : offer.phase === "order" ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-1 text-orange-500">
+                  <AlertTriangle className="h-4 w-4" />
+                  <span className="text-muted-foreground">-</span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Ordre mangler ekstern referanse.</p>
+                <p className="text-xs text-muted-foreground">
+                  Legg til referanse for enklere sporing i ERP.
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <span className="text-muted-foreground">-</span>
+          )}
+        </div>
       </TableCell>
 
       <TableCell className={cn("text-sm", getDueDateColor(offer.dueDate))}>

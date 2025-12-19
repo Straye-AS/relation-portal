@@ -263,6 +263,7 @@ export function useSendOffer() {
     },
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ["offers"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
       queryClient.invalidateQueries({ queryKey: ["offers", id] });
       toast.success("Tilbud markert som sendt");
     },
@@ -356,6 +357,7 @@ export function useCloneOffer() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["offers"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
       toast.success("Tilbud kopiert");
     },
     onError: (error: Error) => {
@@ -385,6 +387,7 @@ export function useUpdateOfferTitle() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["offers"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
       queryClient.invalidateQueries({ queryKey: ["offers", variables.id] });
       toast.success("Tittel oppdatert");
     },
@@ -448,6 +451,7 @@ export function useUpdateOfferCost() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["offers"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
       queryClient.invalidateQueries({ queryKey: ["offers", variables.id] });
       toast.success("Kostnad oppdatert");
     },
@@ -478,6 +482,7 @@ export function useUpdateOfferDescription() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["offers"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
       queryClient.invalidateQueries({ queryKey: ["offers", variables.id] });
       toast.success("Beskrivelse oppdatert");
     },
@@ -508,6 +513,7 @@ export function useUpdateOfferDueDate() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["offers"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
       queryClient.invalidateQueries({ queryKey: ["offers", variables.id] });
       toast.success("Frist oppdatert");
     },
@@ -538,6 +544,7 @@ export function useUpdateOfferProbability() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["offers"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
       queryClient.invalidateQueries({ queryKey: ["offers", variables.id] });
       toast.success("Sannsynlighet oppdatert");
     },
@@ -568,6 +575,7 @@ export function useUpdateOfferResponsible() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["offers"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
       queryClient.invalidateQueries({ queryKey: ["offers", variables.id] });
       toast.success("Ansvarlig oppdatert");
     },
@@ -667,6 +675,7 @@ export function useUpdateOfferNumber() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["offers"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
       queryClient.invalidateQueries({ queryKey: ["offers", variables.id] });
       toast.success("Tilbudsnummer oppdatert");
     },
@@ -711,6 +720,7 @@ export function useUpdateOfferExpirationDate() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["offers"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
       queryClient.invalidateQueries({ queryKey: ["offers", variables.id] });
       toast.success("Vedståelsesfrist oppdatert");
     },
@@ -744,6 +754,7 @@ export function useUpdateOfferExternalReference() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["offers"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
       queryClient.invalidateQueries({ queryKey: ["offers", variables.id] });
       toast.success("Ekstern referanse oppdatert");
     },
@@ -817,6 +828,7 @@ export function useUpdateCustomerHasWonOffer() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["offers"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
       queryClient.invalidateQueries({ queryKey: ["offers", variables.id] });
       toast.success("Kunde er merket som vinner for prosjektet");
     },
@@ -936,6 +948,7 @@ export function useUpdateOfferHealth() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["offers"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
       queryClient.invalidateQueries({ queryKey: ["offers", variables.id] });
       toast.success("Helsestatus oppdatert");
     },
@@ -960,6 +973,7 @@ export function useUpdateOfferSpent() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["offers"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
       queryClient.invalidateQueries({ queryKey: ["offers", variables.id] });
       toast.success("Kostnader oppdatert");
     },
@@ -984,6 +998,7 @@ export function useUpdateOfferInvoiced() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["offers"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
       queryClient.invalidateQueries({ queryKey: ["offers", variables.id] });
       toast.success("Fakturert beløp oppdatert");
     },
@@ -1013,6 +1028,7 @@ export function useReopenOffer() {
     },
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ["offers"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
       queryClient.invalidateQueries({ queryKey: ["offers", id] });
       toast.success("Ordre gjenåpnet");
     },
