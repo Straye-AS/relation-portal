@@ -8,6 +8,7 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Button } from "@/components/ui/button";
 import { useNotifications } from "@/hooks/useNotifications";
 import { AuthModeToggle } from "@/components/auth/auth-mode-toggle";
+import { ErrorBoundary } from "@/components/error-boundary";
 import {
   isLocalAuthEnabled,
   getAuthModePreference,
@@ -101,13 +102,15 @@ export function AppLayout({
             disableScroll ? "overflow-hidden" : "overflow-y-auto"
           )}
         >
-          {disableScroll ? (
-            children
-          ) : (
-            <div className="mx-auto w-full max-w-[1920px] px-4 py-3 md:px-8">
-              {children}
-            </div>
-          )}
+          <ErrorBoundary>
+            {disableScroll ? (
+              children
+            ) : (
+              <div className="mx-auto w-full max-w-[1920px] px-4 py-3 md:px-8">
+                {children}
+              </div>
+            )}
+          </ErrorBoundary>
         </main>
       </div>
     </div>

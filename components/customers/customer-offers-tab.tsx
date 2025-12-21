@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useState, useMemo } from "react";
 import {
   Card,
@@ -17,7 +18,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { X } from "lucide-react";
-import { AddOfferModal } from "@/components/offers/add-offer-modal";
+
+// Lazy load modal to reduce initial bundle size
+const AddOfferModal = dynamic(
+  () =>
+    import("@/components/offers/add-offer-modal").then(
+      (mod) => mod.AddOfferModal
+    ),
+  { ssr: false }
+);
 import { OfferListTable } from "@/components/offers/offer-list-table";
 import { PaginationControls } from "@/components/pagination-controls";
 import { TableSkeleton } from "@/components/ui/table-skeleton";

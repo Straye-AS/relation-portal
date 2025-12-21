@@ -9,6 +9,7 @@ import {
   useUpdateCustomerAddress,
   useUpdateCustomerPostalCode,
   useUpdateCustomerCity,
+  useDeleteCustomerContact,
 } from "@/hooks/useCustomers";
 import { InlineEdit } from "@/components/ui/inline-edit";
 import { toast } from "sonner";
@@ -33,6 +34,7 @@ import {
   Building2,
   Users,
   Banknote,
+  Trash2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -41,6 +43,7 @@ import { CustomerProjectsTab } from "@/components/customers/customer-projects-ta
 import { CustomerOffersTab } from "@/components/customers/customer-offers-tab";
 import { CustomerDocumentsTab } from "@/components/customers/customer-documents-tab";
 import { AddCustomerContactModal } from "@/components/customers/add-customer-contact-modal";
+import { DeleteConfirmationModal } from "@/components/ui/delete-confirmation-modal";
 
 // Local interface for contact to satisfy TS and expected usage
 interface CustomerContact {
@@ -57,8 +60,10 @@ export default function CustomerDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const resolvedParams = use(params);
-  const [, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState("overview");
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+  const [contactToDelete, setContactToDelete] =
+    useState<CustomerContact | null>(null);
 
   const { data: customer, isLoading: isLoadingCustomer } =
     useCustomerWithDetails(resolvedParams.id);
@@ -69,6 +74,7 @@ export default function CustomerDetailPage({
   const updateAddress = useUpdateCustomerAddress();
   const updatePostalCode = useUpdateCustomerPostalCode();
   const updateCity = useUpdateCustomerCity();
+  const deleteContact = useDeleteCustomerContact();
 
   // Map contactsData to local interface properly
   // Robustly handle potential pagination wrapper or diverse return types
@@ -473,7 +479,7 @@ export default function CustomerDetailPage({
 
             {/* Tabs Section */}
             <Tabs
-              defaultValue="overview"
+              value={activeTab}
               className="space-y-4"
               onValueChange={setActiveTab}
             >
@@ -530,7 +536,8 @@ export default function CustomerDetailPage({
                             .map((contact: CustomerContact) => (
                               <div
                                 key={contact.id}
-                                className="flex items-center justify-between"
+                                className="flex cursor-pointer items-center justify-between rounded-md p-2 hover:bg-muted/50"
+                                onClick={() => setActiveTab("contacts")}
                               >
                                 <div className="flex items-center gap-3">
                                   <Avatar className="h-9 w-9">
@@ -549,13 +556,19 @@ export default function CustomerDetailPage({
                                     </p>
                                   </div>
                                 </div>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8"
-                                >
-                                  <Mail className="h-4 w-4" />
-                                </Button>
+                                <div className="flex items-center gap-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-destructive hover:text-destructive"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setContactToDelete(contact);
+                                    }}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
                               </div>
                             ))}
                         {!isLoadingContacts && contacts.length === 0 && (
@@ -651,6 +664,14 @@ export default function CustomerDetailPage({
                                   {contact.role || "Ingen rolle"}
                                 </CardDescription>
                               </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="ml-auto h-8 w-8 text-muted-foreground hover:text-destructive"
+                                onClick={() => setContactToDelete(contact)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
                             </CardHeader>
                             <CardContent className="grid gap-2 text-sm">
                               {contact.email && (
@@ -690,6 +711,24 @@ export default function CustomerDetailPage({
           customerId={resolvedParams.id}
           open={isContactModalOpen}
           onOpenChange={setIsContactModalOpen}
+        />
+
+        <DeleteConfirmationModal
+          isOpen={!!contactToDelete}
+          onClose={() => setContactToDelete(null)}
+          onConfirm={async () => {
+            if (contactToDelete) {
+              await deleteContact.mutateAsync({
+                customerId: resolvedParams.id, // or customer.id
+                contactId: contactToDelete.id,
+              });
+              setContactToDelete(null);
+            }
+          }}
+          title="Slett kontaktperson?"
+          description="Er du sikker på at du vil slette denne kontaktpersonen? Handlingen kan ikke angres."
+          itemTitle={contactToDelete?.name}
+          isLoading={deleteContact.isPending}
         />
       </div>
     </AppLayout>

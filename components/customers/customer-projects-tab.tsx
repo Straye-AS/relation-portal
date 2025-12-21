@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -18,7 +19,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { X } from "lucide-react";
-import { AddProjectModal } from "@/components/projects/add-project-modal";
+
+// Lazy load modal to reduce initial bundle size
+const AddProjectModal = dynamic(
+  () =>
+    import("@/components/projects/add-project-modal").then(
+      (mod) => mod.AddProjectModal
+    ),
+  { ssr: false }
+);
 import { ProjectListTable } from "@/components/projects/project-list-table";
 import { PaginationControls } from "@/components/pagination-controls";
 import { TableSkeleton } from "@/components/ui/table-skeleton";

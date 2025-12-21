@@ -1,5 +1,6 @@
 "use client";
 
+import { type KeyboardEvent } from "react";
 import {
   Table,
   TableBody,
@@ -53,11 +54,22 @@ export function ProjectListTable({
         </TableHeader>
         <TableBody>
           {projects.map((project) => {
+            const handleKeyDown = (e: KeyboardEvent<HTMLTableRowElement>) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onProjectClick(project);
+              }
+            };
+
             return (
               <TableRow
                 key={project.id}
-                className="cursor-pointer hover:bg-muted/50"
+                className="cursor-pointer hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 onClick={() => onProjectClick(project)}
+                onKeyDown={handleKeyDown}
+                tabIndex={0}
+                role="link"
+                aria-label={`Åpne prosjekt: ${project.name}`}
               >
                 <TableCell className="whitespace-nowrap font-mono text-sm text-muted-foreground">
                   {project.projectNumber || "-"}

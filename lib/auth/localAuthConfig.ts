@@ -1,8 +1,16 @@
 import { User } from "@/types";
 
 /**
+ * Check if we're in a development environment
+ */
+function isDevelopment(): boolean {
+  return process.env.NODE_ENV === "development";
+}
+
+/**
  * Test user for local development
  * This user is only available when NEXT_PUBLIC_USE_LOCAL_AUTH is enabled
+ * AND we're in development mode (safety guard against production use)
  */
 export const TEST_USER: User = {
   id: "test-user-123",
@@ -15,8 +23,13 @@ export const TEST_USER: User = {
 
 /**
  * Check if local auth mode is enabled
+ * Only allows local auth in development environment for security
  */
 export function isLocalAuthEnabled(): boolean {
+  // Safety: Never allow local auth in production, even if env var is set
+  if (!isDevelopment()) {
+    return false;
+  }
   return process.env.NEXT_PUBLIC_USE_LOCAL_AUTH === "true";
 }
 

@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { AppLayout } from "@/components/layout/app-layout";
 import { useOffers } from "@/hooks/useOffers";
 import { Button } from "@/components/ui/button";
@@ -17,9 +18,17 @@ import {
 } from "@/components/ui/select";
 import { X } from "lucide-react";
 import { DomainOfferPhase } from "@/lib/.generated/data-contracts";
-import { AddOfferModal } from "@/components/offers/add-offer-modal";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useState, useMemo } from "react";
+
+// Lazy load modal to reduce initial bundle size
+const AddOfferModal = dynamic(
+  () =>
+    import("@/components/offers/add-offer-modal").then(
+      (mod) => mod.AddOfferModal
+    ),
+  { ssr: false }
+);
 
 import { COMPANIES } from "@/lib/api/types";
 import { PaginationControls } from "@/components/pagination-controls";

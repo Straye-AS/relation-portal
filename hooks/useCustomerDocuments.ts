@@ -11,8 +11,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
-export type DocumentSource = "customer" | "offer" | "project";
-
 export interface CustomerDocument {
   id: string;
   filename: string;
@@ -20,13 +18,10 @@ export interface CustomerDocument {
   size: number;
   createdAt: string;
   createdByName?: string;
-  source: DocumentSource;
-  sourceId?: string;
-  sourceName?: string;
+  comment?: string;
 }
 
 export interface CustomerDocumentsParams {
-  source?: DocumentSource;
   page?: number;
   pageSize?: number;
   sortBy?: "filename" | "createdAt" | "size";
@@ -49,7 +44,7 @@ const MOCK_DOCUMENTS: CustomerDocument[] = [
     size: 245000,
     createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
     createdByName: "Ola Nordmann",
-    source: "customer",
+    comment: "Signert hovedkontrakt for 2024",
   },
   {
     id: "doc-2",
@@ -59,9 +54,7 @@ const MOCK_DOCUMENTS: CustomerDocument[] = [
     size: 89000,
     createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
     createdByName: "Kari Hansen",
-    source: "offer",
-    sourceId: "offer-123",
-    sourceName: "Tilbud #2024-001",
+    comment: "Budsjettforslag første kvartal",
   },
   {
     id: "doc-3",
@@ -71,9 +64,6 @@ const MOCK_DOCUMENTS: CustomerDocument[] = [
     size: 156000,
     createdAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
     createdByName: "Per Olsen",
-    source: "project",
-    sourceId: "project-456",
-    sourceName: "Prosjekt Alfa",
   },
   {
     id: "doc-4",
@@ -82,7 +72,7 @@ const MOCK_DOCUMENTS: CustomerDocument[] = [
     size: 78000,
     createdAt: new Date(Date.now() - 21 * 24 * 60 * 60 * 1000).toISOString(),
     createdByName: "Ola Nordmann",
-    source: "customer",
+    comment: "Referat fra oppstartsmøte",
   },
   {
     id: "doc-5",
@@ -91,9 +81,6 @@ const MOCK_DOCUMENTS: CustomerDocument[] = [
     size: 1200000,
     createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
     createdByName: "Kari Hansen",
-    source: "project",
-    sourceId: "project-456",
-    sourceName: "Prosjekt Alfa",
   },
 ];
 
@@ -117,12 +104,7 @@ export function useCustomerDocuments(
       // Simulate network delay
       await new Promise((resolve) => setTimeout(resolve, 500));
 
-      let filtered = [...MOCK_DOCUMENTS];
-
-      // Filter by source
-      if (params?.source) {
-        filtered = filtered.filter((doc) => doc.source === params.source);
-      }
+      const filtered = [...MOCK_DOCUMENTS];
 
       // Sort
       const sortBy = params?.sortBy || "createdAt";
@@ -168,13 +150,16 @@ export function useUploadCustomerDocument() {
     mutationFn: async ({
       customerId: _customerId,
       file,
+      comment,
     }: {
       customerId: string;
       file: File;
+      comment?: string;
     }) => {
       // TODO: Replace with actual API call when backend is ready
       // const formData = new FormData();
       // formData.append('file', file);
+      // if (comment) formData.append('comment', comment);
       // const response = await api.customers.documentsCreate({ id: customerId }, formData);
       // return response.data;
 
@@ -189,7 +174,7 @@ export function useUploadCustomerDocument() {
         size: file.size,
         createdAt: new Date().toISOString(),
         createdByName: "Du",
-        source: "customer",
+        comment: comment || undefined,
       };
 
       return mockDoc;
@@ -266,20 +251,69 @@ export function useDownloadDocument() {
   });
 }
 
+// Re-export FileIconType from file-icons for backwards compatibility
+export type { FileIconType } from "@/components/ui/file-icons";
+
+// Import the type for use in this file
+import type { FileIconType } from "@/components/ui/file-icons";
+
 /**
  * Get file type icon name based on MIME type
  */
-export function getFileTypeIcon(
-  contentType: string
-): "pdf" | "spreadsheet" | "document" | "image" | "archive" | "file" {
+export function getFileTypeIcon(contentType: string): FileIconType {
+  // PDF
   if (contentType.includes("pdf")) return "pdf";
-  if (contentType.includes("spreadsheet") || contentType.includes("excel"))
-    return "spreadsheet";
-  if (contentType.includes("word") || contentType.includes("document"))
-    return "document";
+
+  // Microsoft Word
+  if (
+    contentType.includes("word") ||
+    contentType ===
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+    contentType === "application/msword"
+  )
+    return "word";
+
+  // Microsoft Excel
+  if (
+    contentType.includes("spreadsheet") ||
+    contentType.includes("excel") ||
+    contentType ===
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+    contentType === "application/vnd.ms-excel"
+  )
+    return "excel";
+
+  // Microsoft PowerPoint
+  if (
+    contentType.includes("presentation") ||
+    contentType.includes("powerpoint") ||
+    contentType ===
+      "application/vnd.openxmlformats-officedocument.presentationml.presentation" ||
+    contentType === "application/vnd.ms-powerpoint"
+  )
+    return "powerpoint";
+
+  // Outlook / Email
+  if (
+    contentType.includes("outlook") ||
+    contentType === "application/vnd.ms-outlook" ||
+    contentType === "message/rfc822"
+  )
+    return "outlook";
+
+  // Images
   if (contentType.startsWith("image/")) return "image";
-  if (contentType.includes("zip") || contentType.includes("rar"))
+
+  // Archives
+  if (
+    contentType.includes("zip") ||
+    contentType.includes("rar") ||
+    contentType.includes("7z") ||
+    contentType.includes("tar") ||
+    contentType.includes("gzip")
+  )
     return "archive";
+
   return "file";
 }
 

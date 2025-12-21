@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { AppLayout } from "@/components/layout/app-layout";
 import { useCustomers } from "@/hooks/useCustomers";
 import { Button } from "@/components/ui/button";
@@ -37,7 +38,15 @@ import {
 
 import type { DomainCustomerDTO } from "@/lib/.generated/data-contracts";
 import { useState } from "react";
-import { AddCustomerModal } from "@/components/customers/add-customer-modal";
+
+// Lazy load modal to reduce initial bundle size
+const AddCustomerModal = dynamic(
+  () =>
+    import("@/components/customers/add-customer-modal").then(
+      (mod) => mod.AddCustomerModal
+    ),
+  { ssr: false }
+);
 import {
   DropdownMenu,
   DropdownMenuContent,

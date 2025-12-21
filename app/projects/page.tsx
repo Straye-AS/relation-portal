@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { AppLayout } from "@/components/layout/app-layout";
 import { useProjects, useDeleteProject } from "@/hooks/useProjects";
 
@@ -12,7 +13,15 @@ import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { DeleteConfirmationModal } from "@/components/ui/delete-confirmation-modal";
-import { AddOfferModal } from "@/components/offers/add-offer-modal";
+
+// Lazy load modal to reduce initial bundle size
+const AddOfferModal = dynamic(
+  () =>
+    import("@/components/offers/add-offer-modal").then(
+      (mod) => mod.AddOfferModal
+    ),
+  { ssr: false }
+);
 import {
   Select,
   SelectContent,

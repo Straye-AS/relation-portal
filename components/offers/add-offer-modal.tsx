@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import {
   Dialog,
   DialogContent,
@@ -10,9 +10,13 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
-import { OfferForm } from "./offer-form";
+import { Plus, Loader2 } from "lucide-react";
 import { useCreateOffer } from "@/hooks/useOffers";
+
+// Lazy load the form component to reduce initial bundle size
+const OfferForm = lazy(() =>
+  import("./offer-form").then((mod) => ({ default: mod.OfferForm }))
+);
 import type { DomainCreateOfferRequest } from "@/lib/.generated/data-contracts";
 import { OfferStatusBadge } from "./offer-status-badge";
 import { useCompanyStore } from "@/store/company-store";
@@ -89,18 +93,26 @@ export function AddOfferModal({
         <div className="flex-1 overflow-y-auto px-6 pb-6 pt-2">
           {/* Key on open to re-mount form and reset defaults when opened anew */}
           {open && (
-            <OfferForm
-              onSubmit={handleSubmit}
-              isLoading={createOffer.isPending}
-              initialData={{
-                customerId: defaultCustomerId,
-                projectId: defaultProjectId,
-                companyId: defaultCompanyId,
-              }}
-              showCompanySelect
-              showCustomerWarning={showCustomerWarning}
-              lockedCustomerId={lockedCustomerId}
-            />
+            <Suspense
+              fallback={
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              }
+            >
+              <OfferForm
+                onSubmit={handleSubmit}
+                isLoading={createOffer.isPending}
+                initialData={{
+                  customerId: defaultCustomerId,
+                  projectId: defaultProjectId,
+                  companyId: defaultCompanyId,
+                }}
+                showCompanySelect
+                showCustomerWarning={showCustomerWarning}
+                lockedCustomerId={lockedCustomerId}
+              />
+            </Suspense>
           )}
         </div>
       </DialogContent>

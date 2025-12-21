@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo, memo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Activity } from "@/lib/api/types";
 import {
@@ -39,6 +40,53 @@ const typeColors: Record<string, string> = {
   system: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
 };
 
+/**
+ * Memoized activity item component to prevent unnecessary re-renders
+ */
+const ActivityItem = memo(function ActivityItem({
+  activity,
+}: {
+  activity: Activity;
+}) {
+  // Memoize the formatted date to avoid recalculating on every render
+  const formattedDate = useMemo(() => {
+    const date = new Date(
+      activity.createdAt || activity.occurredAt || new Date()
+    );
+    return formatDistanceToNow(date, {
+      addSuffix: true,
+      locale: nb,
+    });
+  }, [activity.createdAt, activity.occurredAt]);
+
+  return (
+    <div className="flex h-[88px] items-center gap-3 rounded-lg border p-3 transition-colors hover:bg-muted/50">
+      <div
+        className={`rounded-full p-2 ${typeColors[activity.activityType || "system"] || typeColors.system}`}
+      >
+        {typeIcons[activity.activityType || "system"] || typeIcons.system}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <h3 className="truncate text-sm font-semibold">{activity.title}</h3>
+        </div>
+        <div className="line-clamp-2 text-xs text-muted-foreground">
+          <ActivityBody
+            title={activity.title || ""}
+            body={activity.body || ""}
+          />
+        </div>
+        <div className="mt-1 flex items-center justify-between">
+          <p className="text-xs text-muted-foreground">
+            {activity.creatorName && `${activity.creatorName} • `}
+            {formattedDate}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+});
+
 export function ActivityFeed({ activities }: ActivityFeedProps) {
   return (
     <Card className="flex h-full flex-col">
@@ -54,44 +102,7 @@ export function ActivityFeed({ activities }: ActivityFeedProps) {
             </p>
           )}
           {activities.map((activity) => (
-            <div
-              key={activity.id}
-              className="flex h-[88px] items-center gap-3 rounded-lg border p-3 transition-colors hover:bg-muted/50"
-            >
-              <div
-                className={`rounded-full p-2 ${typeColors[activity.activityType || "system"] || typeColors.system}`}
-              >
-                {typeIcons[activity.activityType || "system"] ||
-                  typeIcons.system}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <h3 className="truncate text-sm font-semibold">
-                    {activity.title}
-                  </h3>
-                </div>
-                <div className="line-clamp-2 text-xs text-muted-foreground">
-                  <ActivityBody
-                    title={activity.title || ""}
-                    body={activity.body || ""}
-                  />
-                </div>
-                <div className="mt-1 flex items-center justify-between">
-                  <p className="text-xs text-muted-foreground">
-                    {activity.creatorName && `${activity.creatorName} • `}
-                    {formatDistanceToNow(
-                      new Date(
-                        activity.createdAt || activity.occurredAt || new Date()
-                      ),
-                      {
-                        addSuffix: true,
-                        locale: nb,
-                      }
-                    )}
-                  </p>
-                </div>
-              </div>
-            </div>
+            <ActivityItem key={activity.id} activity={activity} />
           ))}
         </div>
         <div className="mt-4 shrink-0 border-t pt-3">

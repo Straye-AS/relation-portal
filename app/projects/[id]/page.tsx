@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { AppLayout } from "@/components/layout/app-layout";
 import {
   useProject,
@@ -9,7 +10,15 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CardSkeleton } from "@/components/ui/card-skeleton";
-import { AddOfferModal } from "@/components/offers/add-offer-modal";
+
+// Lazy load modal to reduce initial bundle size
+const AddOfferModal = dynamic(
+  () =>
+    import("@/components/offers/add-offer-modal").then(
+      (mod) => mod.AddOfferModal
+    ),
+  { ssr: false }
+);
 
 import Link from "next/link";
 import { ArrowLeft, CalendarDays, Plus } from "lucide-react";

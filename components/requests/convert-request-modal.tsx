@@ -1,5 +1,6 @@
 "use client";
 
+import { lazy, Suspense } from "react";
 import {
   Dialog,
   DialogContent,
@@ -7,13 +8,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { OfferForm } from "@/components/offers/offer-form";
+import { Loader2 } from "lucide-react";
 import { useUpdateOffer } from "@/hooks/useOffers";
 import type {
   DomainOfferDTO,
   DomainCreateOfferRequest,
 } from "@/lib/.generated/data-contracts";
 import { DomainOfferPhase } from "@/lib/.generated/data-contracts";
+
+// Lazy load the form component to reduce initial bundle size
+const OfferForm = lazy(() =>
+  import("@/components/offers/offer-form").then((mod) => ({
+    default: mod.OfferForm,
+  }))
+);
 
 interface ConvertRequestModalProps {
   offer: DomainOfferDTO | null;
@@ -81,12 +89,20 @@ export function ConvertRequestModal({
           </DialogDescription>
         </DialogHeader>
         <div className="flex-1 overflow-y-auto px-6 pb-6 pt-2">
-          <OfferForm
-            onSubmit={handleSubmit}
-            isLoading={updateOffer.isPending}
-            initialData={initialData}
-            showCompanySelect={true}
-          />
+          <Suspense
+            fallback={
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            }
+          >
+            <OfferForm
+              onSubmit={handleSubmit}
+              isLoading={updateOffer.isPending}
+              initialData={initialData}
+              showCompanySelect={true}
+            />
+          </Suspense>
         </div>
       </DialogContent>
     </Dialog>

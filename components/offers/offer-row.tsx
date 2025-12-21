@@ -1,5 +1,6 @@
 "use client";
 
+import { memo, useCallback, type KeyboardEvent } from "react";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { OfferStatusBadge } from "@/components/offers/offer-status-badge";
 import { formatDistanceToNow, format } from "date-fns";
@@ -20,12 +21,22 @@ interface OfferRowProps {
   offer: DomainOfferDTO;
 }
 
-export function OfferRow({ offer }: OfferRowProps) {
+export const OfferRow = memo(function OfferRow({ offer }: OfferRowProps) {
   const router = useRouter();
 
-  const handleRowClick = () => {
+  const navigateToOffer = useCallback(() => {
     router.push(`/offers/${offer.id}`);
-  };
+  }, [router, offer.id]);
+
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent<HTMLTableRowElement>) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        navigateToOffer();
+      }
+    },
+    [navigateToOffer]
+  );
 
   const value = offer.value ?? 0;
   const cost = offer.cost ?? 0;
@@ -34,8 +45,12 @@ export function OfferRow({ offer }: OfferRowProps) {
 
   return (
     <TableRow
-      className="cursor-pointer hover:bg-muted/50"
-      onClick={handleRowClick}
+      className="cursor-pointer hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+      onClick={navigateToOffer}
+      onKeyDown={handleKeyDown}
+      tabIndex={0}
+      role="link"
+      aria-label={`Åpne tilbud: ${offer.title}`}
     >
       <TableCell className="whitespace-nowrap font-mono text-sm text-muted-foreground">
         {formatOfferNumber(offer.offerNumber, offer.phase)}
@@ -140,4 +155,4 @@ export function OfferRow({ offer }: OfferRowProps) {
       </TableCell>
     </TableRow>
   );
-}
+});

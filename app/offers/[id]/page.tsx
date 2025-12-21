@@ -18,11 +18,15 @@ import {
   useUpdateCustomerHasWonOffer,
   useUpdateOfferCustomer,
   useUpdateOfferExpirationDate,
+  useUpdateOfferSentDate,
+  useUpdateOfferStartDate,
+  useUpdateOfferEndDate,
   useUpdateOfferCost,
   useAdvanceOffer,
   useAcceptOrder,
   useCompleteOffer,
   useReopenOffer,
+  useRevertToSent,
   useUpdateOfferHealth,
 } from "@/hooks/useOffers";
 import { useCompanyStore } from "@/store/company-store"; // Imported for company access
@@ -46,7 +50,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useUsers } from "@/hooks/useUsers";
-import { useProjects } from "@/hooks/useProjects";
+import { useProjects, useProjectOffers } from "@/hooks/useProjects";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -79,9 +83,9 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { PaginationControls } from "@/components/pagination-controls";
-import { formatDistanceToNow, addDays, format } from "date-fns";
+import { formatDistanceToNow, format } from "date-fns";
 import { nb } from "date-fns/locale";
-import { use, useState, useEffect } from "react";
+import { use, useState, useEffect, useMemo } from "react";
 import { InlineEdit } from "@/components/ui/inline-edit";
 
 import {
@@ -98,7 +102,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
 import {
@@ -115,6 +118,7 @@ import { cn, formatOfferNumber } from "@/lib/utils";
 import { SmartDatePicker } from "@/components/ui/smart-date-picker";
 import type { DomainProjectDTO } from "@/lib/.generated/data-contracts";
 import type { Project } from "@/lib/api/types";
+import { COMPANIES, type CompanyId } from "@/lib/api/types";
 
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
@@ -125,6 +129,13 @@ import { Progress } from "@/components/ui/progress";
 
 import { Badge } from "@/components/ui/badge";
 import { DeleteConfirmationModal } from "@/components/ui/delete-confirmation-modal";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { OfferNotesCard, SendOfferDialog } from "@/components/offers/detail";
 
 export default function OfferDetailPage({
   params,
@@ -134,7 +145,7 @@ export default function OfferDetailPage({
   const resolvedParams = use(params);
   const router = useRouter();
   const { data: offer, isLoading } = useOfferWithDetails(resolvedParams.id);
-  const { userCompany } = useCompanyStore();
+  const { userCompany: _userCompany } = useCompanyStore();
   const { data: users } = useUsers();
 
   // Modal states - declared early so they can be used in query hooks
@@ -173,6 +184,21 @@ export default function OfferDetailPage({
     enabled: isProjectModalOpen,
   });
 
+  // Fetch offers for the current project to check if there are other active offers from the same company
+  const { data: projectOffers } = useProjectOffers(offer?.projectId ?? "");
+
+  // Check if there are other active offers from the same company in this project
+  const hasOtherActiveOffersFromSameCompany = useMemo(() => {
+    if (!projectOffers || !offer?.projectId || !offer?.companyId) return false;
+    const activePhases = ["draft", "in_progress", "sent"];
+    return projectOffers.some(
+      (o) =>
+        o.id !== offer.id &&
+        o.companyId === offer.companyId &&
+        activePhases.includes(o.phase ?? "")
+    );
+  }, [projectOffers, offer?.id, offer?.projectId, offer?.companyId]);
+
   // Filter projects client-side: anything not "completed" is allowed.
   // Also support search.
   const [projectSearch, setProjectSearch] = useState("");
@@ -208,6 +234,9 @@ export default function OfferDetailPage({
   const updateCustomerHasWonOffer = useUpdateCustomerHasWonOffer();
   const updateOfferCustomer = useUpdateOfferCustomer();
   const updateExpirationDate = useUpdateOfferExpirationDate();
+  const updateSentDate = useUpdateOfferSentDate();
+  const updateStartDate = useUpdateOfferStartDate();
+  const updateEndDate = useUpdateOfferEndDate();
   const updateCost = useUpdateOfferCost();
 
   const acceptOffer = useAcceptOffer();
@@ -217,6 +246,7 @@ export default function OfferDetailPage({
   const acceptOrder = useAcceptOrder();
   const completeOffer = useCompleteOffer();
   const reopenOffer = useReopenOffer();
+  const revertToSent = useRevertToSent();
   const updateHealth = useUpdateOfferHealth();
   const deleteOffer = useDeleteOffer();
 
@@ -228,10 +258,6 @@ export default function OfferDetailPage({
     "won" | "reverted"
   >("won");
   const [pendingProbability, setPendingProbability] = useState(0);
-  const [sendDate, setSendDate] = useState<Date>(new Date());
-  const [expirationDate, setExpirationDate] = useState<Date>(
-    addDays(new Date(), 60)
-  );
   const [localProbability, setLocalProbability] = useState(0);
   const [localCompletionPercent, setLocalCompletionPercent] = useState(0);
 
@@ -246,9 +272,12 @@ export default function OfferDetailPage({
   >(null);
 
   const [projectCreationName, setProjectCreationName] = useState("");
+  const [orderStartDate, setOrderStartDate] = useState<Date | undefined>();
+  const [orderEndDate, setOrderEndDate] = useState<Date | undefined>();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showReopenConfirm, setShowReopenConfirm] = useState(false);
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
+  const [showRevertToSentConfirm, setShowRevertToSentConfirm] = useState(false);
 
   useEffect(() => {
     if (confirmationAction === "win" && offer) {
@@ -390,12 +419,7 @@ export default function OfferDetailPage({
                 {(offer.phase === "draft" || offer.phase === "in_progress") && (
                   <Button
                     className="bg-purple-600 text-white hover:bg-purple-700"
-                    onClick={() => {
-                      const today = new Date();
-                      setSendDate(today);
-                      setExpirationDate(addDays(today, 60));
-                      setIsSendDetailsModalOpen(true);
-                    }}
+                    onClick={() => setIsSendDetailsModalOpen(true)}
                   >
                     <Send className="mr-2 h-4 w-4" />
                     Marker som sendt
@@ -464,6 +488,15 @@ export default function OfferDetailPage({
                       >
                         <Undo2 className="mr-2 h-4 w-4" />
                         Gjenåpne som ordre
+                      </DropdownMenuItem>
+                    )}
+                    {isOrderPhase && (
+                      <DropdownMenuItem
+                        className="cursor-pointer text-amber-600 focus:bg-amber-50 focus:text-amber-600"
+                        onClick={() => setShowRevertToSentConfirm(true)}
+                      >
+                        <Undo2 className="mr-2 h-4 w-4" />
+                        Tilbakestill til sendt
                       </DropdownMenuItem>
                     )}
                     <DropdownMenuItem
@@ -535,25 +568,78 @@ export default function OfferDetailPage({
                                     Herlig! Er du sikker pa at du vil konvertere
                                     tilbudet som ordre?
                                   </p>
-                                  <Alert className="mt-4 border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
-                                    <Info className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                                    <AlertTitle className="ml-2 text-amber-900 dark:text-amber-100">
-                                      Obs! Andre tilbud vil utlope
-                                    </AlertTitle>
-                                    <AlertDescription className="ml-2 text-amber-800 dark:text-amber-200">
-                                      Dette tilbudet er en del av et prosjekt.
-                                      Hvis du gjør om tilbudet til ordre, vil
-                                      alle andre aktive tilbud for{" "}
-                                      <span
-                                        className="font-medium"
-                                        style={{ color: userCompany?.color }}
-                                      >
-                                        {userCompany?.name || "oss"}
-                                      </span>{" "}
-                                      i samme prosjekt automatisk settes til{" "}
-                                      <OfferStatusBadge phase="expired" />
-                                    </AlertDescription>
-                                  </Alert>
+                                  {hasOtherActiveOffersFromSameCompany && (
+                                    <Alert className="mt-4 border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+                                      <Info className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                                      <AlertTitle className="ml-2 text-amber-900 dark:text-amber-100">
+                                        Obs! Andre tilbud vil utlope
+                                      </AlertTitle>
+                                      <AlertDescription className="ml-2 text-amber-800 dark:text-amber-200">
+                                        Dette tilbudet er en del av et prosjekt.
+                                        Hvis du gjør om tilbudet til ordre, vil
+                                        alle andre aktive tilbud for{" "}
+                                        <span
+                                          className="font-medium"
+                                          style={{
+                                            color:
+                                              COMPANIES[
+                                                offer.companyId as CompanyId
+                                              ]?.color,
+                                          }}
+                                        >
+                                          {COMPANIES[
+                                            offer.companyId as CompanyId
+                                          ]?.name || "dette selskapet"}
+                                        </span>{" "}
+                                        i samme prosjekt automatisk settes til{" "}
+                                        <OfferStatusBadge phase="expired" />
+                                      </AlertDescription>
+                                    </Alert>
+                                  )}
+                                  <div className="mt-4 flex flex-wrap gap-4">
+                                    <div className="min-w-[140px] flex-1">
+                                      <Label className="text-sm text-muted-foreground">
+                                        Startdato{" "}
+                                        <span className="text-xs">
+                                          (valgfritt)
+                                        </span>
+                                      </Label>
+                                      <SmartDatePicker
+                                        value={orderStartDate}
+                                        onSelect={setOrderStartDate}
+                                        disabledDates={(date) => {
+                                          if (
+                                            orderEndDate &&
+                                            date > orderEndDate
+                                          )
+                                            return true;
+                                          return false;
+                                        }}
+                                        className="mt-1 w-full"
+                                      />
+                                    </div>
+                                    <div className="min-w-[140px] flex-1">
+                                      <Label className="text-sm text-muted-foreground">
+                                        Sluttdato{" "}
+                                        <span className="text-xs">
+                                          (valgfritt)
+                                        </span>
+                                      </Label>
+                                      <SmartDatePicker
+                                        value={orderEndDate}
+                                        onSelect={setOrderEndDate}
+                                        disabledDates={(date) => {
+                                          if (
+                                            orderStartDate &&
+                                            date < orderStartDate
+                                          )
+                                            return true;
+                                          return false;
+                                        }}
+                                        className="mt-1 w-full"
+                                      />
+                                    </div>
+                                  </div>
                                   <div className="mt-2 text-sm text-muted-foreground">
                                     Tilbudet gar over til ordrefase. Du kan
                                     følge opp okonomi og fremdrift direkte pa
@@ -592,19 +678,35 @@ export default function OfferDetailPage({
                           !offer.projectId &&
                           projectCreationName.length <= 2
                         }
-                        onClick={() => {
+                        onClick={async () => {
                           if (confirmationAction === "win") {
                             if (!offer.projectId) {
                               // Use acceptOffer which creates a project
-                              acceptOffer.mutate({
+                              await acceptOffer.mutateAsync({
                                 id: offer.id!,
                                 createProject: true,
                                 projectName: projectCreationName,
                               });
                             } else {
                               // Use acceptOrder for the sent -> order transition
-                              acceptOrder.mutate({ id: offer.id! });
+                              await acceptOrder.mutateAsync({ id: offer.id! });
                             }
+                            // Update start/end dates if provided
+                            if (orderStartDate) {
+                              updateStartDate.mutate({
+                                id: offer.id!,
+                                startDate: orderStartDate.toISOString(),
+                              });
+                            }
+                            if (orderEndDate) {
+                              updateEndDate.mutate({
+                                id: offer.id!,
+                                endDate: orderEndDate.toISOString(),
+                              });
+                            }
+                            // Reset date state
+                            setOrderStartDate(undefined);
+                            setOrderEndDate(undefined);
                             confetti({
                               particleCount: 100,
                               spread: 70,
@@ -660,6 +762,37 @@ export default function OfferDetailPage({
                         }}
                       >
                         Gjenåpne som ordre
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+
+                {/* Revert to Sent Confirmation Dialog */}
+                <AlertDialog
+                  open={showRevertToSentConfirm}
+                  onOpenChange={setShowRevertToSentConfirm}
+                >
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        Tilbakestill til sendt?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Er du sikker på at du vil sette dette tilbudet tilbake
+                        til <OfferStatusBadge phase="sent" /> Start- og
+                        sluttdatoer vil bli fjernet.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Avbryt</AlertDialogCancel>
+                      <AlertDialogAction
+                        className="bg-amber-600 hover:bg-amber-700"
+                        onClick={() => {
+                          revertToSent.mutate(offer.id!);
+                          setShowRevertToSentConfirm(false);
+                        }}
+                      >
+                        Tilbakestill til sendt
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
@@ -1100,76 +1233,252 @@ export default function OfferDetailPage({
                     </div>
                   )}
 
-                  {/* In order/completed phase, only show date fields if they have values */}
-                  {((!isOrderPhase && !isCompletedPhase) ||
-                    offer.dueDate ||
-                    offer.expirationDate) && (
-                    <div className="flex flex-wrap gap-6">
-                      {/* Frist: always show in non-order phases, or if set in order phase */}
-                      {(!isOrderPhase && !isCompletedPhase) || offer.dueDate ? (
-                        <div className="min-w-[200px] flex-1">
-                          <p className="mb-1 text-sm text-muted-foreground">
-                            Frist <span className="text-xs">(valgfritt)</span>
-                          </p>
-                          <SmartDatePicker
-                            value={
-                              offer.dueDate
-                                ? new Date(offer.dueDate)
-                                : undefined
-                            }
-                            onSelect={(date) => {
-                              updateDueDate.mutate({
-                                id: offer.id!,
-                                data: {
-                                  dueDate: date
-                                    ? date.toISOString()
-                                    : (null as unknown as undefined),
-                                },
-                              });
-                            }}
-                            disabled={isLocked}
-                            disabledDates={(date) =>
-                              date < new Date("1900-01-01")
-                            }
-                            className="w-full"
-                          />
-                        </div>
-                      ) : null}
-                      {/* Vedståelsesfrist: show in sent/order/completed/lost, but in order/completed only if set */}
-                      {(offer.phase === "sent" ||
-                        offer.phase === "lost" ||
-                        ((offer.phase === "order" ||
-                          offer.phase === "completed") &&
-                          offer.expirationDate)) && (
-                        <div className="min-w-[200px] flex-1">
-                          <p className="mb-1 text-sm text-muted-foreground">
-                            Vedståelsesfrist{" "}
-                            <span className="text-xs">(valgfritt)</span>
-                          </p>
-                          <SmartDatePicker
-                            value={
-                              offer.expirationDate
-                                ? new Date(offer.expirationDate)
-                                : undefined
-                            }
-                            onSelect={(date) => {
-                              updateExpirationDate.mutate({
-                                id: offer.id!,
-                                expirationDate: date
+                  {/* Date fields section */}
+                  <div className="flex flex-wrap gap-6">
+                    {/* Frist (due date): show in draft/in_progress phases */}
+                    {(offer.phase === "draft" ||
+                      offer.phase === "in_progress") && (
+                      <div className="min-w-[200px] flex-1">
+                        <p className="mb-1 text-sm text-muted-foreground">
+                          Frist <span className="text-xs">(valgfritt)</span>
+                        </p>
+                        <SmartDatePicker
+                          value={
+                            offer.dueDate ? new Date(offer.dueDate) : undefined
+                          }
+                          onSelect={(date) => {
+                            updateDueDate.mutate({
+                              id: offer.id!,
+                              data: {
+                                dueDate: date
                                   ? date.toISOString()
                                   : (null as unknown as undefined),
-                              });
+                              },
+                            });
+                          }}
+                          disabled={isLocked}
+                          disabledDates={(date) =>
+                            date < new Date("1900-01-01")
+                          }
+                          className="w-full"
+                        />
+                      </div>
+                    )}
+                    {/* Sendt dato: show in sent phase and later, editable on hover */}
+                    {offer.sentDate && (
+                      <div className="min-w-[200px] flex-1">
+                        <p className="mb-1 text-sm text-muted-foreground">
+                          Sendt dato
+                        </p>
+                        <Popover>
+                          <PopoverTrigger asChild disabled={isLocked}>
+                            <button
+                              className={cn(
+                                "group -ml-2 flex items-center gap-2 rounded-md px-2 py-1 text-left font-medium transition-colors",
+                                !isLocked && "cursor-pointer hover:bg-muted"
+                              )}
+                              disabled={isLocked}
+                            >
+                              {format(new Date(offer.sentDate), "dd.MM.yyyy")}
+                              {!isLocked && (
+                                <Pencil className="h-3 w-3 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+                              )}
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={new Date(offer.sentDate)}
+                              onSelect={(date) => {
+                                if (date) {
+                                  updateSentDate.mutate({
+                                    id: offer.id!,
+                                    sentDate: date.toISOString(),
+                                  });
+                                }
+                              }}
+                              disabled={(date) => {
+                                const today = new Date();
+                                today.setHours(23, 59, 59, 999);
+                                if (date > today) return true;
+                                if (offer.expirationDate) {
+                                  const expDate = new Date(
+                                    offer.expirationDate
+                                  );
+                                  if (date > expDate) return true;
+                                }
+                                return false;
+                              }}
+                              locale={nb}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    )}
+                    {/* Vedståelsesfrist: show in sent phase */}
+                    {offer.phase === "sent" && (
+                      <div className="min-w-[200px] flex-1">
+                        <p className="mb-1 text-sm text-muted-foreground">
+                          Vedståelsesfrist{" "}
+                          <span className="text-xs">(valgfritt)</span>
+                        </p>
+                        <SmartDatePicker
+                          value={
+                            offer.expirationDate
+                              ? new Date(offer.expirationDate)
+                              : undefined
+                          }
+                          onSelect={(date) => {
+                            updateExpirationDate.mutate({
+                              id: offer.id!,
+                              expirationDate: date
+                                ? date.toISOString()
+                                : (null as unknown as undefined),
+                            });
+                          }}
+                          disabled={isLocked}
+                          disabledDates={(date) =>
+                            date < new Date("1900-01-01")
+                          }
+                          className="w-full"
+                        />
+                      </div>
+                    )}
+                    {/* Startdato: show in order/completed phases, always editable */}
+                    {(offer.phase === "order" ||
+                      offer.phase === "completed") && (
+                      <div className="min-w-[140px] flex-1">
+                        <p className="mb-1 text-sm text-muted-foreground">
+                          Startdato
+                        </p>
+                        {offer.startDate ? (
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <button className="group -ml-2 flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 text-left font-medium transition-colors hover:bg-muted">
+                                {format(
+                                  new Date(offer.startDate),
+                                  "dd.MM.yyyy"
+                                )}
+                                <Pencil className="h-3 w-3 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+                              </button>
+                            </PopoverTrigger>
+                            <PopoverContent
+                              className="w-auto p-0"
+                              align="start"
+                            >
+                              <Calendar
+                                mode="single"
+                                selected={new Date(offer.startDate)}
+                                onSelect={(date) => {
+                                  if (date) {
+                                    updateStartDate.mutate({
+                                      id: offer.id!,
+                                      startDate: date.toISOString(),
+                                    });
+                                  }
+                                }}
+                                disabled={(date) => {
+                                  if (offer.endDate) {
+                                    const endDate = new Date(offer.endDate);
+                                    if (date > endDate) return true;
+                                  }
+                                  return false;
+                                }}
+                                locale={nb}
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        ) : (
+                          <SmartDatePicker
+                            value={undefined}
+                            onSelect={(date) => {
+                              if (date) {
+                                updateStartDate.mutate({
+                                  id: offer.id!,
+                                  startDate: date.toISOString(),
+                                });
+                              }
                             }}
-                            disabled={isLocked}
-                            disabledDates={(date) =>
-                              date < new Date("1900-01-01")
-                            }
+                            disabledDates={(date) => {
+                              if (offer.endDate) {
+                                const endDate = new Date(offer.endDate);
+                                if (date > endDate) return true;
+                              }
+                              return false;
+                            }}
                             className="w-full"
                           />
-                        </div>
-                      )}
-                    </div>
-                  )}
+                        )}
+                      </div>
+                    )}
+                    {/* Sluttdato: show in order/completed phases, editable on hover */}
+                    {(offer.phase === "order" ||
+                      offer.phase === "completed") && (
+                      <div className="min-w-[140px] flex-1">
+                        <p className="mb-1 text-sm text-muted-foreground">
+                          Sluttdato
+                        </p>
+                        {offer.endDate ? (
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <button className="group -ml-2 flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 text-left font-medium transition-colors hover:bg-muted">
+                                {format(new Date(offer.endDate), "dd.MM.yyyy")}
+                                <Pencil className="h-3 w-3 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+                              </button>
+                            </PopoverTrigger>
+                            <PopoverContent
+                              className="w-auto p-0"
+                              align="start"
+                            >
+                              <Calendar
+                                mode="single"
+                                selected={new Date(offer.endDate)}
+                                onSelect={(date) => {
+                                  if (date) {
+                                    updateEndDate.mutate({
+                                      id: offer.id!,
+                                      endDate: date.toISOString(),
+                                    });
+                                  }
+                                }}
+                                disabled={(date) => {
+                                  if (offer.startDate) {
+                                    const startDate = new Date(offer.startDate);
+                                    if (date < startDate) return true;
+                                  }
+                                  return false;
+                                }}
+                                locale={nb}
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        ) : (
+                          <SmartDatePicker
+                            value={undefined}
+                            onSelect={(date) => {
+                              if (date) {
+                                updateEndDate.mutate({
+                                  id: offer.id!,
+                                  endDate: date.toISOString(),
+                                });
+                              }
+                            }}
+                            disabledDates={(date) => {
+                              if (offer.startDate) {
+                                const startDate = new Date(offer.startDate);
+                                if (date < startDate) return true;
+                              }
+                              return false;
+                            }}
+                            className="w-full"
+                          />
+                        )}
+                      </div>
+                    )}
+                  </div>
 
                   <div className="flex flex-col gap-2 border-t pt-4 text-xs text-muted-foreground">
                     <div className="flex items-center justify-between">
@@ -1228,43 +1537,98 @@ export default function OfferDetailPage({
                       <p className="text-sm font-medium text-muted-foreground">
                         Total kost
                       </p>
-                      <InlineEdit
-                        type="currency"
-                        value={offer.cost || 0}
-                        onSave={async (val) => {
-                          await updateCost.mutateAsync({
-                            id: offer.id!,
-                            cost: Number(val),
-                          });
-                        }}
-                        disabled={isCostPriceLocked}
-                        className={cn(
-                          "-ml-2 border-transparent p-2 text-2xl font-bold",
-                          !isCostPriceLocked &&
-                            "hover:border-input hover:bg-transparent"
-                        )}
-                      />
+                      <div className="flex items-center gap-2">
+                        <InlineEdit
+                          type="currency"
+                          value={offer.cost || 0}
+                          onSave={async (val) => {
+                            await updateCost.mutateAsync({
+                              id: offer.id!,
+                              cost: Number(val),
+                            });
+                          }}
+                          disabled={isCostPriceLocked}
+                          className={cn(
+                            "-ml-2 border-transparent p-2 text-2xl font-bold",
+                            !isCostPriceLocked &&
+                              "hover:border-input hover:bg-transparent"
+                          )}
+                        />
+                      </div>
                     </div>
                     <div className="min-w-[200px] flex-1 space-y-2">
                       <p className="text-sm font-medium text-muted-foreground">
                         Total pris
                       </p>
-                      <InlineEdit
-                        type="currency"
-                        value={offer.value || 0}
-                        onSave={async (val) => {
-                          await updateValue.mutateAsync({
-                            id: offer.id!,
-                            data: { value: Number(val) },
-                          });
-                        }}
-                        disabled={isCostPriceLocked}
-                        className={cn(
-                          "-ml-2 border-transparent p-2 text-2xl font-bold",
-                          !isCostPriceLocked &&
-                            "hover:border-input hover:bg-transparent"
-                        )}
-                      />
+                      <div className="flex items-center gap-2">
+                        <InlineEdit
+                          type="currency"
+                          value={offer.value || 0}
+                          onSave={async (val) => {
+                            await updateValue.mutateAsync({
+                              id: offer.id!,
+                              data: { value: Number(val) },
+                            });
+                          }}
+                          disabled={isCostPriceLocked}
+                          className={cn(
+                            "-ml-2 border-transparent p-2 text-2xl font-bold",
+                            !isCostPriceLocked &&
+                              "hover:border-input hover:bg-transparent"
+                          )}
+                        />
+                        {offer.budgetSummary?.totalRevenue !== undefined &&
+                          offer.budgetSummary.totalRevenue !==
+                            (offer.value || 0) &&
+                          (offer.invoiced || 0) !== 0 && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <AlertTriangle className="h-5 w-5 cursor-pointer text-orange-500" />
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-[280px]">
+                                <p className="font-medium">
+                                  Kalkulert pris avviker fra CW
+                                </p>
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                  Kalkulert pris fra CW er{" "}
+                                  {new Intl.NumberFormat("nb-NO", {
+                                    style: "currency",
+                                    currency: "NOK",
+                                    maximumFractionDigits: 0,
+                                  }).format(offer.budgetSummary.totalRevenue)}
+                                  . Vil du oppdatere total pris?
+                                </p>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="mt-2 w-full"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    updateValue.mutate({
+                                      id: offer.id!,
+                                      data: {
+                                        value:
+                                          offer.budgetSummary?.totalRevenue ||
+                                          0,
+                                      },
+                                    });
+                                  }}
+                                  disabled={updateValue.isPending}
+                                >
+                                  {updateValue.isPending ? (
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  ) : null}
+                                  Oppdater til{" "}
+                                  {new Intl.NumberFormat("nb-NO", {
+                                    style: "currency",
+                                    currency: "NOK",
+                                    maximumFractionDigits: 0,
+                                  }).format(offer.budgetSummary.totalRevenue)}
+                                </Button>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                      </div>
                     </div>
                   </div>
 
@@ -1790,15 +2154,19 @@ export default function OfferDetailPage({
                               }).format(
                                 (offer.invoiced || 0) - (offer.spent || 0)
                               )}
-                              <span className="ml-2 text-xs text-primary">
-                                {(
-                                  (((offer.invoiced || 0) -
-                                    (offer.spent || 0)) /
-                                    (offer.invoiced || 1)) *
-                                  100
-                                ).toFixed(2)}
-                                %
-                              </span>
+                              {offer.invoiced && offer.spent && (
+                                <span
+                                  className={cn("ml-2 text-xs text-primary")}
+                                >
+                                  {(
+                                    (((offer.invoiced || 0) -
+                                      (offer.spent || 0)) /
+                                      (offer.invoiced || 1)) *
+                                    100
+                                  ).toFixed(2)}
+                                  %
+                                </span>
+                              )}
                             </p>
                           </div>
                         </div>
@@ -1812,7 +2180,7 @@ export default function OfferDetailPage({
                               <p
                                 className={cn(
                                   "font-mono text-lg font-bold",
-                                  (offer.invoiced || 0) - (offer.spent || 0) < 0
+                                  (offer.value || 0) - (offer.spent || 0) < 0
                                     ? "text-red-600"
                                     : "text-green-600"
                                 )}
@@ -1825,7 +2193,9 @@ export default function OfferDetailPage({
                                 }).format(
                                   (offer.value || 0) - (offer.spent || 0)
                                 )}
-                                <span className="ml-2 text-xs text-primary">
+                                <span
+                                  className={cn("ml-2 text-xs text-primary")}
+                                >
                                   {(
                                     (((offer.value || 0) - (offer.spent || 0)) /
                                       (offer.value || 1)) *
@@ -1864,11 +2234,10 @@ export default function OfferDetailPage({
                           style: "currency",
                           currency: "NOK",
                           maximumFractionDigits: 0,
+                          signDisplay: "exceptZero",
                         }).format(
-                          Math.abs(
-                            offer.orderReserve ??
-                              calcPrice - (offer.invoiced || 0)
-                          )
+                          offer.orderReserve ??
+                            calcPrice - (offer.invoiced || 0)
                         )}
                       </p>
                     </div>
@@ -2010,92 +2379,22 @@ export default function OfferDetailPage({
               initialDescription={offer.description || ""}
             />
 
-            {offer.notes && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Notater</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">{offer.notes}</p>
-                </CardContent>
-              </Card>
-            )}
+            <OfferNotesCard notes={offer.notes} />
           </div>
         </div>
       </div>
 
-      <Dialog
+      <SendOfferDialog
         open={isSendDetailsModalOpen}
         onOpenChange={setIsSendDetailsModalOpen}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Send tilbud</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4">
-            <p className="text-sm text-muted-foreground">
-              Dette vil sette tilbudet til fasen{" "}
-              <OfferStatusBadge phase="sent" />. For å gjøre dette trenger vi å
-              vite når tilbudet er sendt, og hvor lenge det er gyldig for
-              kunden. Nedenfor ser du default verdiene for sendt dato og
-              vedståelsesfrist. Disse kan du endre som du vil.
-            </p>
-            <div className="grid gap-2">
-              <Label htmlFor="sent-date">Sendt dato</Label>
-              <Input
-                id="sent-date"
-                type="date"
-                value={sendDate ? format(sendDate, "yyyy-MM-dd") : ""}
-                onChange={(e) => {
-                  if (e.target.value) {
-                    const date = new Date(e.target.value);
-                    setSendDate(date);
-                    setExpirationDate(addDays(date, 60));
-                  }
-                }}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="expiration-date">
-                Vedståelsesfrist (60 dager)
-              </Label>
-              <Input
-                id="expiration-date"
-                type="date"
-                value={
-                  expirationDate ? format(expirationDate, "yyyy-MM-dd") : ""
-                }
-                onChange={(e) => {
-                  if (e.target.value) {
-                    setExpirationDate(new Date(e.target.value));
-                  }
-                }}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsSendDetailsModalOpen(false)}
-            >
-              Avbryt
-            </Button>
-            <Button
-              className="bg-purple-600 text-white hover:bg-purple-700"
-              onClick={() => {
-                sendOffer.mutate({
-                  id: offer.id!,
-                  sentDate: sendDate.toISOString(),
-                  expirationDate: expirationDate.toISOString(),
-                });
-                setIsSendDetailsModalOpen(false);
-              }}
-            >
-              Bekreft og send
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        onConfirm={(sentDate, expirationDate) => {
+          sendOffer.mutate({
+            id: offer.id!,
+            sentDate,
+            expirationDate,
+          });
+        }}
+      />
     </AppLayout>
   );
 }

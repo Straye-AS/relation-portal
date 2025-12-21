@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import {
   Dialog,
   DialogContent,
@@ -10,10 +10,14 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
-import { ProjectForm } from "./project-form";
+import { Plus, Loader2 } from "lucide-react";
 import { useCreateProject } from "@/hooks/useProjects";
 import type { DomainCreateProjectRequest } from "@/lib/.generated/data-contracts";
+
+// Lazy load the form component to reduce initial bundle size
+const ProjectForm = lazy(() =>
+  import("./project-form").then((mod) => ({ default: mod.ProjectForm }))
+);
 
 export interface AddProjectModalProps {
   open?: boolean;
@@ -71,14 +75,22 @@ export function AddProjectModal({
         </DialogHeader>
         <div className="flex-1 overflow-y-auto px-6 pb-6 pt-2">
           {open && (
-            <ProjectForm
-              onSubmit={handleSubmit}
-              isLoading={createProject.isPending}
-              initialData={{
-                customerId: defaultCustomerId,
-              }}
-              lockedCustomerId={lockedCustomerId}
-            />
+            <Suspense
+              fallback={
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              }
+            >
+              <ProjectForm
+                onSubmit={handleSubmit}
+                isLoading={createProject.isPending}
+                initialData={{
+                  customerId: defaultCustomerId,
+                }}
+                lockedCustomerId={lockedCustomerId}
+              />
+            </Suspense>
           )}
         </div>
       </DialogContent>

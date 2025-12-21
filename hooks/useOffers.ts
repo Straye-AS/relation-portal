@@ -5,18 +5,32 @@
  *
  * React Query hooks for offer CRUD operations.
  * Uses the generated API client for backend communication.
+ *
+ * Query hooks are defined in useOfferQueries.ts and re-exported here.
+ * Mutation hooks are defined below.
  */
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useApi } from "@/lib/api/api-provider";
 import { toast } from "sonner";
-import { useAuth } from "@/hooks/useAuth";
-import { useCompanyStore } from "@/store/company-store";
+import { createLogger } from "@/lib/logging";
+
+const log = createLogger("useOffers");
+
+// Re-export query hooks from useOfferQueries.ts
+export {
+  useOffers,
+  useOffer,
+  useOfferWithDetails,
+  useOfferBudget,
+  useOfferBudgetDimensions,
+  useOfferNextNumber,
+} from "./useOfferQueries";
+
 import {
   DomainUpdateOfferHealthRequestHealthEnum,
   type DomainCreateOfferRequest,
   type DomainUpdateOfferRequest,
-  type OffersListParams,
   type DomainUpdateOfferTitleRequest,
   type DomainUpdateOfferValueRequest,
   type DomainUpdateOfferProbabilityRequest,
@@ -27,102 +41,7 @@ import {
   type DomainUpdateOfferCustomerRequest,
 } from "@/lib/.generated/data-contracts";
 import { ContentType } from "@/lib/.generated/http-client";
-import { Offer, OfferDetail } from "@/lib/api/types";
-
-/**
- * Fetch paginated list of offers
- */
-export function useOffers(
-  params?: Partial<OffersListParams>,
-  options?: { enabled?: boolean }
-) {
-  const api = useApi();
-  const { isAuthenticated } = useAuth();
-  const { selectedCompanyId } = useCompanyStore();
-
-  return useQuery({
-    queryKey: ["offers", params, selectedCompanyId],
-    queryFn: async () => {
-      const response = await api.offers.offersList((params as any) ?? {});
-      return response.data;
-    },
-    enabled: isAuthenticated && (options?.enabled ?? true),
-  });
-}
-
-/**
- * Fetch single offer by ID
- */
-export function useOffer(id: string) {
-  const api = useApi();
-  const { isAuthenticated } = useAuth();
-  const { selectedCompanyId } = useCompanyStore();
-
-  return useQuery({
-    queryKey: ["offers", id, selectedCompanyId],
-    queryFn: async () => {
-      const response = await api.offers.offersDetail({ id });
-      return response.data as Offer;
-    },
-    enabled: !!id && isAuthenticated,
-  });
-}
-
-/**
- * Fetch offer with full details including budget dimensions
- */
-export function useOfferWithDetails(id: string) {
-  const api = useApi();
-  const { isAuthenticated } = useAuth();
-  const { selectedCompanyId } = useCompanyStore();
-
-  return useQuery({
-    queryKey: ["offers", id, "details", selectedCompanyId],
-    queryFn: async () => {
-      const response = await api.offers.detailList({ id });
-      return response.data as OfferDetail;
-    },
-    enabled: !!id && isAuthenticated,
-  });
-}
-
-/**
- * Fetch offer budget summary
- */
-export function useOfferBudget(offerId: string) {
-  const api = useApi();
-  const { isAuthenticated } = useAuth();
-  const { selectedCompanyId } = useCompanyStore();
-
-  return useQuery({
-    queryKey: ["offers", offerId, "budget", selectedCompanyId],
-    queryFn: async () => {
-      const response = await api.offers.budgetList({ id: offerId });
-      return response.data;
-    },
-    enabled: !!offerId && isAuthenticated,
-  });
-}
-
-/**
- * Fetch offer budget dimensions
- */
-export function useOfferBudgetDimensions(offerId: string) {
-  const api = useApi();
-  const { isAuthenticated } = useAuth();
-  const { selectedCompanyId } = useCompanyStore();
-
-  return useQuery({
-    queryKey: ["offers", offerId, "budget", "dimensions", selectedCompanyId],
-    queryFn: async () => {
-      const response = await api.offers.budgetDimensionsList({
-        id: offerId,
-      });
-      return response.data;
-    },
-    enabled: !!offerId && isAuthenticated,
-  });
-}
+import { getHttpErrorStatus } from "@/lib/api/types";
 
 /**
  * Create a new offer
@@ -143,7 +62,7 @@ export function useCreateOffer() {
       toast.success("Tilbud opprettet");
     },
     onError: (error: Error) => {
-      console.error("Failed to create offer:", error);
+      log.error("Failed to create offer", error as Error);
       toast.error("Kunne ikke opprette tilbud");
     },
   });
@@ -175,7 +94,7 @@ export function useUpdateOffer() {
       toast.success("Tilbud oppdatert");
     },
     onError: (error: Error) => {
-      console.error("Failed to update offer:", error);
+      log.error("Failed to update offer", error as Error);
       toast.error("Kunne ikke oppdatere tilbud");
     },
   });
@@ -199,7 +118,7 @@ export function useDeleteOffer() {
       toast.success("Tilbud slettet");
     },
     onError: (error: Error) => {
-      console.error("Failed to delete offer:", error);
+      log.error("Failed to delete offer", error as Error);
       toast.error("Kunne ikke slette tilbud");
     },
   });
@@ -232,7 +151,7 @@ export function useAdvanceOffer() {
       toast.success("Tilbud avansert til neste fase");
     },
     onError: (error: Error) => {
-      console.error("Failed to advance offer:", error);
+      log.error("Failed to advance offer", error as Error);
       toast.error("Kunne ikke avansere tilbud");
     },
   });
@@ -268,7 +187,7 @@ export function useSendOffer() {
       toast.success("Tilbud markert som sendt");
     },
     onError: (error: Error) => {
-      console.error("Failed to send offer:", error);
+      log.error("Failed to send offer", error as Error);
       toast.error("Kunne ikke sende tilbud");
     },
   });
@@ -311,7 +230,7 @@ export function useAcceptOffer() {
       toast.success("Tilbud akseptert");
     },
     onError: (error: Error) => {
-      console.error("Failed to accept offer:", error);
+      log.error("Failed to accept offer", error as Error);
       toast.error("Kunne ikke akseptere tilbud");
     },
   });
@@ -337,7 +256,7 @@ export function useRejectOffer() {
       toast.info("Tilbud avvist");
     },
     onError: (error: Error) => {
-      console.error("Failed to reject offer:", error);
+      log.error("Failed to reject offer", error as Error);
       toast.error("Kunne ikke avvise tilbud");
     },
   });
@@ -361,7 +280,7 @@ export function useCloneOffer() {
       toast.success("Tilbud kopiert");
     },
     onError: (error: Error) => {
-      console.error("Failed to clone offer:", error);
+      log.error("Failed to clone offer", error as Error);
       toast.error("Kunne ikke kopiere tilbud");
     },
   });
@@ -386,13 +305,17 @@ export function useUpdateOfferTitle() {
       return response.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["offers"] });
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      // Only invalidate the specific offer and offers list - title change doesn't affect projects
       queryClient.invalidateQueries({ queryKey: ["offers", variables.id] });
+      queryClient.invalidateQueries({
+        queryKey: ["offers"],
+        exact: false,
+        refetchType: "active",
+      });
       toast.success("Tittel oppdatert");
     },
     onError: (error: Error) => {
-      console.error("Failed to update title:", error);
+      log.error("Failed to update title", error as Error);
       toast.error("Kunne ikke oppdatere tittel");
     },
   });
@@ -417,14 +340,19 @@ export function useUpdateOfferValue() {
       return response.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["offers"] });
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
-      queryClient.invalidateQueries({ queryKey: ["customers"] });
+      // Only invalidate the specific offer and offers list - value change affects list totals
       queryClient.invalidateQueries({ queryKey: ["offers", variables.id] });
+      queryClient.invalidateQueries({
+        queryKey: ["offers"],
+        exact: false,
+        refetchType: "active",
+      });
+      // Dashboard metrics depend on offer values
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       toast.success("Verdi oppdatert");
     },
     onError: (error: Error) => {
-      console.error("Failed to update value:", error);
+      log.error("Failed to update value", error as Error);
       toast.error("Kunne ikke oppdatere verdi");
     },
   });
@@ -450,13 +378,17 @@ export function useUpdateOfferCost() {
       return response.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["offers"] });
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      // Only invalidate the specific offer - cost doesn't affect other entities
       queryClient.invalidateQueries({ queryKey: ["offers", variables.id] });
+      queryClient.invalidateQueries({
+        queryKey: ["offers"],
+        exact: false,
+        refetchType: "active",
+      });
       toast.success("Kostnad oppdatert");
     },
     onError: (error: Error) => {
-      console.error("Failed to update cost:", error);
+      log.error("Failed to update cost", error as Error);
       toast.error("Kunne ikke oppdatere kostnad");
     },
   });
@@ -481,13 +413,12 @@ export function useUpdateOfferDescription() {
       return response.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["offers"] });
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      // Only invalidate the specific offer - description doesn't affect other entities
       queryClient.invalidateQueries({ queryKey: ["offers", variables.id] });
       toast.success("Beskrivelse oppdatert");
     },
     onError: (error: Error) => {
-      console.error("Failed to update description:", error);
+      log.error("Failed to update description", error as Error);
       toast.error("Kunne ikke oppdatere beskrivelse");
     },
   });
@@ -512,13 +443,17 @@ export function useUpdateOfferDueDate() {
       return response.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["offers"] });
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      // Due date only affects offer display, not project/customer totals
       queryClient.invalidateQueries({ queryKey: ["offers", variables.id] });
+      queryClient.invalidateQueries({
+        queryKey: ["offers"],
+        exact: false,
+        refetchType: "active",
+      });
       toast.success("Frist oppdatert");
     },
     onError: (error: Error) => {
-      console.error("Failed to update due date:", error);
+      log.error("Failed to update due date", error as Error);
       toast.error("Kunne ikke oppdatere frist");
     },
   });
@@ -543,13 +478,18 @@ export function useUpdateOfferProbability() {
       return response.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["offers"] });
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      // Probability affects weighted values - invalidate specific offer, list, and dashboard
       queryClient.invalidateQueries({ queryKey: ["offers", variables.id] });
+      queryClient.invalidateQueries({
+        queryKey: ["offers"],
+        exact: false,
+        refetchType: "active",
+      });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       toast.success("Sannsynlighet oppdatert");
     },
     onError: (error: Error) => {
-      console.error("Failed to update probability:", error);
+      log.error("Failed to update probability", error as Error);
       toast.error("Kunne ikke oppdatere sannsynlighet");
     },
   });
@@ -574,13 +514,17 @@ export function useUpdateOfferResponsible() {
       return response.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["offers"] });
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      // Responsible user change only affects offer display
       queryClient.invalidateQueries({ queryKey: ["offers", variables.id] });
+      queryClient.invalidateQueries({
+        queryKey: ["offers"],
+        exact: false,
+        refetchType: "active",
+      });
       toast.success("Ansvarlig oppdatert");
     },
     onError: (error: Error) => {
-      console.error("Failed to update responsible user:", error);
+      log.error("Failed to update responsible user", error as Error);
       toast.error("Kunne ikke oppdatere ansvarlig");
     },
   });
@@ -611,13 +555,9 @@ export function useUpdateOfferProject() {
       queryClient.invalidateQueries({ queryKey: ["offers", variables.id] });
       toast.success("Prosjekt oppdatert");
     },
-    onError: (error: any) => {
-      console.error("Failed to update project:", error);
-      if (
-        error.status === 400 ||
-        error.response?.status === 400 ||
-        error.statusCode === 400
-      ) {
+    onError: (error: Error) => {
+      log.error("Failed to update project", error as Error);
+      if (getHttpErrorStatus(error) === 400) {
         toast.error("Kan kun koble til prosjekter som er i tilbudsfasen.");
       } else {
         toast.error("Kunne ikke oppdatere prosjekt");
@@ -645,7 +585,7 @@ export function useDeleteOfferProject() {
       toast.success("Prosjektlink fjernet");
     },
     onError: (error: Error) => {
-      console.error("Failed to remove project link:", error);
+      log.error("Failed to remove project link", error as Error);
       toast.error("Kunne ikke fjerne prosjektlink");
     },
   });
@@ -674,19 +614,19 @@ export function useUpdateOfferNumber() {
       return response.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["offers"] });
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      // Offer number only affects display
       queryClient.invalidateQueries({ queryKey: ["offers", variables.id] });
+      queryClient.invalidateQueries({
+        queryKey: ["offers"],
+        exact: false,
+        refetchType: "active",
+      });
       toast.success("Tilbudsnummer oppdatert");
     },
-    onError: (error: any) => {
-      console.error("Failed to update offer number:", error);
+    onError: (error: Error) => {
+      log.error("Failed to update offer number", error as Error);
       // Check for 409 Conflict
-      if (
-        error.status === 409 ||
-        error.response?.status === 409 ||
-        error.statusCode === 409
-      ) {
+      if (getHttpErrorStatus(error) === 409) {
         toast.error(
           "Dette tilbudsnummeret er allerede i bruk. Vennligst velg et annet."
         );
@@ -719,14 +659,120 @@ export function useUpdateOfferExpirationDate() {
       return response.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["offers"] });
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      // Expiration date only affects offer display
       queryClient.invalidateQueries({ queryKey: ["offers", variables.id] });
+      queryClient.invalidateQueries({
+        queryKey: ["offers"],
+        exact: false,
+        refetchType: "active",
+      });
       toast.success("Vedståelsesfrist oppdatert");
     },
     onError: (error: Error) => {
-      console.error("Failed to update expiration date:", error);
+      log.error("Failed to update expiration date", error as Error);
       toast.error("Kunne ikke oppdatere vedståelsesfrist");
+    },
+  });
+}
+
+/**
+ * Update offer start date
+ */
+export function useUpdateOfferStartDate() {
+  const queryClient = useQueryClient();
+  const api = useApi();
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      startDate,
+    }: {
+      id: string;
+      startDate?: string;
+    }) => {
+      const response = await api.offers.startDateUpdate({ id }, { startDate });
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      // Start date only affects offer display
+      queryClient.invalidateQueries({ queryKey: ["offers", variables.id] });
+      queryClient.invalidateQueries({
+        queryKey: ["offers", variables.id, "details"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["offers"],
+        exact: false,
+        refetchType: "active",
+      });
+      toast.success("Startdato oppdatert");
+    },
+    onError: (error: Error) => {
+      log.error("Failed to update start date", error as Error);
+      toast.error("Kunne ikke oppdatere startdato");
+    },
+  });
+}
+
+/**
+ * Update offer end date
+ */
+export function useUpdateOfferEndDate() {
+  const queryClient = useQueryClient();
+  const api = useApi();
+
+  return useMutation({
+    mutationFn: async ({ id, endDate }: { id: string; endDate?: string }) => {
+      const response = await api.offers.endDateUpdate({ id }, { endDate });
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      // End date only affects offer display
+      queryClient.invalidateQueries({ queryKey: ["offers", variables.id] });
+      queryClient.invalidateQueries({
+        queryKey: ["offers", variables.id, "details"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["offers"],
+        exact: false,
+        refetchType: "active",
+      });
+      toast.success("Sluttdato oppdatert");
+    },
+    onError: (error: Error) => {
+      log.error("Failed to update end date", error as Error);
+      toast.error("Kunne ikke oppdatere sluttdato");
+    },
+  });
+}
+
+/**
+ * Update offer sent date
+ */
+export function useUpdateOfferSentDate() {
+  const queryClient = useQueryClient();
+  const api = useApi();
+
+  return useMutation({
+    mutationFn: async ({ id, sentDate }: { id: string; sentDate?: string }) => {
+      const response = await api.offers.sentDateUpdate({ id }, { sentDate });
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      // Sent date only affects offer display
+      queryClient.invalidateQueries({ queryKey: ["offers", variables.id] });
+      queryClient.invalidateQueries({
+        queryKey: ["offers", variables.id, "details"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["offers"],
+        exact: false,
+        refetchType: "active",
+      });
+      toast.success("Sendt dato oppdatert");
+    },
+    onError: (error: Error) => {
+      log.error("Failed to update sent date", error as Error);
+      toast.error("Kunne ikke oppdatere sendt dato");
     },
   });
 }
@@ -753,18 +799,21 @@ export function useUpdateOfferExternalReference() {
       return response.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["offers"] });
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      // External reference only affects offer display
       queryClient.invalidateQueries({ queryKey: ["offers", variables.id] });
+      queryClient.invalidateQueries({
+        queryKey: ["offers", variables.id, "details"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["offers"],
+        exact: false,
+        refetchType: "active",
+      });
       toast.success("Ekstern referanse oppdatert");
     },
-    onError: (error: any) => {
-      console.error("Failed to update external reference:", error);
-      if (
-        error.status === 409 ||
-        error.response?.status === 409 ||
-        error.statusCode === 409
-      ) {
+    onError: (error: Error) => {
+      log.error("Failed to update external reference", error as Error);
+      if (getHttpErrorStatus(error) === 409) {
         toast.error("Denne referansen er allerede i bruk for denne bedriften.");
       } else {
         toast.error("Kunne ikke oppdatere ekstern referanse");
@@ -799,7 +848,7 @@ export function useUpdateOfferCustomer() {
       toast.success("Kunde oppdatert");
     },
     onError: (error: Error) => {
-      console.error("Failed to update customer:", error);
+      log.error("Failed to update customer", error as Error);
       toast.error("Kunne ikke oppdatere kunde");
     },
   });
@@ -833,34 +882,9 @@ export function useUpdateCustomerHasWonOffer() {
       toast.success("Kunde er merket som vinner for prosjektet");
     },
     onError: (error: Error) => {
-      console.error("Failed to update customer won status:", error);
+      log.error("Failed to update customer won status", error as Error);
       toast.error("Kunne ikke oppdatere vinner-status");
     },
-  });
-}
-
-/**
- * Fetch next offer number for a company
- */
-export function useOfferNextNumber(companyId?: string) {
-  const api = useApi();
-  const { isAuthenticated } = useAuth();
-
-  return useQuery({
-    queryKey: ["offers", "next-number", companyId],
-    queryFn: async () => {
-      if (!companyId) return null;
-
-      const response = await api.offers.http.request({
-        path: `/offers/next-number`,
-        method: "GET",
-        query: { companyId },
-        secure: true,
-        type: ContentType.Json,
-      });
-      return response.data as string;
-    },
-    enabled: !!companyId && isAuthenticated,
   });
 }
 
@@ -883,7 +907,7 @@ export function useAcceptOrder() {
       toast.success("Tilbud akseptert som ordre");
     },
     onError: (error: Error) => {
-      console.error("Failed to accept order:", error);
+      log.error("Failed to accept order", error as Error);
       toast.error("Kunne ikke akseptere som ordre");
     },
   });
@@ -907,7 +931,7 @@ export function useCompleteOffer() {
       toast.success("Ordre markert som ferdig");
     },
     onError: (error: Error) => {
-      console.error("Failed to complete offer:", error);
+      log.error("Failed to complete offer", error as Error);
       toast.error("Kunne ikke markere som ferdig");
     },
   });
@@ -953,7 +977,7 @@ export function useUpdateOfferHealth() {
       toast.success("Helsestatus oppdatert");
     },
     onError: (error: Error) => {
-      console.error("Failed to update health:", error);
+      log.error("Failed to update health", error as Error);
       toast.error("Kunne ikke oppdatere helsestatus");
     },
   });
@@ -978,7 +1002,7 @@ export function useUpdateOfferSpent() {
       toast.success("Kostnader oppdatert");
     },
     onError: (error: Error) => {
-      console.error("Failed to update spent:", error);
+      log.error("Failed to update spent", error as Error);
       toast.error("Kunne ikke oppdatere kostnader");
     },
   });
@@ -1003,7 +1027,7 @@ export function useUpdateOfferInvoiced() {
       toast.success("Fakturert beløp oppdatert");
     },
     onError: (error: Error) => {
-      console.error("Failed to update invoiced:", error);
+      log.error("Failed to update invoiced", error as Error);
       toast.error("Kunne ikke oppdatere fakturert beløp");
     },
   });
@@ -1033,8 +1057,39 @@ export function useReopenOffer() {
       toast.success("Ordre gjenåpnet");
     },
     onError: (error: Error) => {
-      console.error("Failed to reopen offer:", error);
+      log.error("Failed to reopen offer", error as Error);
       toast.error("Kunne ikke gjenåpne ordre");
+    },
+  });
+}
+
+/**
+ * Revert offer from order phase back to sent phase
+ */
+export function useRevertToSent() {
+  const queryClient = useQueryClient();
+  const api = useApi();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const response = await api.offers.http.request({
+        path: `/offers/${id}/revert-to-sent`,
+        method: "POST",
+        secure: true,
+        type: ContentType.Json,
+      });
+      return response.data;
+    },
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: ["offers"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["offers", id] });
+      queryClient.invalidateQueries({ queryKey: ["offers", id, "details"] });
+      toast.success("Tilbudet er satt tilbake til sendt");
+    },
+    onError: (error: Error) => {
+      log.error("Failed to revert to sent", error as Error);
+      toast.error("Kunne ikke sette tilbudet tilbake til sendt");
     },
   });
 }

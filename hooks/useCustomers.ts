@@ -12,6 +12,10 @@ import { useApi } from "@/lib/api/api-provider";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useCompanyStore } from "@/store/company-store";
+import { MAX_PAGE_SIZE, QUERY_STALE_TIME_DEFAULT } from "@/lib/constants";
+import { createLogger } from "@/lib/logging";
+
+const log = createLogger("useCustomers");
 import type {
   DomainCreateCustomerRequest,
   DomainUpdateCustomerRequest,
@@ -54,11 +58,13 @@ export function useAllCustomers(options?: { enabled?: boolean }) {
     queryKey: ["customers", "all", selectedCompanyId],
     queryFn: async () => {
       // Fetch with large page size to get all
-      const response = await api.customers.customersList({ pageSize: 1000 });
+      const response = await api.customers.customersList({
+        pageSize: MAX_PAGE_SIZE,
+      });
       return response.data?.data ?? [];
     },
     enabled: isAuthenticated && (options?.enabled ?? true),
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    staleTime: QUERY_STALE_TIME_DEFAULT,
   });
 }
 
@@ -183,7 +189,7 @@ export function useCreateCustomer() {
       toast.success("Kunde opprettet");
     },
     onError: (error) => {
-      console.error("Failed to create customer:", error);
+      log.error("Failed to create customer", error as Error);
       const err = error as { status?: number; response?: { status?: number } };
       if (err.status === 409 || err.response?.status === 409) {
         toast.error("Kunden eksisterer allerede i dette selskapet");
@@ -220,7 +226,7 @@ export function useUpdateCustomer() {
       toast.success("Kunde oppdatert");
     },
     onError: (error: Error) => {
-      console.error("Failed to update customer:", error);
+      log.error("Failed to update customer", error as Error);
       toast.error("Kunne ikke oppdatere kunde");
     },
   });
@@ -254,7 +260,7 @@ export function useUpdateCustomerContactInfo() {
       toast.success("Kontaktinfo oppdatert");
     },
     onError: (error: Error) => {
-      console.error("Failed to update contact info:", error);
+      log.error("Failed to update contact info", error as Error);
       toast.error("Kunne ikke oppdatere kontaktinfo");
     },
   });
@@ -292,7 +298,7 @@ export function useCreateCustomerContact() {
       toast.success("Kontaktperson opprettet");
     },
     onError: (error) => {
-      console.error("Failed to create contact:", error);
+      log.error("Failed to create contact", error as Error);
       toast.error("Kunne ikke opprette kontaktperson");
     },
   });
@@ -329,7 +335,7 @@ export function useUpdateCustomerAddress() {
       toast.success("Adresse oppdatert");
     },
     onError: (error: Error) => {
-      console.error("Failed to update address:", error);
+      log.error("Failed to update address", error as Error);
       toast.error("Kunne ikke oppdatere adresse");
     },
   });
@@ -361,7 +367,7 @@ export function useUpdateCustomerPostalCode() {
       toast.success("Postnummer oppdatert");
     },
     onError: (error: Error) => {
-      console.error("Failed to update postal code:", error);
+      log.error("Failed to update postal code", error as Error);
       toast.error("Kunne ikke oppdatere postnummer");
     },
   });
@@ -393,7 +399,7 @@ export function useUpdateCustomerCity() {
       toast.success("Sted oppdatert");
     },
     onError: (error: Error) => {
-      console.error("Failed to update city:", error);
+      log.error("Failed to update city", error as Error);
       toast.error("Kunne ikke oppdatere sted");
     },
   });
@@ -415,8 +421,41 @@ export function useDeleteCustomer() {
       toast.success("Kunde slettet");
     },
     onError: (error: Error) => {
-      console.error("Failed to delete customer:", error);
+      log.error("Failed to delete customer", error as Error);
       toast.error("Kunne ikke slette kunde");
+    },
+  });
+}
+
+/**
+ * Delete a customer contact
+ */
+export function useDeleteCustomerContact() {
+  const queryClient = useQueryClient();
+  const api = useApi();
+
+  return useMutation({
+    mutationFn: async ({
+      customerId: _customerId,
+      contactId,
+    }: {
+      customerId: string;
+      contactId: string;
+    }) => {
+      await api.contacts.contactsDelete({ id: contactId });
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["customers", variables.customerId, "contacts"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["customers", variables.customerId, "details"],
+      });
+      toast.success("Kontaktperson slettet");
+    },
+    onError: (error: Error) => {
+      log.error("Failed to delete contact", error as Error);
+      toast.error("Kunne ikke slette kontaktperson");
     },
   });
 }

@@ -286,6 +286,42 @@ export interface ApiError {
   code: number;
 }
 
+/**
+ * HTTP Error response from API client.
+ * Covers different error shapes from fetch/axios/generated client.
+ */
+export interface HttpErrorResponse extends Error {
+  /** Direct HTTP status code */
+  status?: number;
+  /** Nested response object (axios-style) */
+  response?: {
+    status?: number;
+    data?: unknown;
+  };
+  /** Alternative status code property */
+  statusCode?: number;
+}
+
+/**
+ * Type guard to check if an error is an HTTP error response
+ */
+export function isHttpError(error: unknown): error is HttpErrorResponse {
+  return (
+    error instanceof Error &&
+    (typeof (error as HttpErrorResponse).status === "number" ||
+      typeof (error as HttpErrorResponse).response?.status === "number" ||
+      typeof (error as HttpErrorResponse).statusCode === "number")
+  );
+}
+
+/**
+ * Get HTTP status code from various error shapes
+ */
+export function getHttpErrorStatus(error: unknown): number | undefined {
+  if (!isHttpError(error)) return undefined;
+  return error.status ?? error.response?.status ?? error.statusCode;
+}
+
 // Pagination parameters
 export interface PaginationParams {
   page?: number;
@@ -322,8 +358,8 @@ export interface DashboardMetrics {
   orderReserve: number;
   totalInvoiced: number;
   totalValue: number;
-  recentOffers: any[];
-  recentOrders: any[];
-  recentActivities: any[];
-  topCustomers: any[];
+  recentOffers: import("@/lib/.generated/data-contracts").DomainOfferDTO[];
+  recentOrders: import("@/lib/.generated/data-contracts").DomainOfferDTO[];
+  recentActivities: import("@/lib/.generated/data-contracts").DomainActivityDTO[];
+  topCustomers: import("@/lib/.generated/data-contracts").DomainTopCustomerDTO[];
 }

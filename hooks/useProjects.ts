@@ -12,6 +12,7 @@ import { useApi } from "@/lib/api/api-provider";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useCompanyStore } from "@/store/company-store";
+import { MAX_PAGE_SIZE, QUERY_STALE_TIME_DEFAULT } from "@/lib/constants";
 import type {
   DomainUpdateProjectNameRequest,
   DomainUpdateProjectDescriptionRequest,
@@ -56,11 +57,13 @@ export function useAllProjects() {
     queryKey: ["projects", "all", selectedCompanyId],
     queryFn: async () => {
       // Fetch with large page size to get all
-      const response = await api.projects.projectsList({ pageSize: 1000 });
+      const response = await api.projects.projectsList({
+        pageSize: MAX_PAGE_SIZE,
+      });
       return response.data?.data ?? [];
     },
     enabled: isAuthenticated,
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    staleTime: QUERY_STALE_TIME_DEFAULT,
   });
 }
 
