@@ -25,6 +25,19 @@ export type {
   DomainDashboardMetrics,
   DomainPaginatedResponse,
 
+  // Supplier types
+  DomainSupplierDTO as Supplier,
+  DomainSupplierWithDetailsDTO as SupplierWithDetails,
+  DomainSupplierContactDTO as SupplierContact,
+  DomainOfferSupplierDTO as OfferSupplier,
+  DomainSupplierStatsDTO as SupplierStats,
+  DomainCreateSupplierRequest as CreateSupplierRequest,
+  DomainUpdateSupplierRequest as UpdateSupplierRequest,
+  DomainUpdateSupplierStatusRequest as UpdateSupplierStatusRequest,
+  DomainUpdateSupplierCategoryRequest as UpdateSupplierCategoryRequest,
+  DomainUpdateSupplierNotesRequest as UpdateSupplierNotesRequest,
+  DomainUpdateSupplierPaymentTermsRequest as UpdateSupplierPaymentTermsRequest,
+
   // Request types
   DomainCreateCustomerRequest as CreateCustomerRequest,
   DomainCreateContactRequest as CreateContactRequest,
@@ -81,6 +94,8 @@ export {
   DomainActivityStatus,
   DomainContactType,
   DomainLossReasonCategory,
+  DomainSupplierStatus,
+  DomainOfferSupplierStatus,
 } from "@/lib/.generated/data-contracts";
 
 // Company type (static, not from API)
@@ -195,6 +210,10 @@ export type ContactType =
   | "influencer"
   | "other";
 
+export type SupplierStatus = "active" | "inactive" | "pending" | "blacklisted";
+
+export type OfferSupplierStatusType = "active" | "done";
+
 export type NotificationType =
   | "deal_update"
   | "offer_update"
@@ -267,6 +286,34 @@ export const LOSS_REASON_LABELS: Record<LossReasonCategory, string> = {
   competitor: "Konkurrent",
   requirements: "Krav",
   other: "Annet",
+};
+
+// Supplier status labels (Norwegian)
+export const SUPPLIER_STATUS_LABELS: Record<SupplierStatus, string> = {
+  active: "Aktiv",
+  inactive: "Inaktiv",
+  pending: "Avventer",
+  blacklisted: "Svartelistet",
+};
+
+// Supplier status badge variants (for shadcn/ui Badge component)
+export const SUPPLIER_STATUS_VARIANTS: Record<
+  SupplierStatus,
+  "default" | "secondary" | "destructive" | "outline"
+> = {
+  active: "default",
+  inactive: "secondary",
+  pending: "outline",
+  blacklisted: "destructive",
+};
+
+// Offer-Supplier status labels
+export const OFFER_SUPPLIER_STATUS_LABELS: Record<
+  OfferSupplierStatusType,
+  string
+> = {
+  active: "Aktiv",
+  done: "Ferdig",
 };
 
 // Default probability values for deal stages

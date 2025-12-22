@@ -15,7 +15,10 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Loader2, Search, Building2, MapPin } from "lucide-react";
-import type { DomainCreateCustomerRequest } from "@/lib/.generated/data-contracts";
+import {
+  type DomainCreateSupplierRequest,
+  DomainSupplierStatus,
+} from "@/lib/.generated/data-contracts";
 import {
   Command,
   CommandEmpty,
@@ -31,7 +34,7 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
-const customerSchema = z.object({
+const supplierSchema = z.object({
   name: z.string().min(2, "Navnet må være minst 2 tegn"),
   orgNumber: z
     .string()
@@ -41,6 +44,11 @@ const customerSchema = z.object({
     .optional(),
   email: z.string().email("Ugyldig e-postadresse").optional().or(z.literal("")),
   phone: z.string().optional(),
+  address: z.string().optional(),
+  city: z.string().optional(),
+  postalCode: z.string().optional(),
+  country: z.string().default("Norge"),
+  category: z.string().optional(),
   website: z
     .string()
     .optional()
@@ -54,16 +62,12 @@ const customerSchema = z.object({
         message: "Ugyldig nettadresse",
       }
     ),
-  address: z.string().optional(),
-  city: z.string().optional(),
-  postalCode: z.string().optional(),
-  country: z.string().default("Norge"),
 });
 
-type CustomerFormValues = z.infer<typeof customerSchema>;
+type SupplierFormValues = z.infer<typeof supplierSchema>;
 
-interface CustomerFormProps {
-  onSubmit: (data: DomainCreateCustomerRequest) => Promise<void>;
+interface SupplierFormProps {
+  onSubmit: (data: DomainCreateSupplierRequest) => Promise<void>;
   isLoading: boolean;
   autoFocusSearch?: boolean;
 }
@@ -86,13 +90,17 @@ interface BrregEnhet {
     poststed?: string;
     land?: string;
   };
+  naeringskode1?: {
+    kode: string;
+    beskrivelse: string;
+  };
 }
 
-export function CustomerForm({
+export function SupplierForm({
   onSubmit,
   isLoading,
   autoFocusSearch = false,
-}: CustomerFormProps) {
+}: SupplierFormProps) {
   const [openCombobox, setOpenCombobox] = useState(false);
   const [searchResults, setSearchResults] = useState<BrregEnhet[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -108,27 +116,33 @@ export function CustomerForm({
     }
   }, [autoFocusSearch]);
 
-  const form = useForm<CustomerFormValues>({
-    resolver: zodResolver(customerSchema),
+  const form = useForm<SupplierFormValues>({
+    resolver: zodResolver(supplierSchema),
     defaultValues: {
       name: "",
       orgNumber: "",
       email: "",
       phone: "",
-      website: "",
       address: "",
       city: "",
       postalCode: "",
       country: "Norge",
+      category: "",
+      website: "",
     },
-    mode: "onChange", // Enable real-time validation for styling
+    mode: "onChange",
   });
 
-  const handleSubmit = async (values: CustomerFormValues) => {
-    await onSubmit(values);
+  const handleSubmit = async (values: SupplierFormValues) => {
+    // Always set status to "active" on creation
+    const submitData: DomainCreateSupplierRequest = {
+      ...values,
+      status: DomainSupplierStatus.SupplierStatusActive,
+    };
+    await onSubmit(submitData);
     form.reset();
-    setIsBrregSelected(false); // Reset selection
-    setOpenCombobox(false); // Close combobox if open
+    setIsBrregSelected(false);
+    setOpenCombobox(false);
   };
 
   // Debounce search
@@ -187,6 +201,13 @@ export function CustomerForm({
       form.setValue("email", company.epostadresse, { shouldValidate: true });
     }
 
+    // Set category from industry (naeringskode)
+    if (company.naeringskode1?.beskrivelse) {
+      form.setValue("category", company.naeringskode1.beskrivelse, {
+        shouldValidate: true,
+      });
+    }
+
     const address = company.forretningsadresse || company.postadresse;
 
     if (address) {
@@ -209,32 +230,20 @@ export function CustomerForm({
       }
     }
     setOpenCombobox(false);
-    setIsBrregSelected(true); // Lock fields
-    setSearchValue(""); // Clear search
+    setIsBrregSelected(true);
+    setSearchValue("");
   };
 
-  // Helper to determine input border color
-  // fieldName: keyof CustomerFormValues
-  // We need to cast to any because accessing formState for dynamic fields is tricky in mapped renders,
-  // but here we use it directly in render props.
-  // Custom styling:
-  // - Error: border-destructive (default usually, but we ensure it)
-  // - Valid (dirty & no error): green border
   const getInputClass = (
-    fieldName: keyof CustomerFormValues,
+    fieldName: keyof SupplierFormValues,
     hasError: boolean
   ) => {
-    // If we selected from Brreg, these fields are filled but might not be marked 'dirty' by user typing,
-    // so we also check if they have a value.
     const hasValue = !!form.getValues(fieldName);
-
-    // Valid if: has value AND no error
     const isValid = hasValue && !hasError;
 
     return cn(
       isValid &&
         "border-green-500 ring-green-500 focus-visible:ring-green-500 dark:border-green-400 dark:ring-green-400 dark:focus-visible:ring-green-400"
-      // Additional stylistic tweaks if needed
     );
   };
 
@@ -335,11 +344,11 @@ export function CustomerForm({
             render={({ field, fieldState }) => (
               <FormItem>
                 <FormLabel>
-                  Kundenavn <span className="text-destructive">*</span>
+                  Leverandørnavn <span className="text-destructive">*</span>
                 </FormLabel>
                 <FormControl>
                   <Input
-                    placeholder="Straye AS"
+                    placeholder="Leverandør AS"
                     {...field}
                     disabled={isBrregSelected}
                     className={getInputClass("name", !!fieldState.error)}
@@ -372,15 +381,53 @@ export function CustomerForm({
 
             <FormField
               control={form.control}
+              name="category"
+              render={({ field, fieldState }) => (
+                <FormItem>
+                  <FormLabel>Kategori</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="f.eks. Taktekking, Elektro, VVS"
+                      {...field}
+                      className={getInputClass("category", !!fieldState.error)}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <FormField
+              control={form.control}
               name="email"
               render={({ field, fieldState }) => (
                 <FormItem>
                   <FormLabel>E-post</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="post@firma.no"
+                      placeholder="post@leverandor.no"
                       {...field}
                       className={getInputClass("email", !!fieldState.error)}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="phone"
+              render={({ field, fieldState }) => (
+                <FormItem>
+                  <FormLabel>Telefon</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="12345678"
+                      {...field}
+                      className={getInputClass("phone", !!fieldState.error)}
                     />
                   </FormControl>
                   <FormMessage />
@@ -391,31 +438,13 @@ export function CustomerForm({
 
           <FormField
             control={form.control}
-            name="phone"
-            render={({ field, fieldState }) => (
-              <FormItem>
-                <FormLabel>Telefon</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="12345678"
-                    {...field}
-                    className={getInputClass("phone", !!fieldState.error)}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
             name="website"
             render={({ field, fieldState }) => (
               <FormItem>
                 <FormLabel>Nettside</FormLabel>
                 <FormControl>
                   <Input
-                    placeholder="https://www.firma.no"
+                    placeholder="https://www.leverandor.no"
                     {...field}
                     className={getInputClass("website", !!fieldState.error)}
                   />
@@ -493,7 +522,7 @@ export function CustomerForm({
               className="w-full sm:w-auto"
             >
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Opprett kunde
+              Opprett leverandør
             </Button>
           </div>
         </form>

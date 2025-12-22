@@ -13,12 +13,11 @@ import {
   FileText,
   Users,
   FolderKanban,
-  Settings,
-  Bell,
   ChevronLeft,
   ChevronRight,
   FileQuestion,
   Calendar,
+  Truck,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import {
@@ -56,19 +55,14 @@ const navigation = [
     icon: Users,
   },
   {
-    name: "Varsler",
-    href: "/notifications",
-    icon: Bell,
+    name: "Leverandører",
+    href: "/suppliers",
+    icon: Truck,
   },
   {
     name: "Aktivitetslogg",
     href: "/activities",
     icon: Calendar,
-  },
-  {
-    name: "Innstillinger",
-    href: "/settings",
-    icon: Settings,
   },
 ];
 

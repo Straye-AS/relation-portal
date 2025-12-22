@@ -428,6 +428,38 @@ export function useDeleteCustomer() {
 }
 
 /**
+ * Update customer website
+ */
+export function useUpdateCustomerWebsite() {
+  const queryClient = useQueryClient();
+  const api = useApi();
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: {
+        website?: string;
+      };
+    }) => {
+      const response = await api.customers.websiteUpdate({ id }, data);
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["customers"] });
+      queryClient.invalidateQueries({ queryKey: ["customers", variables.id] });
+      toast.success("Nettside oppdatert");
+    },
+    onError: (error: Error) => {
+      log.error("Failed to update website", error as Error);
+      toast.error("Kunne ikke oppdatere nettside");
+    },
+  });
+}
+
+/**
  * Delete a customer contact
  */
 export function useDeleteCustomerContact() {

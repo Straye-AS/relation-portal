@@ -9,10 +9,9 @@ import {
   useUpdateCustomerAddress,
   useUpdateCustomerPostalCode,
   useUpdateCustomerCity,
+  useUpdateCustomerWebsite,
   useDeleteCustomerContact,
 } from "@/hooks/useCustomers";
-import { InlineEdit } from "@/components/ui/inline-edit";
-import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -26,15 +25,16 @@ import {
 import { CardSkeleton } from "@/components/ui/card-skeleton";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   Mail,
   Phone,
-  MapPin,
   Building2,
   Users,
   Banknote,
   Trash2,
+  MapPin,
 } from "lucide-react";
 import { format } from "date-fns";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -44,6 +44,9 @@ import { CustomerOffersTab } from "@/components/customers/customer-offers-tab";
 import { CustomerDocumentsTab } from "@/components/customers/customer-documents-tab";
 import { AddCustomerContactModal } from "@/components/customers/add-customer-contact-modal";
 import { DeleteConfirmationModal } from "@/components/ui/delete-confirmation-modal";
+import { ContactInfoCard } from "@/components/shared/contact-info-card";
+import { SyncWithBrregButton } from "@/components/shared/sync-with-brreg-button";
+import type { BrregMappedData } from "@/lib/brreg";
 
 // Local interface for contact to satisfy TS and expected usage
 interface CustomerContact {
@@ -60,7 +63,18 @@ export default function CustomerDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const resolvedParams = use(params);
-  const [activeTab, setActiveTab] = useState("overview");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTab] = useState(
+    searchParams.get("tab") || "overview"
+  );
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    const newParams = new URLSearchParams(searchParams.toString());
+    newParams.set("tab", value);
+    router.replace(`?${newParams.toString()}`, { scroll: false });
+  };
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [contactToDelete, setContactToDelete] =
     useState<CustomerContact | null>(null);
@@ -74,6 +88,7 @@ export default function CustomerDetailPage({
   const updateAddress = useUpdateCustomerAddress();
   const updatePostalCode = useUpdateCustomerPostalCode();
   const updateCity = useUpdateCustomerCity();
+  const updateWebsite = useUpdateCustomerWebsite();
   const deleteContact = useDeleteCustomerContact();
 
   // Map contactsData to local interface properly
@@ -206,6 +221,35 @@ export default function CustomerDetailPage({
                 </div>
               </div>
             </div>
+            <SyncWithBrregButton
+              type="customer"
+              orgNumber={customer.orgNumber}
+              currentData={{
+                name: customer.name,
+                email: customer.email,
+                phone: customer.phone,
+                website: (customer as any).website,
+                address: customer.address,
+                postalCode: customer.postalCode,
+                city: customer.city,
+                country: customer.country,
+              }}
+              onSync={async (data: BrregMappedData) => {
+                await updateCustomer.mutateAsync({
+                  id: customer.id!,
+                  data: {
+                    name: customer.name || "",
+                    country: customer.country || "Norge",
+                    email: data.email,
+                    phone: data.phone,
+                    address: data.address,
+                    postalCode: data.postalCode,
+                    city: data.city,
+                    website: data.website,
+                  },
+                });
+              }}
+            />
           </div>
         </div>
 
@@ -214,7 +258,7 @@ export default function CustomerDetailPage({
             {/* Info Grid */}
             <div className="grid gap-6 md:grid-cols-3">
               {/* Main Info Card */}
-              <Card className="md:col-span-2">
+              <Card className="hidden md:col-span-2">
                 <CardHeader>
                   <CardTitle>Nøkkeltall</CardTitle>
                   <CardDescription>
@@ -303,133 +347,6 @@ export default function CustomerDetailPage({
                     </div>
                   </div>
                 </CardContent>
-              </Card>
-
-              {/* Contact Info Card */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Kontaktinfo</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-muted">
-                      <Mail className="h-4 w-4 text-foreground" />
-                    </div>
-                    <div className="flex min-w-0 flex-1 flex-col gap-2">
-                      <p className="text-sm font-medium leading-none">E-post</p>
-                      <InlineEdit
-                        value={customer.email || ""}
-                        className="-ml-1 h-auto p-0 px-1 text-sm text-muted-foreground hover:bg-transparent"
-                        type="email"
-                        placeholder="Legg til e-post"
-                        onSave={async (value) => {
-                          const email = String(value);
-                          if (
-                            email &&
-                            !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-                          ) {
-                            toast.error("Ugyldig e-postadresse");
-                            throw new Error("Invalid email");
-                          }
-                          await updateCustomer.mutateAsync({
-                            id: customer.id!,
-                            data: {
-                              email,
-                              name: customer.name ?? "",
-                              country: customer.country ?? "Norge",
-                            },
-                          });
-                        }}
-                      />
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-muted">
-                      <Phone className="h-4 w-4 text-foreground" />
-                    </div>
-                    <div className="flex min-w-0 flex-1 flex-col gap-2">
-                      <p className="text-sm font-medium leading-none">
-                        Telefon
-                      </p>
-                      <InlineEdit
-                        value={customer.phone || ""}
-                        className="-ml-1 h-auto p-0 px-1 text-sm text-muted-foreground hover:bg-transparent"
-                        type="tel"
-                        placeholder="Legg til telefon"
-                        onSave={async (value) => {
-                          const phone = String(value);
-                          // Simple validation: allow numbers, spaces, +, -, (, )
-                          if (phone && !/^[\d\s+\-()]+$/.test(phone)) {
-                            toast.error("Ugyldig telefonnummer");
-                            throw new Error("Invalid phone");
-                          }
-                          await updateCustomer.mutateAsync({
-                            id: customer.id!,
-                            data: {
-                              phone,
-                              name: customer.name ?? "",
-                              country: customer.country ?? "Norge",
-                            },
-                          });
-                        }}
-                      />
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-muted">
-                      <MapPin className="h-4 w-4 text-foreground" />
-                    </div>
-                    <div className="flex min-w-0 flex-1 flex-col gap-2">
-                      <p className="text-sm font-medium leading-none">
-                        Adresse
-                      </p>
-                      <div className="flex flex-col gap-1 text-sm text-muted-foreground">
-                        <InlineEdit
-                          value={customer.address || ""}
-                          className="-ml-1 h-auto p-0 px-1 hover:bg-transparent"
-                          placeholder="Gateadresse"
-                          onSave={async (value) => {
-                            await updateAddress.mutateAsync({
-                              id: customer.id!,
-                              data: {
-                                address: String(value),
-                              },
-                            });
-                          }}
-                        />
-                        <div className="flex gap-2">
-                          <InlineEdit
-                            value={customer.postalCode || ""}
-                            className="-ml-1 h-auto p-0 px-1 hover:bg-transparent"
-                            editClassName="w-48"
-                            placeholder="Postnr"
-                            onSave={async (value) => {
-                              await updatePostalCode.mutateAsync({
-                                id: customer.id!,
-                                data: {
-                                  postalCode: String(value),
-                                },
-                              });
-                            }}
-                          />
-                          <InlineEdit
-                            value={customer.city || ""}
-                            className="-ml-1 h-auto flex-1 p-0 px-1 hover:bg-transparent"
-                            placeholder="Sted"
-                            onSave={async (value) => {
-                              await updateCity.mutateAsync({
-                                id: customer.id!,
-                                data: {
-                                  city: String(value),
-                                },
-                              });
-                            }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
                 <CardFooter className="flex flex-col gap-2 border-t bg-muted/30 px-6 py-4 text-xs text-muted-foreground">
                   <div className="flex w-full items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -475,13 +392,74 @@ export default function CustomerDetailPage({
                   </div>
                 </CardFooter>
               </Card>
+
+              {/* Contact Info Card */}
+              <div className="col-span-3">
+                <ContactInfoCard
+                  email={customer.email}
+                  phone={customer.phone}
+                  website={(customer as any).website}
+                  address={customer.address}
+                  postalCode={customer.postalCode}
+                  city={customer.city}
+                  country={customer.country}
+                  createdAt={customer.createdAt}
+                  createdByName={customer.createdByName}
+                  updatedAt={customer.updatedAt}
+                  updatedByName={customer.updatedByName}
+                  onUpdateEmail={async (email) => {
+                    await updateCustomer.mutateAsync({
+                      id: customer.id!,
+                      data: {
+                        email,
+                        name: customer.name ?? "",
+                        country: customer.country ?? "Norge",
+                      },
+                    });
+                  }}
+                  onUpdatePhone={async (phone) => {
+                    await updateCustomer.mutateAsync({
+                      id: customer.id!,
+                      data: {
+                        phone,
+                        name: customer.name ?? "",
+                        country: customer.country ?? "Norge",
+                      },
+                    });
+                  }}
+                  onUpdateWebsite={async (website) => {
+                    await updateWebsite.mutateAsync({
+                      id: customer.id!,
+                      data: { website },
+                    });
+                  }}
+                  onUpdateAddress={async (address) => {
+                    await updateAddress.mutateAsync({
+                      id: customer.id!,
+                      data: { address },
+                    });
+                  }}
+                  onUpdatePostalCode={async (postalCode) => {
+                    await updatePostalCode.mutateAsync({
+                      id: customer.id!,
+                      data: { postalCode },
+                    });
+                  }}
+                  onUpdateCity={async (city) => {
+                    await updateCity.mutateAsync({
+                      id: customer.id!,
+                      data: { city },
+                    });
+                  }}
+                />
+              </div>
             </div>
 
             {/* Tabs Section */}
             <Tabs
               value={activeTab}
               className="space-y-4"
-              onValueChange={setActiveTab}
+              onValueChange={handleTabChange}
             >
               <TabsList>
                 <TabsTrigger value="overview">Oversikt</TabsTrigger>
@@ -537,7 +515,7 @@ export default function CustomerDetailPage({
                               <div
                                 key={contact.id}
                                 className="flex cursor-pointer items-center justify-between rounded-md p-2 hover:bg-muted/50"
-                                onClick={() => setActiveTab("contacts")}
+                                onClick={() => handleTabChange("contacts")}
                               >
                                 <div className="flex items-center gap-3">
                                   <Avatar className="h-9 w-9">
@@ -677,23 +655,15 @@ export default function CustomerDetailPage({
                               {contact.email && (
                                 <div className="flex items-center gap-2">
                                   <Mail className="h-4 w-4 text-muted-foreground" />
-                                  <a
-                                    href={`mailto:${contact.email}`}
-                                    className="truncate hover:underline"
-                                  >
+                                  <span className="truncate">
                                     {contact.email}
-                                  </a>
+                                  </span>
                                 </div>
                               )}
                               {contact.phone && (
                                 <div className="flex items-center gap-2">
                                   <Phone className="h-4 w-4 text-muted-foreground" />
-                                  <a
-                                    href={`tel:${contact.phone}`}
-                                    className="hover:underline"
-                                  >
-                                    {contact.phone}
-                                  </a>
+                                  <span>{contact.phone}</span>
                                 </div>
                               )}
                             </CardContent>

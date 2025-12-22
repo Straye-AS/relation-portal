@@ -64,7 +64,7 @@ import { OfferStatusBadge } from "@/components/offers/offer-status-badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   Link as LinkIcon,
@@ -73,6 +73,7 @@ import {
   ChevronDown,
   Trophy,
   XCircle,
+  X,
   Send,
   Pencil,
   Undo2,
@@ -136,6 +137,10 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { OfferNotesCard, SendOfferDialog } from "@/components/offers/detail";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { OfferInformationTab } from "@/components/offers/tabs/offer-information-tab";
+import { OfferEconomyTab } from "@/components/offers/tabs/offer-economy-tab";
+import { OfferSuppliersTab } from "@/components/offers/tabs/offer-suppliers-tab";
 
 export default function OfferDetailPage({
   params,
@@ -151,6 +156,20 @@ export default function OfferDetailPage({
   // Modal states - declared early so they can be used in query hooks
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
+
+  const searchParams = useSearchParams();
+  // Tab state
+  const [activeTab, setActiveTab] = useState(
+    searchParams.get("tab") || "overview"
+  );
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    const newParams = new URLSearchParams(searchParams.toString());
+    newParams.set("tab", value);
+    // Use replace to update URL without adding to history stack, keep scroll position
+    router.replace(`?${newParams.toString()}`, { scroll: false });
+  };
 
   // Customer search and pagination state
   const [customerSearch, setCustomerSearch] = useState("");
@@ -942,9 +961,8 @@ export default function OfferDetailPage({
                 Tilbudet er tapt
               </AlertTitle>
               <AlertDescription className="ml-2 text-amber-800 dark:text-amber-200">
-                Dette tilbudet er i en tapt tilstand, og kan derfor ikke
-                oppdateres. Dette er for å bevare historikken. Du kan fortsatt
-                oppdatere beskrivelsen.
+                Dette tilbudet er i en tapt tilstand, og mange felter kan derfor
+                ikke oppdateres. Dette er for å bevare historikken.
               </AlertDescription>
             </Alert>
           )}
@@ -961,527 +979,999 @@ export default function OfferDetailPage({
               </AlertDescription>
             </Alert>
           )}
-          <div className="w-full space-y-6">
-            {/* Legacy "won" alert removed - new flow uses order/completed phases */}
-            <div className="grid gap-6 md:grid-cols-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Tilbudsinfo</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Kunde</p>
-                    <div className="flex items-center gap-2">
-                      {offer.customerId ? (
-                        <Link
-                          href={`/customers/${offer.customerId}`}
-                          className="font-medium hover:underline"
-                        >
-                          {offer.customerName}
-                        </Link>
-                      ) : (
-                        <span className="font-medium">
-                          {offer.customerName}
-                        </span>
-                      )}
-                      {!isLocked && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6"
-                          onClick={() => setIsCustomerModalOpen(true)}
-                        >
-                          <Pencil className="h-3 w-3" />
-                        </Button>
-                      )}
-                    </div>
 
-                    <Dialog
-                      open={isCustomerModalOpen}
-                      onOpenChange={(open) => {
-                        setIsCustomerModalOpen(open);
-                        if (!open) {
-                          // Reset search and page when closing
-                          setCustomerSearch("");
-                          setCustomerPage(1);
-                        }
-                      }}
-                    >
-                      <DialogContent className="flex max-h-[90vh] w-[95vw] max-w-[95vw] flex-col">
-                        <DialogHeader>
-                          <DialogTitle>Bytt kunde</DialogTitle>
-                          <DialogDescription>
-                            Søk etter og velg kunden som dette tilbudet skal
-                            tilhøre.
-                          </DialogDescription>
-                        </DialogHeader>
-                        <div className="flex flex-1 flex-col space-y-4 overflow-hidden">
-                          <Input
-                            placeholder="Søk etter kunde (navn eller org.nr)..."
-                            value={customerSearch}
-                            onChange={(e) => setCustomerSearch(e.target.value)}
-                            className="focus-visible:border-primary focus-visible:ring-0 focus-visible:ring-offset-0"
-                          />
-                          <div className="flex-1 overflow-auto rounded-md border">
-                            {isLoadingCustomers ? (
-                              <div className="flex items-center justify-center py-12">
-                                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                              </div>
-                            ) : customers.length === 0 ? (
-                              <div className="py-12 text-center text-muted-foreground">
-                                {customerSearch
-                                  ? "Ingen kunder funnet"
-                                  : "Ingen kunder"}
-                              </div>
-                            ) : (
-                              <CustomerListTable
-                                compact={true}
-                                customers={customers}
-                                onCustomerClick={(customer) => {
-                                  updateOfferCustomer.mutate({
-                                    id: offer.id!,
-                                    data: { customerId: customer.id! },
-                                  });
-                                  setIsCustomerModalOpen(false);
-                                }}
-                              />
-                            )}
-                          </div>
-                          {customerTotalPages > 1 && (
-                            <PaginationControls
-                              currentPage={customerPage}
-                              totalPages={customerTotalPages}
-                              onPageChange={setCustomerPage}
-                              pageSize={customerPageSize}
-                              totalCount={customersData?.total ?? 0}
-                              entityName="kunder"
-                            />
-                          )}
-                          <div className="flex justify-start">
-                            <Button
-                              variant="outline"
-                              onClick={() => {
-                                if (offer.customerId) {
-                                  window.open(
-                                    `/customers/${offer.customerId}`,
-                                    "_blank"
-                                  );
-                                }
-                                setIsCustomerModalOpen(false);
-                              }}
-                            >
-                              <LinkIcon className="mr-2 h-4 w-4" />
-                              Gå til kundeside for nåværende kunde
-                            </Button>
-                          </div>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Fase</p>
-                    <OfferStatusBadge
-                      className="mt-1"
-                      phase={offer.phase || "draft"}
-                    />
-                  </div>
+          {/* Tabs Section */}
+          <Tabs
+            value={activeTab}
+            className="w-full space-y-4"
+            onValueChange={handleTabChange}
+          >
+            <div className="sticky top-0 z-10 -mt-2 bg-background pb-2 pt-2">
+              <TabsList>
+                <TabsTrigger value="overview">Oversikt</TabsTrigger>
+                <TabsTrigger value="information">Informasjon</TabsTrigger>
+                <TabsTrigger value="economy">Økonomi</TabsTrigger>
+                <TabsTrigger value="suppliers">Leverandører</TabsTrigger>
+              </TabsList>
+            </div>
 
-                  <div>
-                    <p className="mb-1 text-sm text-muted-foreground">
-                      Ekstern referanse
-                    </p>
-                    <InlineEdit
-                      value={(offer as any).externalReference || ""}
-                      placeholder="Legg til ekstern ref..."
-                      onSave={async (val) => {
-                        await updateExternalReference.mutateAsync({
-                          id: offer.id!,
-                          externalReference: String(val),
-                        });
-                      }}
-                      className="-ml-1 w-full border-transparent p-1 px-1 font-medium hover:border-input hover:bg-transparent"
-                    />
-                  </div>
-
-                  <div>
-                    <p className="mb-1 text-sm text-muted-foreground">
-                      Ansvarlig
-                    </p>
-                    <div className="group flex items-center gap-2">
-                      <div
-                        role="button"
-                        onClick={() => setIsResponsibleModalOpen(true)}
-                        className="-ml-1 cursor-pointer rounded border border-transparent p-1 px-1 font-medium transition-colors hover:border-input hover:bg-transparent"
-                      >
-                        {offer.responsibleUserId ? (
-                          (users || []).find(
-                            (u) => u.id === offer.responsibleUserId
-                          )?.name || "Ukjent bruker"
+            <TabsContent value="overview" className="space-y-6">
+              {/* Legacy "won" alert removed - new flow uses order/completed phases */}
+              <div className="grid gap-6 md:grid-cols-2">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Tilbudsinfo</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Kunde</p>
+                      <div className="flex items-center gap-2">
+                        {offer.customerId ? (
+                          <Link
+                            href={`/customers/${offer.customerId}`}
+                            className="font-medium hover:underline"
+                          >
+                            {offer.customerName}
+                          </Link>
                         ) : (
-                          <span className="italic text-muted-foreground">
-                            Sett Straye ansvarlig
+                          <span className="font-medium">
+                            {offer.customerName}
                           </span>
                         )}
+                        {!isLocked && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={() => setIsCustomerModalOpen(true)}
+                          >
+                            <Pencil className="h-3 w-3" />
+                          </Button>
+                        )}
                       </div>
+
+                      <Dialog
+                        open={isCustomerModalOpen}
+                        onOpenChange={(open) => {
+                          setIsCustomerModalOpen(open);
+                          if (!open) {
+                            // Reset search and page when closing
+                            setCustomerSearch("");
+                            setCustomerPage(1);
+                          }
+                        }}
+                      >
+                        <DialogContent className="flex max-h-[90vh] w-[95vw] max-w-[95vw] flex-col">
+                          <DialogHeader>
+                            <DialogTitle>Bytt kunde</DialogTitle>
+                            <DialogDescription>
+                              Søk etter og velg kunden som dette tilbudet skal
+                              tilhøre.
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="flex flex-1 flex-col space-y-4 overflow-hidden">
+                            <Input
+                              placeholder="Søk etter kunde (navn eller org.nr)..."
+                              value={customerSearch}
+                              onChange={(e) =>
+                                setCustomerSearch(e.target.value)
+                              }
+                              className="focus-visible:border-primary focus-visible:ring-0 focus-visible:ring-offset-0"
+                            />
+                            <div className="flex-1 overflow-auto rounded-md border">
+                              {isLoadingCustomers ? (
+                                <div className="flex items-center justify-center py-12">
+                                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                                </div>
+                              ) : customers.length === 0 ? (
+                                <div className="py-12 text-center text-muted-foreground">
+                                  {customerSearch
+                                    ? "Ingen kunder funnet"
+                                    : "Ingen kunder"}
+                                </div>
+                              ) : (
+                                <CustomerListTable
+                                  compact={true}
+                                  customers={customers}
+                                  onCustomerClick={(customer) => {
+                                    updateOfferCustomer.mutate({
+                                      id: offer.id!,
+                                      data: { customerId: customer.id! },
+                                    });
+                                    setIsCustomerModalOpen(false);
+                                  }}
+                                />
+                              )}
+                            </div>
+                            {customerTotalPages > 1 && (
+                              <PaginationControls
+                                currentPage={customerPage}
+                                totalPages={customerTotalPages}
+                                onPageChange={setCustomerPage}
+                                pageSize={customerPageSize}
+                                totalCount={customersData?.total ?? 0}
+                                entityName="kunder"
+                              />
+                            )}
+                            <div className="flex justify-start">
+                              <Button
+                                variant="outline"
+                                onClick={() => {
+                                  if (offer.customerId) {
+                                    window.open(
+                                      `/customers/${offer.customerId}`,
+                                      "_blank"
+                                    );
+                                  }
+                                  setIsCustomerModalOpen(false);
+                                }}
+                              >
+                                <LinkIcon className="mr-2 h-4 w-4" />
+                                Gå til kundeside for nåværende kunde
+                              </Button>
+                            </div>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Fase</p>
+                      <OfferStatusBadge
+                        className="mt-1"
+                        phase={offer.phase || "draft"}
+                      />
                     </div>
 
-                    <CommandDialog
-                      open={isResponsibleModalOpen}
-                      onOpenChange={setIsResponsibleModalOpen}
-                    >
-                      <CommandInput placeholder="Søk etter ansatt..." />
-                      <CommandList>
-                        <CommandEmpty>Ingen ansatte funnet.</CommandEmpty>
-                        <CommandGroup heading="Handlinger">
-                          <CommandItem
-                            onSelect={() => {
-                              updateResponsible.mutate({
-                                id: offer.id!,
-                                data: { responsibleUserId: "" },
-                              });
-                              setIsResponsibleModalOpen(false);
-                            }}
-                          >
-                            <span
-                              className={cn(
-                                "mr-2 flex h-4 w-4 items-center justify-center opacity-0",
-                                !offer.responsibleUserId && "opacity-100"
-                              )}
-                            >
-                              <Check className="h-4 w-4" />
+                    <div>
+                      <p className="mb-1 text-sm text-muted-foreground">
+                        Ekstern referanse
+                      </p>
+                      <InlineEdit
+                        value={(offer as any).externalReference || ""}
+                        placeholder="Legg til ekstern ref..."
+                        onSave={async (val) => {
+                          await updateExternalReference.mutateAsync({
+                            id: offer.id!,
+                            externalReference: String(val),
+                          });
+                        }}
+                        className="-ml-1 w-full border-transparent p-1 px-1 font-medium hover:border-input hover:bg-transparent"
+                      />
+                    </div>
+
+                    <div>
+                      <p className="mb-1 text-sm text-muted-foreground">
+                        Ansvarlig
+                      </p>
+                      <div className="group flex items-center gap-2">
+                        <div
+                          role="button"
+                          onClick={() => setIsResponsibleModalOpen(true)}
+                          className="-ml-1 cursor-pointer rounded border border-transparent p-1 px-1 font-medium transition-colors hover:border-input hover:bg-transparent"
+                        >
+                          {offer.responsibleUserId ? (
+                            (users || []).find(
+                              (u) => u.id === offer.responsibleUserId
+                            )?.name || "Ukjent bruker"
+                          ) : (
+                            <span className="italic text-muted-foreground">
+                              Sett Straye ansvarlig
                             </span>
-                            Ingen (Fjern ansvarlig)
-                          </CommandItem>
-                        </CommandGroup>
-                        <CommandSeparator />
-                        <CommandGroup heading="Ansatte">
-                          {(users || []).map((user) => (
+                          )}
+                        </div>
+                      </div>
+
+                      <CommandDialog
+                        open={isResponsibleModalOpen}
+                        onOpenChange={setIsResponsibleModalOpen}
+                      >
+                        <CommandInput placeholder="Søk etter ansatt..." />
+                        <CommandList>
+                          <CommandEmpty>Ingen ansatte funnet.</CommandEmpty>
+                          <CommandGroup heading="Handlinger">
                             <CommandItem
-                              key={user.id}
-                              value={user.name}
                               onSelect={() => {
                                 updateResponsible.mutate({
                                   id: offer.id!,
-                                  data: { responsibleUserId: user.id! },
+                                  data: { responsibleUserId: "" },
                                 });
                                 setIsResponsibleModalOpen(false);
                               }}
-                              className="group"
                             >
                               <span
                                 className={cn(
                                   "mr-2 flex h-4 w-4 items-center justify-center opacity-0",
-                                  offer.responsibleUserId === user.id &&
-                                    "opacity-100"
+                                  !offer.responsibleUserId && "opacity-100"
                                 )}
                               >
                                 <Check className="h-4 w-4" />
                               </span>
-                              <div className="flex flex-col">
-                                <span>{user.name}</span>
-                                {user.email && (
-                                  <span className="text-xs text-muted-foreground group-data-[selected=true]:text-accent-foreground/70">
-                                    {user.email}
-                                  </span>
-                                )}
-                              </div>
+                              Ingen (Fjern ansvarlig)
                             </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </CommandDialog>
-                  </div>
-
-                  {!isOrderPhase && !isCompletedPhase && (
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm text-muted-foreground">
-                          Kunde har vunnet sitt prosjekt?
-                        </p>
-                      </div>
-                      <div className="mt-1 flex items-center gap-2">
-                        <Checkbox
-                          id="customer-won"
-                          checked={offer.customerHasWonProject || false}
-                          onCheckedChange={(checked) => {
-                            const isChecked = !!checked;
-                            updateCustomerHasWonOffer.mutate({
-                              id: offer.id!,
-                              customerHasWonProject: isChecked,
-                            });
-                            setProbabilityContext(
-                              isChecked ? "won" : "reverted"
-                            );
-                            setPendingProbability(localProbability);
-                            setIsProbabilityPromptOpen(true);
-                          }}
-                          disabled={isLocked}
-                          className={cn(
-                            "h-5 w-5",
-                            offer.customerHasWonProject
-                              ? "border-green-600 bg-green-600 text-primary-foreground data-[state=checked]:border-green-600 data-[state=checked]:bg-green-600"
-                              : "border-muted-foreground"
-                          )}
-                        />
-                        <label
-                          htmlFor="customer-won"
-                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                        >
-                          {offer.customerHasWonProject ? "Ja" : "Nei"}
-                        </label>
-                      </div>
+                          </CommandGroup>
+                          <CommandSeparator />
+                          <CommandGroup heading="Ansatte">
+                            {(users || []).map((user) => (
+                              <CommandItem
+                                key={user.id}
+                                value={user.name}
+                                onSelect={() => {
+                                  updateResponsible.mutate({
+                                    id: offer.id!,
+                                    data: { responsibleUserId: user.id! },
+                                  });
+                                  setIsResponsibleModalOpen(false);
+                                }}
+                                className="group"
+                              >
+                                <span
+                                  className={cn(
+                                    "mr-2 flex h-4 w-4 items-center justify-center opacity-0",
+                                    offer.responsibleUserId === user.id &&
+                                      "opacity-100"
+                                  )}
+                                >
+                                  <Check className="h-4 w-4" />
+                                </span>
+                                <div className="flex flex-col">
+                                  <span>{user.name}</span>
+                                  {user.email && (
+                                    <span className="text-xs text-muted-foreground group-data-[selected=true]:text-accent-foreground/70">
+                                      {user.email}
+                                    </span>
+                                  )}
+                                </div>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </CommandDialog>
                     </div>
-                  )}
 
-                  {/* Date fields section */}
-                  <div className="flex flex-wrap gap-6">
-                    {/* Frist (due date): show in draft/in_progress phases */}
-                    {(offer.phase === "draft" ||
-                      offer.phase === "in_progress") && (
-                      <div className="min-w-[200px] flex-1">
-                        <p className="mb-1 text-sm text-muted-foreground">
-                          Frist <span className="text-xs">(valgfritt)</span>
-                        </p>
-                        <SmartDatePicker
-                          value={
-                            offer.dueDate ? new Date(offer.dueDate) : undefined
-                          }
-                          onSelect={(date) => {
-                            updateDueDate.mutate({
-                              id: offer.id!,
-                              data: {
-                                dueDate: date
-                                  ? date.toISOString()
-                                  : (null as unknown as undefined),
-                              },
-                            });
-                          }}
-                          disabled={isLocked}
-                          disabledDates={(date) =>
-                            date < new Date("1900-01-01")
-                          }
-                          className="w-full"
-                        />
+                    {!isOrderPhase && !isCompletedPhase && (
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm text-muted-foreground">
+                            Kunde har vunnet sitt prosjekt?
+                          </p>
+                        </div>
+                        <div className="mt-1 flex items-center gap-2">
+                          <Checkbox
+                            id="customer-won"
+                            checked={offer.customerHasWonProject || false}
+                            onCheckedChange={(checked) => {
+                              const isChecked = !!checked;
+                              updateCustomerHasWonOffer.mutate({
+                                id: offer.id!,
+                                customerHasWonProject: isChecked,
+                              });
+                              setProbabilityContext(
+                                isChecked ? "won" : "reverted"
+                              );
+                              setPendingProbability(localProbability);
+                              setIsProbabilityPromptOpen(true);
+                            }}
+                            disabled={isLocked}
+                            className={cn(
+                              "h-5 w-5",
+                              offer.customerHasWonProject
+                                ? "border-green-600 bg-green-600 text-primary-foreground data-[state=checked]:border-green-600 data-[state=checked]:bg-green-600"
+                                : "border-muted-foreground"
+                            )}
+                          />
+                          <label
+                            htmlFor="customer-won"
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                          >
+                            {offer.customerHasWonProject ? "Ja" : "Nei"}
+                          </label>
+                        </div>
                       </div>
                     )}
-                    {/* Sendt dato: show in sent phase and later, editable on hover */}
-                    {offer.sentDate && (
-                      <div className="min-w-[200px] flex-1">
-                        <p className="mb-1 text-sm text-muted-foreground">
-                          Sendt dato
-                        </p>
-                        <Popover>
-                          <PopoverTrigger asChild disabled={isLocked}>
-                            <button
-                              className={cn(
-                                "group -ml-2 flex items-center gap-2 rounded-md px-2 py-1 text-left font-medium transition-colors",
-                                !isLocked && "cursor-pointer hover:bg-muted"
-                              )}
-                              disabled={isLocked}
+
+                    {/* Date fields section */}
+                    <div className="flex flex-wrap justify-between">
+                      {/* Frist (due date): show in draft/in_progress phases */}
+                      {(offer.phase === "draft" ||
+                        offer.phase === "in_progress") && (
+                        <div className="min-w-[200px] flex-1">
+                          <p className="mb-1 text-sm text-muted-foreground">
+                            Frist <span className="text-xs">(valgfritt)</span>
+                          </p>
+                          <SmartDatePicker
+                            value={
+                              offer.dueDate
+                                ? new Date(offer.dueDate)
+                                : undefined
+                            }
+                            onSelect={(date) => {
+                              updateDueDate.mutate({
+                                id: offer.id!,
+                                data: {
+                                  dueDate: date
+                                    ? date.toISOString()
+                                    : (null as unknown as undefined),
+                                },
+                              });
+                            }}
+                            disabled={isLocked}
+                            disabledDates={(date) =>
+                              date < new Date("1900-01-01")
+                            }
+                            className="w-full"
+                          />
+                        </div>
+                      )}
+                      {/* Sendt dato: show in sent phase and later, editable on hover */}
+                      {offer.sentDate && (
+                        <div className="min-w-[200px] flex-1">
+                          <p className="mb-1 text-sm text-muted-foreground">
+                            Sendt dato
+                          </p>
+                          <Popover>
+                            <PopoverTrigger asChild disabled={isLocked}>
+                              <button
+                                className={cn(
+                                  "group -ml-2 flex items-center gap-2 rounded-md px-2 py-1 text-left font-medium transition-colors",
+                                  !isLocked && "cursor-pointer hover:bg-muted"
+                                )}
+                                disabled={isLocked}
+                              >
+                                {format(new Date(offer.sentDate), "dd.MM.yyyy")}
+                                {!isLocked && (
+                                  <Pencil className="h-3 w-3 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+                                )}
+                              </button>
+                            </PopoverTrigger>
+                            <PopoverContent
+                              className="w-auto p-0"
+                              align="start"
                             >
-                              {format(new Date(offer.sentDate), "dd.MM.yyyy")}
-                              {!isLocked && (
-                                <Pencil className="h-3 w-3 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
-                              )}
-                            </button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={new Date(offer.sentDate)}
+                              <Calendar
+                                mode="single"
+                                selected={new Date(offer.sentDate)}
+                                onSelect={(date) => {
+                                  if (date) {
+                                    updateSentDate.mutate({
+                                      id: offer.id!,
+                                      sentDate: date.toISOString(),
+                                    });
+                                  }
+                                }}
+                                disabled={(date) => {
+                                  const today = new Date();
+                                  today.setHours(23, 59, 59, 999);
+                                  if (date > today) return true;
+                                  if (offer.expirationDate) {
+                                    const expDate = new Date(
+                                      offer.expirationDate
+                                    );
+                                    if (date > expDate) return true;
+                                  }
+                                  return false;
+                                }}
+                                locale={nb}
+                                initialFocus
+                              />
+                              <div className="border-t p-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="w-full text-destructive hover:text-destructive"
+                                  onClick={() => {
+                                    updateSentDate.mutate({
+                                      id: offer.id!,
+                                      sentDate: undefined,
+                                    });
+                                  }}
+                                >
+                                  <X className="mr-2 h-4 w-4" />
+                                  Fjern dato
+                                </Button>
+                              </div>
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                      )}
+                      {/* Vedståelsesfrist: show in sent phase */}
+                      {offer.phase === "sent" && (
+                        <div className="min-w-[200px] flex-1">
+                          <p className="mb-1 text-sm text-muted-foreground">
+                            Vedståelsesfrist{" "}
+                            <span className="text-xs">(valgfritt)</span>
+                          </p>
+                          <SmartDatePicker
+                            value={
+                              offer.expirationDate
+                                ? new Date(offer.expirationDate)
+                                : undefined
+                            }
+                            onSelect={(date) => {
+                              updateExpirationDate.mutate({
+                                id: offer.id!,
+                                expirationDate: date
+                                  ? date.toISOString()
+                                  : (null as unknown as undefined),
+                              });
+                            }}
+                            disabled={isLocked}
+                            disabledDates={(date) =>
+                              date < new Date("1900-01-01")
+                            }
+                            className="w-full"
+                          />
+                        </div>
+                      )}
+                      {/* Startdato: show in order/completed phases, always editable */}
+                      {(offer.phase === "order" ||
+                        offer.phase === "completed") && (
+                        <div className="min-w-[140px] flex-1">
+                          <p className="mb-1 text-sm text-muted-foreground">
+                            Startdato
+                          </p>
+                          {offer.startDate ? (
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <button className="group -ml-2 flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 text-left font-medium transition-colors hover:bg-muted">
+                                  {format(
+                                    new Date(offer.startDate),
+                                    "dd.MM.yyyy"
+                                  )}
+                                  <Pencil className="h-3 w-3 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+                                </button>
+                              </PopoverTrigger>
+                              <PopoverContent
+                                className="w-auto p-0"
+                                align="start"
+                              >
+                                <Calendar
+                                  mode="single"
+                                  selected={new Date(offer.startDate)}
+                                  onSelect={(date) => {
+                                    if (date) {
+                                      updateStartDate.mutate({
+                                        id: offer.id!,
+                                        startDate: date.toISOString(),
+                                      });
+                                    }
+                                  }}
+                                  disabled={(date) => {
+                                    // Cannot be before sent date
+                                    if (offer.sentDate) {
+                                      const sentDate = new Date(offer.sentDate);
+                                      sentDate.setHours(0, 0, 0, 0);
+                                      const checkDate = new Date(date);
+                                      checkDate.setHours(0, 0, 0, 0);
+                                      if (checkDate < sentDate) return true;
+                                    }
+                                    // Cannot be after end date
+                                    if (offer.endDate) {
+                                      const endDate = new Date(offer.endDate);
+                                      if (date > endDate) return true;
+                                    }
+                                    return false;
+                                  }}
+                                  locale={nb}
+                                  initialFocus
+                                />
+                                <div className="border-t p-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="w-full text-destructive hover:text-destructive"
+                                    onClick={() => {
+                                      updateStartDate.mutate({
+                                        id: offer.id!,
+                                        startDate: undefined,
+                                      });
+                                    }}
+                                  >
+                                    <X className="mr-2 h-4 w-4" />
+                                    Fjern dato
+                                  </Button>
+                                </div>
+                              </PopoverContent>
+                            </Popover>
+                          ) : (
+                            <SmartDatePicker
+                              value={undefined}
                               onSelect={(date) => {
                                 if (date) {
-                                  updateSentDate.mutate({
+                                  updateStartDate.mutate({
                                     id: offer.id!,
-                                    sentDate: date.toISOString(),
+                                    startDate: date.toISOString(),
                                   });
                                 }
                               }}
-                              disabled={(date) => {
-                                const today = new Date();
-                                today.setHours(23, 59, 59, 999);
-                                if (date > today) return true;
-                                if (offer.expirationDate) {
-                                  const expDate = new Date(
-                                    offer.expirationDate
-                                  );
-                                  if (date > expDate) return true;
+                              disabledDates={(date) => {
+                                // Cannot be before sent date
+                                if (offer.sentDate) {
+                                  const sentDate = new Date(offer.sentDate);
+                                  sentDate.setHours(0, 0, 0, 0);
+                                  const checkDate = new Date(date);
+                                  checkDate.setHours(0, 0, 0, 0);
+                                  if (checkDate < sentDate) return true;
+                                }
+                                // Cannot be after end date
+                                if (offer.endDate) {
+                                  const endDate = new Date(offer.endDate);
+                                  if (date > endDate) return true;
                                 }
                                 return false;
                               }}
-                              locale={nb}
-                              initialFocus
+                              className="w-full"
                             />
-                          </PopoverContent>
-                        </Popover>
-                      </div>
-                    )}
-                    {/* Vedståelsesfrist: show in sent phase */}
-                    {offer.phase === "sent" && (
-                      <div className="min-w-[200px] flex-1">
-                        <p className="mb-1 text-sm text-muted-foreground">
-                          Vedståelsesfrist{" "}
-                          <span className="text-xs">(valgfritt)</span>
-                        </p>
-                        <SmartDatePicker
-                          value={
-                            offer.expirationDate
-                              ? new Date(offer.expirationDate)
-                              : undefined
-                          }
-                          onSelect={(date) => {
-                            updateExpirationDate.mutate({
-                              id: offer.id!,
-                              expirationDate: date
-                                ? date.toISOString()
-                                : (null as unknown as undefined),
-                            });
-                          }}
-                          disabled={isLocked}
-                          disabledDates={(date) =>
-                            date < new Date("1900-01-01")
-                          }
-                          className="w-full"
-                        />
-                      </div>
-                    )}
-                    {/* Startdato: show in order/completed phases, always editable */}
-                    {(offer.phase === "order" ||
-                      offer.phase === "completed") && (
-                      <div className="min-w-[140px] flex-1">
-                        <p className="mb-1 text-sm text-muted-foreground">
-                          Startdato
-                        </p>
-                        {offer.startDate ? (
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <button className="group -ml-2 flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 text-left font-medium transition-colors hover:bg-muted">
-                                {format(
-                                  new Date(offer.startDate),
-                                  "dd.MM.yyyy"
-                                )}
-                                <Pencil className="h-3 w-3 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
-                              </button>
-                            </PopoverTrigger>
-                            <PopoverContent
-                              className="w-auto p-0"
-                              align="start"
-                            >
-                              <Calendar
-                                mode="single"
-                                selected={new Date(offer.startDate)}
-                                onSelect={(date) => {
-                                  if (date) {
-                                    updateStartDate.mutate({
-                                      id: offer.id!,
-                                      startDate: date.toISOString(),
-                                    });
-                                  }
-                                }}
-                                disabled={(date) => {
-                                  if (offer.endDate) {
-                                    const endDate = new Date(offer.endDate);
-                                    if (date > endDate) return true;
-                                  }
-                                  return false;
-                                }}
-                                locale={nb}
-                                initialFocus
-                              />
-                            </PopoverContent>
-                          </Popover>
-                        ) : (
-                          <SmartDatePicker
-                            value={undefined}
-                            onSelect={(date) => {
-                              if (date) {
-                                updateStartDate.mutate({
-                                  id: offer.id!,
-                                  startDate: date.toISOString(),
-                                });
-                              }
-                            }}
-                            disabledDates={(date) => {
-                              if (offer.endDate) {
-                                const endDate = new Date(offer.endDate);
-                                if (date > endDate) return true;
-                              }
-                              return false;
-                            }}
-                            className="w-full"
-                          />
-                        )}
-                      </div>
-                    )}
-                    {/* Sluttdato: show in order/completed phases, editable on hover */}
-                    {(offer.phase === "order" ||
-                      offer.phase === "completed") && (
-                      <div className="min-w-[140px] flex-1">
-                        <p className="mb-1 text-sm text-muted-foreground">
-                          Sluttdato
-                        </p>
-                        {offer.endDate ? (
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <button className="group -ml-2 flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 text-left font-medium transition-colors hover:bg-muted">
-                                {format(new Date(offer.endDate), "dd.MM.yyyy")}
-                                <Pencil className="h-3 w-3 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
-                              </button>
-                            </PopoverTrigger>
-                            <PopoverContent
-                              className="w-auto p-0"
-                              align="start"
-                            >
-                              <Calendar
-                                mode="single"
-                                selected={new Date(offer.endDate)}
-                                onSelect={(date) => {
-                                  if (date) {
-                                    updateEndDate.mutate({
-                                      id: offer.id!,
-                                      endDate: date.toISOString(),
-                                    });
-                                  }
-                                }}
-                                disabled={(date) => {
-                                  if (offer.startDate) {
-                                    const startDate = new Date(offer.startDate);
-                                    if (date < startDate) return true;
-                                  }
-                                  return false;
-                                }}
-                                locale={nb}
-                                initialFocus
-                              />
-                            </PopoverContent>
-                          </Popover>
-                        ) : (
-                          <SmartDatePicker
-                            value={undefined}
-                            onSelect={(date) => {
-                              if (date) {
-                                updateEndDate.mutate({
-                                  id: offer.id!,
-                                  endDate: date.toISOString(),
-                                });
-                              }
-                            }}
-                            disabledDates={(date) => {
-                              if (offer.startDate) {
-                                const startDate = new Date(offer.startDate);
-                                if (date < startDate) return true;
-                              }
-                              return false;
-                            }}
-                            className="w-full"
-                          />
-                        )}
-                      </div>
-                    )}
-                  </div>
+                          )}
+                        </div>
+                      )}
+                      {/* Sluttdato: show in order/completed phases, editable on hover */}
+                      {(offer.phase === "order" ||
+                        offer.phase === "completed") && (
+                        <div className="min-w-[140px] flex-1">
+                          <p className="mb-1 text-sm text-muted-foreground">
+                            Sluttdato
+                          </p>
+                          {offer.endDate ? (
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <button className="group -ml-2 flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 text-left font-medium transition-colors hover:bg-muted">
+                                  {format(
+                                    new Date(offer.endDate),
+                                    "dd.MM.yyyy"
+                                  )}
+                                  <Pencil className="h-3 w-3 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+                                </button>
+                              </PopoverTrigger>
+                              <PopoverContent
+                                className="w-auto p-0"
+                                align="start"
+                              >
+                                <Calendar
+                                  mode="single"
+                                  selected={new Date(offer.endDate)}
+                                  onSelect={(date) => {
+                                    if (date) {
+                                      updateEndDate.mutate({
+                                        id: offer.id!,
+                                        endDate: date.toISOString(),
+                                      });
+                                    }
+                                  }}
+                                  disabled={(date) => {
+                                    // Cannot be before start date
+                                    if (offer.startDate) {
+                                      const startDate = new Date(
+                                        offer.startDate
+                                      );
+                                      startDate.setHours(0, 0, 0, 0);
+                                      const checkDate = new Date(date);
+                                      checkDate.setHours(0, 0, 0, 0);
+                                      if (checkDate < startDate) return true;
+                                    } else if (offer.sentDate) {
+                                      // If no start date, cannot be before sent date
+                                      const sentDate = new Date(offer.sentDate);
+                                      sentDate.setHours(0, 0, 0, 0);
+                                      const checkDate = new Date(date);
+                                      checkDate.setHours(0, 0, 0, 0);
+                                      if (checkDate < sentDate) return true;
+                                    }
+                                    return false;
+                                  }}
+                                  locale={nb}
+                                  initialFocus
+                                />
+                                <div className="border-t p-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="w-full text-destructive hover:text-destructive"
+                                    onClick={() => {
+                                      updateEndDate.mutate({
+                                        id: offer.id!,
+                                        endDate: undefined,
+                                      });
+                                    }}
+                                  >
+                                    <X className="mr-2 h-4 w-4" />
+                                    Fjern dato
+                                  </Button>
+                                </div>
+                              </PopoverContent>
+                            </Popover>
+                          ) : (
+                            <SmartDatePicker
+                              value={undefined}
+                              onSelect={(date) => {
+                                if (date) {
+                                  updateEndDate.mutate({
+                                    id: offer.id!,
+                                    endDate: date.toISOString(),
+                                  });
+                                }
+                              }}
+                              disabledDates={(date) => {
+                                // Cannot be before start date
+                                if (offer.startDate) {
+                                  const startDate = new Date(offer.startDate);
+                                  startDate.setHours(0, 0, 0, 0);
+                                  const checkDate = new Date(date);
+                                  checkDate.setHours(0, 0, 0, 0);
+                                  if (checkDate < startDate) return true;
+                                } else if (offer.sentDate) {
+                                  // If no start date, cannot be before sent date
+                                  const sentDate = new Date(offer.sentDate);
+                                  sentDate.setHours(0, 0, 0, 0);
+                                  const checkDate = new Date(date);
+                                  checkDate.setHours(0, 0, 0, 0);
+                                  if (checkDate < sentDate) return true;
+                                }
+                                return false;
+                              }}
+                              className="w-full"
+                            />
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
 
-                  <div className="flex flex-col gap-2 border-t pt-4 text-xs text-muted-foreground">
-                    <div className="flex items-center justify-between">
+                <Card className="flex h-full flex-col">
+                  <CardHeader>
+                    <CardTitle>Totalt kalkulert</CardTitle>
+                  </CardHeader>
+                  <CardContent className="flex flex-1 flex-col space-y-6">
+                    <div className="flex flex-wrap gap-4">
+                      <div className="min-w-[200px] flex-1 space-y-2">
+                        <p className="text-sm font-medium text-muted-foreground">
+                          Total kost
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <InlineEdit
+                            type="currency"
+                            value={offer.cost || 0}
+                            onSave={async (val) => {
+                              await updateCost.mutateAsync({
+                                id: offer.id!,
+                                cost: Number(val),
+                              });
+                            }}
+                            disabled={isCostPriceLocked}
+                            className={cn(
+                              "-ml-2 border-transparent p-2 text-2xl font-bold",
+                              !isCostPriceLocked &&
+                                "hover:border-input hover:bg-transparent"
+                            )}
+                          />
+                        </div>
+                      </div>
+                      <div className="min-w-[200px] flex-1 space-y-2">
+                        <p className="text-sm font-medium text-muted-foreground">
+                          Total pris
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <InlineEdit
+                            type="currency"
+                            value={offer.value || 0}
+                            onSave={async (val) => {
+                              await updateValue.mutateAsync({
+                                id: offer.id!,
+                                data: { value: Number(val) },
+                              });
+                            }}
+                            disabled={isCostPriceLocked}
+                            className={cn(
+                              "-ml-2 border-transparent p-2 text-2xl font-bold",
+                              !isCostPriceLocked &&
+                                "hover:border-input hover:bg-transparent"
+                            )}
+                          />
+                          {offer.dwTotalIncome !== undefined &&
+                            offer.dwTotalIncome > (offer.value || 0) &&
+                            (offer.invoiced || 0) !== 0 && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <AlertTriangle className="h-5 w-5 cursor-pointer text-orange-500" />
+                                </TooltipTrigger>
+                                <TooltipContent className="max-w-[280px]">
+                                  <p className="font-medium">
+                                    Kalkulert pris avviker fra CW
+                                  </p>
+                                  <p className="mt-1 text-xs text-muted-foreground">
+                                    Kalkulert pris fra CW er{" "}
+                                    {new Intl.NumberFormat("nb-NO", {
+                                      style: "currency",
+                                      currency: "NOK",
+                                      maximumFractionDigits: 0,
+                                    }).format(offer.dwTotalIncome)}
+                                    . Vil du oppdatere total pris?
+                                  </p>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="mt-2 w-full"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      updateValue.mutate({
+                                        id: offer.id!,
+                                        data: {
+                                          value: offer.dwTotalIncome || 0,
+                                        },
+                                      });
+                                    }}
+                                    disabled={updateValue.isPending}
+                                  >
+                                    {updateValue.isPending ? (
+                                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    ) : null}
+                                    Oppdater til{" "}
+                                    {new Intl.NumberFormat("nb-NO", {
+                                      style: "currency",
+                                      currency: "NOK",
+                                      maximumFractionDigits: 0,
+                                    }).format(offer.dwTotalIncome)}
+                                  </Button>
+                                </TooltipContent>
+                              </Tooltip>
+                            )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4 rounded-lg bg-muted/50 p-4">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-muted-foreground">
+                          Forventet DG (%)
+                        </p>
+                        <p className="text-2xl font-bold">
+                          {calcDG ? calcDG.toFixed(2) : "0.00"} %
+                        </p>
+                      </div>
+                      <div className="flex items-center justify-between border-t pt-2">
+                        <p className="text-sm text-muted-foreground">
+                          Forventet DB
+                        </p>
+                        <p className="font-mono font-medium text-green-600">
+                          {new Intl.NumberFormat("nb-NO", {
+                            style: "currency",
+                            currency: "NOK",
+                            maximumFractionDigits: 0,
+                          }).format(calcDB || 0)}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Hide probability in order/completed phase - it's 100% by definition */}
+                    {!isOrderPhase && !isCompletedPhase && (
+                      <div className="space-y-6 border-t pt-6">
+                        <div>
+                          <div className="mb-2 text-sm text-muted-foreground">
+                            <div>Sannsynlighet: {localProbability}%</div>
+                            <div className="text-xs text-orange-500">
+                              {isLocked
+                                ? "Slik den var når tilbudet ble lukket"
+                                : ""}
+                            </div>
+                          </div>
+                          <div className="w-full">
+                            <Slider
+                              value={[localProbability]}
+                              max={90}
+                              min={10}
+                              step={10}
+                              disabled={isLocked}
+                              onValueChange={(val) =>
+                                setLocalProbability(val[0])
+                              }
+                              onValueCommit={async (val) => {
+                                if (isLocked) return;
+                                await updateProbability.mutateAsync({
+                                  id: offer.id!,
+                                  data: { probability: val[0] },
+                                });
+                              }}
+                              className="w-full"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="w-full">
+                      <p className="mb-1 text-sm text-muted-foreground">
+                        Tilknyttet Prosjekt
+                      </p>
+                      <div className="flex items-center gap-2">
+                        {offer.projectId ? (
+                          <Link
+                            href={`/projects/${offer.projectId}`}
+                            className="flex items-center gap-2 font-medium hover:underline"
+                          >
+                            <LinkIcon className="h-3 w-3 text-muted-foreground" />
+                            <span>
+                              {offer.projectName || "Ukjent prosjekt"}
+                            </span>
+                          </Link>
+                        ) : (
+                          <span className="italic text-muted-foreground">
+                            Ikke tilknyttet prosjekt
+                          </span>
+                        )}
+                        {!isPartiallyLocked && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={() => setIsProjectModalOpen(true)}
+                          >
+                            <Pencil className="h-3 w-3" />
+                          </Button>
+                        )}
+                      </div>
+
+                      <Dialog
+                        open={isProjectModalOpen}
+                        onOpenChange={setIsProjectModalOpen}
+                      >
+                        <DialogContent className="flex max-h-[90vh] w-[95vw] max-w-[95vw] flex-col">
+                          <DialogHeader>
+                            <DialogTitle>Velg prosjekt</DialogTitle>
+                          </DialogHeader>
+                          <div className="flex flex-1 flex-col space-y-4 overflow-hidden">
+                            <Input
+                              placeholder="Søk etter prosjekt..."
+                              value={projectSearch}
+                              onChange={(e) => setProjectSearch(e.target.value)}
+                              className="focus-visible:border-primary focus-visible:ring-0 focus-visible:ring-offset-0"
+                            />
+                            <div className="flex-1 overflow-auto rounded-md border">
+                              <ProjectListTable
+                                compact={true}
+                                projects={(filteredProjects as Project[]) || []}
+                                onProjectClick={(project) => {
+                                  setPendingProject(project);
+                                  setShowChangeConfirm(true);
+                                }}
+                              />
+                            </div>
+                            <div className="flex justify-end">
+                              <Button
+                                variant="destructive"
+                                onClick={() => setShowDisconnectConfirm(true)}
+                              >
+                                Fjern tilknytning
+                              </Button>
+                            </div>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+
+                      <AlertDialog
+                        open={showChangeConfirm}
+                        onOpenChange={setShowChangeConfirm}
+                      >
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Endre prosjekt?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Er du sikker på at du vil endre tilknyttet
+                              prosjekt til{" "}
+                              <span className="font-medium text-foreground">
+                                {pendingProject?.name}
+                              </span>
+                              ?
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel
+                              onClick={() => setPendingProject(null)}
+                            >
+                              Avbryt
+                            </AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => {
+                                if (pendingProject) {
+                                  updateProject.mutate({
+                                    id: offer.id!,
+                                    data: { projectId: pendingProject.id! },
+                                  });
+                                  setIsProjectModalOpen(false);
+                                  setPendingProject(null);
+                                }
+                              }}
+                            >
+                              Endre prosjekt
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+
+                      {/* Probability Update Modal */}
+                      <AlertDialog
+                        open={isProbabilityPromptOpen}
+                        onOpenChange={setIsProbabilityPromptOpen}
+                      >
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>
+                              Oppdater sannsynlighet?
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                              {probabilityContext === "won"
+                                ? "Det at kunden har vunnet sitt prosjekt er gode nyheter! Dette påvirker ofte våre vinnersjanser positivt. Ønsker du å oppjustere sannsynligheten for dette tilbudet?"
+                                : "Siden kunden ikke lenger er markert som vinner av prosjektet, kan dette påvirke våre vinnersjanser. Ønsker du å justere sannsynligheten for dette tilbudet?"}
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <div className="py-4">
+                            <div className="mb-4 flex items-center justify-between">
+                              <span className="text-sm font-medium">
+                                Ny sannsynlighet:
+                              </span>
+                              <span className="font-bold">
+                                {pendingProbability}%
+                              </span>
+                            </div>
+                            <Slider
+                              value={[pendingProbability]}
+                              max={90}
+                              min={10}
+                              step={10}
+                              onValueChange={(val) =>
+                                setPendingProbability(val[0])
+                              }
+                            />
+                          </div>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>
+                              Nei, behold dagens ({localProbability}%)
+                            </AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => {
+                                updateProbability.mutate({
+                                  id: offer.id!,
+                                  data: { probability: pendingProbability },
+                                });
+                                setLocalProbability(pendingProbability);
+                                setIsProbabilityPromptOpen(false);
+                              }}
+                            >
+                              Ja, oppdater
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                      <AlertDialog
+                        open={showDisconnectConfirm}
+                        onOpenChange={setShowDisconnectConfirm}
+                      >
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>
+                              Fjern tilknytning?
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Er du sikker på at du vil fjerne tilknytningen til
+                              prosjektet?
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Avbryt</AlertDialogCancel>
+                            <AlertDialogAction
+                              className="bg-red-600 hover:bg-red-700"
+                              onClick={() => {
+                                deleteProject.mutate(offer.id!);
+                                setIsProjectModalOpen(false);
+                              }}
+                            >
+                              Fjern tilknytning
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </CardContent>
+                  <CardFooter className="flex flex-col gap-2 border-t bg-muted/30 px-6 py-4 text-xs text-muted-foreground">
+                    <div className="flex w-full items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className="w-28 shrink-0">Opprettet av</span>
                         {offer.createdByName ?? (
@@ -1502,7 +1992,7 @@ export default function OfferDetailPage({
                           : "Ukjent"}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between">
+                    <div className="flex w-full items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className="w-28 shrink-0">Sist oppdatert av</span>
                         {offer.updatedByName ?? (
@@ -1523,80 +2013,58 @@ export default function OfferDetailPage({
                           : "Ukjent"}
                       </span>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardFooter>
+                </Card>
+              </div>
 
-              <Card className="flex h-full flex-col">
-                <CardHeader>
-                  <CardTitle>Totalt kalkulert</CardTitle>
-                </CardHeader>
-                <CardContent className="flex flex-1 flex-col space-y-6">
-                  <div className="flex flex-wrap gap-4">
-                    <div className="min-w-[200px] flex-1 space-y-2">
-                      <p className="text-sm font-medium text-muted-foreground">
-                        Total kost
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <InlineEdit
-                          type="currency"
-                          value={offer.cost || 0}
-                          onSave={async (val) => {
-                            await updateCost.mutateAsync({
-                              id: offer.id!,
-                              cost: Number(val),
-                            });
-                          }}
-                          disabled={isCostPriceLocked}
-                          className={cn(
-                            "-ml-2 border-transparent p-2 text-2xl font-bold",
-                            !isCostPriceLocked &&
-                              "hover:border-input hover:bg-transparent"
-                          )}
-                        />
-                      </div>
-                    </div>
-                    <div className="min-w-[200px] flex-1 space-y-2">
-                      <p className="text-sm font-medium text-muted-foreground">
-                        Total pris
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <InlineEdit
-                          type="currency"
-                          value={offer.value || 0}
-                          onSave={async (val) => {
-                            await updateValue.mutateAsync({
-                              id: offer.id!,
-                              data: { value: Number(val) },
-                            });
-                          }}
-                          disabled={isCostPriceLocked}
-                          className={cn(
-                            "-ml-2 border-transparent p-2 text-2xl font-bold",
-                            !isCostPriceLocked &&
-                              "hover:border-input hover:bg-transparent"
-                          )}
-                        />
-                        {offer.budgetSummary?.totalRevenue !== undefined &&
-                          offer.budgetSummary.totalRevenue !==
-                            (offer.value || 0) &&
-                          (offer.invoiced || 0) !== 0 && (
+              {/* Execution Tracking Section - Only visible for order/completed phases */}
+              {(isOrderPhase || isCompletedPhase) && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      <span className="flex flex-col gap-1">
+                        Oppfølging av ordre
+                        <span className="text-xs">
+                          Bokførte tall hentet fra NXT
+                        </span>
+                      </span>
+                      {isCompletedPhase ? (
+                        <OfferStatusBadge phase="completed" />
+                      ) : (
+                        offer.health && (
+                          <OfferHealthBadge health={offer.health} />
+                        )
+                      )}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="grid gap-6 md:grid-cols-2">
+                      {/* Spent tracking */}
+                      <div className="space-y-2">
+                        <p className="flex items-center gap-4 text-sm font-medium text-muted-foreground">
+                          Påløpte kostnader
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-xl font-bold">
+                            {new Intl.NumberFormat("nb-NO", {
+                              style: "currency",
+                              currency: "NOK",
+                              maximumFractionDigits: 0,
+                            }).format(offer.spent || 0)}
+                          </p>
+                          {(offer.spent || 0) > calcCost && calcCost > 0 && (
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <AlertTriangle className="h-5 w-5 cursor-pointer text-orange-500" />
                               </TooltipTrigger>
                               <TooltipContent className="max-w-[280px]">
                                 <p className="font-medium">
-                                  Kalkulert pris avviker fra CW
+                                  Påløpte kostnader overstiger kalkulert kostnad
                                 </p>
                                 <p className="mt-1 text-xs text-muted-foreground">
-                                  Kalkulert pris fra CW er{" "}
-                                  {new Intl.NumberFormat("nb-NO", {
-                                    style: "currency",
-                                    currency: "NOK",
-                                    maximumFractionDigits: 0,
-                                  }).format(offer.budgetSummary.totalRevenue)}
-                                  . Vil du oppdatere total pris?
+                                  Har det kommet tilleggsarbeid, eller var
+                                  budsjettet for stramt? Vurder å oppdatere
+                                  kalkulasjonen.
                                 </p>
                                 <Button
                                   size="sm"
@@ -1604,557 +2072,226 @@ export default function OfferDetailPage({
                                   className="mt-2 w-full"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    updateValue.mutate({
+                                    updateCost.mutate({
                                       id: offer.id!,
-                                      data: {
-                                        value:
-                                          offer.budgetSummary?.totalRevenue ||
-                                          0,
-                                      },
+                                      cost: offer.spent || 0,
                                     });
                                   }}
-                                  disabled={updateValue.isPending}
+                                  disabled={updateCost.isPending}
                                 >
-                                  {updateValue.isPending ? (
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  {updateCost.isPending ? (
+                                    <Loader2 className="mr-2 h-3 w-3 animate-spin" />
                                   ) : null}
-                                  Oppdater til{" "}
-                                  {new Intl.NumberFormat("nb-NO", {
-                                    style: "currency",
-                                    currency: "NOK",
-                                    maximumFractionDigits: 0,
-                                  }).format(offer.budgetSummary.totalRevenue)}
+                                  Oppdater kostnad til påløpt beløp
                                 </Button>
                               </TooltipContent>
                             </Tooltip>
                           )}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4 rounded-lg bg-muted/50 p-4">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium text-muted-foreground">
-                        Forventet DG (%)
-                      </p>
-                      <p className="text-2xl font-bold">
-                        {calcDG ? calcDG.toFixed(2) : "0.00"} %
-                      </p>
-                    </div>
-                    <div className="flex items-center justify-between border-t pt-2">
-                      <p className="text-sm text-muted-foreground">
-                        Forventet DB
-                      </p>
-                      <p className="font-mono font-medium text-green-600">
-                        {new Intl.NumberFormat("nb-NO", {
-                          style: "currency",
-                          currency: "NOK",
-                          maximumFractionDigits: 0,
-                        }).format(calcDB || 0)}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Hide probability in order/completed phase - it's 100% by definition */}
-                  {!isOrderPhase && !isCompletedPhase && (
-                    <div className="space-y-6 border-t pt-6">
-                      <div>
-                        <div className="mb-2 text-sm text-muted-foreground">
-                          <div>Sannsynlighet: {localProbability}%</div>
-                          <div className="text-xs text-orange-500">
-                            {isLocked
-                              ? "Slik den var når tilbudet ble lukket"
-                              : ""}
-                          </div>
                         </div>
-                        <div className="w-full">
-                          <Slider
-                            value={[localProbability]}
-                            max={90}
-                            min={10}
-                            step={10}
-                            disabled={isLocked}
-                            onValueChange={(val) => setLocalProbability(val[0])}
-                            onValueCommit={async (val) => {
-                              if (isLocked) return;
-                              await updateProbability.mutateAsync({
-                                id: offer.id!,
-                                data: { probability: val[0] },
-                              });
-                            }}
-                            className="w-full"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-
-                <CardFooter className="mt-auto flex flex-col items-start p-6 pt-0">
-                  <div className="w-full">
-                    <p className="mb-1 text-sm text-muted-foreground">
-                      Tilknyttet Prosjekt
-                    </p>
-                    <div className="flex items-center gap-2">
-                      {offer.projectId ? (
-                        <Link
-                          href={`/projects/${offer.projectId}`}
-                          className="flex items-center gap-2 font-medium hover:underline"
-                        >
-                          <LinkIcon className="h-3 w-3 text-muted-foreground" />
-                          <span>{offer.projectName || "Ukjent prosjekt"}</span>
-                        </Link>
-                      ) : (
-                        <span className="italic text-muted-foreground">
-                          Ikke tilknyttet prosjekt
-                        </span>
-                      )}
-                      {!isPartiallyLocked && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6"
-                          onClick={() => setIsProjectModalOpen(true)}
-                        >
-                          <Pencil className="h-3 w-3" />
-                        </Button>
-                      )}
-                    </div>
-
-                    <Dialog
-                      open={isProjectModalOpen}
-                      onOpenChange={setIsProjectModalOpen}
-                    >
-                      <DialogContent className="flex max-h-[90vh] w-[95vw] max-w-[95vw] flex-col">
-                        <DialogHeader>
-                          <DialogTitle>Velg prosjekt</DialogTitle>
-                        </DialogHeader>
-                        <div className="flex flex-1 flex-col space-y-4 overflow-hidden">
-                          <Input
-                            placeholder="Søk etter prosjekt..."
-                            value={projectSearch}
-                            onChange={(e) => setProjectSearch(e.target.value)}
-                            className="focus-visible:border-primary focus-visible:ring-0 focus-visible:ring-offset-0"
-                          />
-                          <div className="flex-1 overflow-auto rounded-md border">
-                            <ProjectListTable
-                              compact={true}
-                              projects={(filteredProjects as Project[]) || []}
-                              onProjectClick={(project) => {
-                                setPendingProject(project);
-                                setShowChangeConfirm(true);
-                              }}
-                            />
-                          </div>
-                          <div className="flex justify-end">
-                            <Button
-                              variant="destructive"
-                              onClick={() => setShowDisconnectConfirm(true)}
-                            >
-                              Fjern tilknytning
-                            </Button>
-                          </div>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-
-                    <AlertDialog
-                      open={showChangeConfirm}
-                      onOpenChange={setShowChangeConfirm}
-                    >
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Endre prosjekt?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Er du sikker på at du vil endre tilknyttet prosjekt
-                            til{" "}
-                            <span className="font-medium text-foreground">
-                              {pendingProject?.name}
-                            </span>
-                            ?
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel
-                            onClick={() => setPendingProject(null)}
-                          >
-                            Avbryt
-                          </AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => {
-                              if (pendingProject) {
-                                updateProject.mutate({
-                                  id: offer.id!,
-                                  data: { projectId: pendingProject.id! },
-                                });
-                                setIsProjectModalOpen(false);
-                                setPendingProject(null);
-                              }
-                            }}
-                          >
-                            Endre prosjekt
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-
-                    {/* Probability Update Modal */}
-                    <AlertDialog
-                      open={isProbabilityPromptOpen}
-                      onOpenChange={setIsProbabilityPromptOpen}
-                    >
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>
-                            Oppdater sannsynlighet?
-                          </AlertDialogTitle>
-                          <AlertDialogDescription>
-                            {probabilityContext === "won"
-                              ? "Det at kunden har vunnet sitt prosjekt er gode nyheter! Dette påvirker ofte våre vinnersjanser positivt. Ønsker du å oppjustere sannsynligheten for dette tilbudet?"
-                              : "Siden kunden ikke lenger er markert som vinner av prosjektet, kan dette påvirke våre vinnersjanser. Ønsker du å justere sannsynligheten for dette tilbudet?"}
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <div className="py-4">
-                          <div className="mb-4 flex items-center justify-between">
-                            <span className="text-sm font-medium">
-                              Ny sannsynlighet:
-                            </span>
-                            <span className="font-bold">
-                              {pendingProbability}%
-                            </span>
-                          </div>
-                          <Slider
-                            value={[pendingProbability]}
-                            max={90}
-                            min={10}
-                            step={10}
-                            onValueChange={(val) =>
-                              setPendingProbability(val[0])
-                            }
-                          />
-                        </div>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>
-                            Nei, behold dagens ({localProbability}%)
-                          </AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => {
-                              updateProbability.mutate({
-                                id: offer.id!,
-                                data: { probability: pendingProbability },
-                              });
-                              setLocalProbability(pendingProbability);
-                              setIsProbabilityPromptOpen(false);
-                            }}
-                          >
-                            Ja, oppdater
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                    <AlertDialog
-                      open={showDisconnectConfirm}
-                      onOpenChange={setShowDisconnectConfirm}
-                    >
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>
-                            Fjern tilknytning?
-                          </AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Er du sikker på at du vil fjerne tilknytningen til
-                            prosjektet?
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Avbryt</AlertDialogCancel>
-                          <AlertDialogAction
-                            className="bg-red-600 hover:bg-red-700"
-                            onClick={() => {
-                              deleteProject.mutate(offer.id!);
-                              setIsProjectModalOpen(false);
-                            }}
-                          >
-                            Fjern tilknytning
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </CardFooter>
-              </Card>
-            </div>
-
-            {/* Execution Tracking Section - Only visible for order/completed phases */}
-            {(isOrderPhase || isCompletedPhase) && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span className="flex flex-col gap-1">
-                      Oppfølging av ordre
-                      <span className="text-xs">
-                        Bokførte tall hentet fra NXT
-                      </span>
-                    </span>
-                    {isCompletedPhase ? (
-                      <OfferStatusBadge phase="completed" />
-                    ) : (
-                      offer.health && <OfferHealthBadge health={offer.health} />
-                    )}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="grid gap-6 md:grid-cols-2">
-                    {/* Spent tracking */}
-                    <div className="space-y-2">
-                      <p className="flex items-center gap-4 text-sm font-medium text-muted-foreground">
-                        Påløpte kostnader
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <p className="text-xl font-bold">
-                          {new Intl.NumberFormat("nb-NO", {
-                            style: "currency",
-                            currency: "NOK",
-                            maximumFractionDigits: 0,
-                          }).format(offer.spent || 0)}
-                        </p>
-                        {(offer.spent || 0) > calcCost && calcCost > 0 && (
+                        {calcCost > 0 && (
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <AlertTriangle className="h-5 w-5 cursor-pointer text-orange-500" />
+                              <div>
+                                <Progress
+                                  value={((offer.spent || 0) / calcCost) * 100}
+                                  className="h-2 cursor-help"
+                                  indicatorClassName={
+                                    ((offer.spent || 0) / calcCost) * 100 > 100
+                                      ? "bg-red-600"
+                                      : ((offer.spent || 0) / calcCost) * 100 >
+                                          80
+                                        ? "bg-orange-500"
+                                        : "bg-green-600"
+                                  }
+                                />
+                              </div>
                             </TooltipTrigger>
-                            <TooltipContent className="max-w-[280px]">
-                              <p className="font-medium">
-                                Påløpte kostnader overstiger kalkulert kostnad
-                              </p>
-                              <p className="mt-1 text-xs text-muted-foreground">
-                                Har det kommet tilleggsarbeid, eller var
-                                budsjettet for stramt? Vurder å oppdatere
-                                kalkulasjonen.
-                              </p>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="mt-2 w-full"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  updateCost.mutate({
-                                    id: offer.id!,
-                                    cost: offer.spent || 0,
-                                  });
-                                }}
-                                disabled={updateCost.isPending}
-                              >
-                                {updateCost.isPending ? (
-                                  <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                                ) : null}
-                                Oppdater kostnad til påløpt beløp
-                              </Button>
+                            <TooltipContent>
+                              <div className="space-y-1 text-sm">
+                                <div className="flex justify-between gap-4">
+                                  <span className="text-muted-foreground">
+                                    Total kalkulert kost:
+                                  </span>
+                                  <span className="font-medium">
+                                    {new Intl.NumberFormat("nb-NO", {
+                                      style: "currency",
+                                      currency: "NOK",
+                                      maximumFractionDigits: 0,
+                                    }).format(calcCost)}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between gap-4">
+                                  <span className="text-muted-foreground underline">
+                                    Påløpte kostnader:
+                                  </span>
+                                  <span className="font-medium">
+                                    {new Intl.NumberFormat("nb-NO", {
+                                      style: "currency",
+                                      currency: "NOK",
+                                      maximumFractionDigits: 0,
+                                    }).format(offer.spent || 0)}
+                                  </span>
+                                </div>
+
+                                <div className="border-t pt-1">
+                                  <span className="font-medium">
+                                    {Math.round(
+                                      ((offer.spent || 0) / calcCost) * 100
+                                    )}
+                                    % av beregnet kostnad brukt
+                                  </span>
+                                </div>
+                              </div>
                             </TooltipContent>
                           </Tooltip>
                         )}
                       </div>
-                      {calcCost > 0 && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div>
-                              <Progress
-                                value={((offer.spent || 0) / calcCost) * 100}
-                                className="h-2 cursor-help"
-                                indicatorClassName={
-                                  ((offer.spent || 0) / calcCost) * 100 > 100
-                                    ? "bg-red-600"
-                                    : ((offer.spent || 0) / calcCost) * 100 > 80
-                                      ? "bg-orange-500"
-                                      : "bg-green-600"
-                                }
-                              />
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <div className="space-y-1 text-sm">
-                              <div className="flex justify-between gap-4">
-                                <span className="text-muted-foreground">
-                                  Total kalkulert kost:
-                                </span>
-                                <span className="font-medium">
-                                  {new Intl.NumberFormat("nb-NO", {
-                                    style: "currency",
-                                    currency: "NOK",
-                                    maximumFractionDigits: 0,
-                                  }).format(calcCost)}
-                                </span>
-                              </div>
-                              <div className="flex justify-between gap-4">
-                                <span className="text-muted-foreground underline">
-                                  Påløpte kostnader:
-                                </span>
-                                <span className="font-medium">
-                                  {new Intl.NumberFormat("nb-NO", {
-                                    style: "currency",
-                                    currency: "NOK",
-                                    maximumFractionDigits: 0,
-                                  }).format(offer.spent || 0)}
-                                </span>
-                              </div>
 
-                              <div className="border-t pt-1">
-                                <span className="font-medium">
-                                  {Math.round(
-                                    ((offer.spent || 0) / calcCost) * 100
-                                  )}
-                                  % av beregnet kostnad brukt
-                                </span>
-                              </div>
-                            </div>
-                          </TooltipContent>
-                        </Tooltip>
-                      )}
-                    </div>
-
-                    {/* Invoiced tracking */}
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium text-muted-foreground">
-                        Fakturert
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <p className="text-xl font-bold">
-                          {new Intl.NumberFormat("nb-NO", {
-                            style: "currency",
-                            currency: "NOK",
-                            maximumFractionDigits: 0,
-                          }).format(offer.invoiced || 0)}
+                      {/* Invoiced tracking */}
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium text-muted-foreground">
+                          Fakturert
                         </p>
-                        {(offer.invoiced || 0) > calcPrice && calcPrice > 0 && (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <AlertTriangle className="h-5 w-5 cursor-pointer text-orange-500" />
-                            </TooltipTrigger>
-                            <TooltipContent className="max-w-[280px]">
-                              <p className="font-medium">
-                                Fakturert beløp overstiger kalkulert pris
-                              </p>
-                              <p className="mt-1 text-xs text-muted-foreground">
-                                Er dette riktig? Vurder å oppdatere
-                                kalkulasjonen slik at den reflekterer faktisk
-                                pris.
-                              </p>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="mt-2 w-full"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  updateValue.mutate({
-                                    id: offer.id!,
-                                    data: { value: offer.invoiced || 0 },
-                                  });
-                                }}
-                                disabled={updateValue.isPending}
-                              >
-                                {updateValue.isPending ? (
-                                  <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                                ) : null}
-                                Oppdater pris til fakturert beløp
-                              </Button>
-                            </TooltipContent>
-                          </Tooltip>
-                        )}
-                      </div>
-                      {calcPrice > 0 && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div>
-                              <Progress
-                                value={
-                                  ((offer.invoiced || 0) / calcPrice) * 100
-                                }
-                                className="h-2 cursor-help"
-                                indicatorClassName=""
-                              />
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <div className="space-y-1 text-sm">
-                              <div className="flex justify-between gap-4">
-                                <span className="text-muted-foreground">
-                                  Total pris:
-                                </span>
-                                <span className="font-medium">
-                                  {new Intl.NumberFormat("nb-NO", {
-                                    style: "currency",
-                                    currency: "NOK",
-                                    maximumFractionDigits: 0,
-                                  }).format(calcPrice)}
-                                </span>
-                              </div>
-                              <div className="flex justify-between gap-4">
-                                <span className="text-muted-foreground underline">
-                                  Fakturert:
-                                </span>
-                                <span className="font-medium">
-                                  {new Intl.NumberFormat("nb-NO", {
-                                    style: "currency",
-                                    currency: "NOK",
-                                    maximumFractionDigits: 0,
-                                  }).format(offer.invoiced || 0)}
-                                </span>
-                              </div>
-
-                              <div className="flex justify-between gap-4">
-                                <span className="text-muted-foreground">
-                                  Gjenstående:
-                                </span>
-                                <span className="font-medium">
-                                  {new Intl.NumberFormat("nb-NO", {
-                                    style: "currency",
-                                    currency: "NOK",
-                                    maximumFractionDigits: 0,
-                                  }).format(calcPrice - (offer.invoiced || 0))}
-                                </span>
-                              </div>
-                              <div className="border-t pt-1">
-                                <span className="font-medium">
-                                  {Math.round(
-                                    ((offer.invoiced || 0) / calcPrice) * 100
-                                  )}
-                                  % av total pris fakturert
-                                </span>
-                              </div>
-                            </div>
-                          </TooltipContent>
-                        </Tooltip>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap gap-6 border-t pt-4">
-                    <div className="min-w-[150px] flex-1">
-                      <div className="flex flex-col gap-4">
-                        <div className="flex flex-col gap-2">
-                          <p className="text-sm text-muted-foreground">
-                            {isCompletedPhase
-                              ? "Fullført dekning"
-                              : "Dekning så langt"}
+                        <div className="flex items-center gap-2">
+                          <p className="text-xl font-bold">
+                            {new Intl.NumberFormat("nb-NO", {
+                              style: "currency",
+                              currency: "NOK",
+                              maximumFractionDigits: 0,
+                            }).format(offer.invoiced || 0)}
                           </p>
-                          <div className="flex items-center gap-2">
-                            <p
-                              className={cn(
-                                "font-mono text-lg font-bold",
-                                (offer.invoiced || 0) - (offer.spent || 0) < 0
-                                  ? "text-red-600"
-                                  : "text-green-600"
-                              )}
-                            >
-                              {new Intl.NumberFormat("nb-NO", {
-                                style: "currency",
-                                currency: "NOK",
-                                maximumFractionDigits: 0,
-                                signDisplay: "exceptZero",
-                              }).format(
-                                (offer.invoiced || 0) - (offer.spent || 0)
-                              )}
-                              {offer.invoiced && offer.spent && (
+                          {(offer.invoiced || 0) > calcPrice &&
+                            calcPrice > 0 && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <AlertTriangle className="h-5 w-5 cursor-pointer text-orange-500" />
+                                </TooltipTrigger>
+                                <TooltipContent className="max-w-[280px]">
+                                  <p className="font-medium">
+                                    Fakturert beløp overstiger kalkulert pris
+                                  </p>
+                                  <p className="mt-1 text-xs text-muted-foreground">
+                                    Er dette riktig? Vurder å oppdatere
+                                    kalkulasjonen slik at den reflekterer
+                                    faktisk pris.
+                                  </p>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="mt-2 w-full"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      updateValue.mutate({
+                                        id: offer.id!,
+                                        data: { value: offer.invoiced || 0 },
+                                      });
+                                    }}
+                                    disabled={updateValue.isPending}
+                                  >
+                                    {updateValue.isPending ? (
+                                      <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                                    ) : null}
+                                    Oppdater pris til fakturert beløp
+                                  </Button>
+                                </TooltipContent>
+                              </Tooltip>
+                            )}
+                        </div>
+                        {calcPrice > 0 && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div>
+                                <Progress
+                                  value={
+                                    ((offer.invoiced || 0) / calcPrice) * 100
+                                  }
+                                  className="h-2 cursor-help"
+                                  indicatorClassName=""
+                                />
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <div className="space-y-1 text-sm">
+                                <div className="flex justify-between gap-4">
+                                  <span className="text-muted-foreground">
+                                    Total pris:
+                                  </span>
+                                  <span className="font-medium">
+                                    {new Intl.NumberFormat("nb-NO", {
+                                      style: "currency",
+                                      currency: "NOK",
+                                      maximumFractionDigits: 0,
+                                    }).format(calcPrice)}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between gap-4">
+                                  <span className="text-muted-foreground underline">
+                                    Fakturert:
+                                  </span>
+                                  <span className="font-medium">
+                                    {new Intl.NumberFormat("nb-NO", {
+                                      style: "currency",
+                                      currency: "NOK",
+                                      maximumFractionDigits: 0,
+                                    }).format(offer.invoiced || 0)}
+                                  </span>
+                                </div>
+
+                                <div className="flex justify-between gap-4">
+                                  <span className="text-muted-foreground">
+                                    Gjenstående:
+                                  </span>
+                                  <span className="font-medium">
+                                    {new Intl.NumberFormat("nb-NO", {
+                                      style: "currency",
+                                      currency: "NOK",
+                                      maximumFractionDigits: 0,
+                                    }).format(
+                                      calcPrice - (offer.invoiced || 0)
+                                    )}
+                                  </span>
+                                </div>
+                                <div className="border-t pt-1">
+                                  <span className="font-medium">
+                                    {Math.round(
+                                      ((offer.invoiced || 0) / calcPrice) * 100
+                                    )}
+                                    % av total pris fakturert
+                                  </span>
+                                </div>
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-6 border-t pt-4">
+                      <div className="min-w-[150px] flex-1">
+                        <div className="flex flex-col gap-4">
+                          <div className="flex flex-col gap-2">
+                            <p className="text-sm text-muted-foreground">
+                              {isCompletedPhase
+                                ? "Fullført dekning"
+                                : "Dekning så langt"}
+                            </p>
+                            <div className="flex items-center gap-2">
+                              <p
+                                className={cn(
+                                  "font-mono text-lg font-bold",
+                                  (offer.invoiced || 0) - (offer.spent || 0) < 0
+                                    ? "text-red-600"
+                                    : "text-green-600"
+                                )}
+                              >
+                                {new Intl.NumberFormat("nb-NO", {
+                                  style: "currency",
+                                  currency: "NOK",
+                                  maximumFractionDigits: 0,
+                                  signDisplay: "exceptZero",
+                                }).format(
+                                  (offer.invoiced || 0) - (offer.spent || 0)
+                                )}
                                 <span
                                   className={cn("ml-2 text-xs text-primary")}
                                 >
@@ -2166,221 +2303,234 @@ export default function OfferDetailPage({
                                   ).toFixed(2)}
                                   %
                                 </span>
-                              )}
-                            </p>
-                          </div>
-                        </div>
-                        {isOrderPhase && (
-                          <div className="flex flex-col gap-2">
-                            <p className="text-sm text-muted-foreground">
-                              Beregnet dekning dersom alt faktureres uten flere
-                              kostnader
-                            </p>
-                            <div className="flex items-center gap-2">
-                              <p
-                                className={cn(
-                                  "font-mono text-lg font-bold",
-                                  (offer.value || 0) - (offer.spent || 0) < 0
-                                    ? "text-red-600"
-                                    : "text-green-600"
-                                )}
-                              >
-                                {new Intl.NumberFormat("nb-NO", {
-                                  style: "currency",
-                                  currency: "NOK",
-                                  maximumFractionDigits: 0,
-                                  signDisplay: "exceptZero",
-                                }).format(
-                                  (offer.value || 0) - (offer.spent || 0)
-                                )}
-                                <span
-                                  className={cn("ml-2 text-xs text-primary")}
-                                >
-                                  {(
-                                    (((offer.value || 0) - (offer.spent || 0)) /
-                                      (offer.value || 1)) *
-                                    100
-                                  ).toFixed(2)}
-                                  %
-                                </span>
                               </p>
                             </div>
                           </div>
-                        )}
+                          {isOrderPhase && offer.invoiced != offer.value && (
+                            <div className="flex flex-col gap-2">
+                              <p className="text-sm text-muted-foreground">
+                                Beregnet dekning dersom alt faktureres uten
+                                flere kostnader
+                              </p>
+                              <div className="flex items-center gap-2">
+                                <p
+                                  className={cn(
+                                    "font-mono text-lg font-bold",
+                                    (offer.value || 0) - (offer.spent || 0) < 0
+                                      ? "text-red-600"
+                                      : "text-green-600"
+                                  )}
+                                >
+                                  {new Intl.NumberFormat("nb-NO", {
+                                    style: "currency",
+                                    currency: "NOK",
+                                    maximumFractionDigits: 0,
+                                    signDisplay: "exceptZero",
+                                  }).format(
+                                    (offer.value || 0) - (offer.spent || 0)
+                                  )}
+                                  <span
+                                    className={cn("ml-2 text-xs text-primary")}
+                                  >
+                                    {(
+                                      (((offer.value || 0) -
+                                        (offer.spent || 0)) /
+                                        (offer.value || 1)) *
+                                      100
+                                    ).toFixed(2)}
+                                    %
+                                  </span>
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                    <div className="min-w-[150px] flex-1">
-                      <p className="text-sm text-muted-foreground">
-                        {isCompletedPhase
-                          ? (offer.orderReserve ??
+                      <div className="min-w-[150px] flex-1">
+                        <p className="text-sm text-muted-foreground">
+                          {isCompletedPhase
+                            ? (offer.orderReserve ??
+                                calcPrice - (offer.invoiced || 0)) < 0
+                              ? "Overfakturert"
+                              : "Ikke fakturert"
+                            : "Gjenstår å fakturere"}
+                        </p>
+                        <p
+                          className={cn(
+                            "font-mono text-lg font-bold",
+                            (offer.orderReserve ??
                               calcPrice - (offer.invoiced || 0)) < 0
-                            ? "Overfakturert"
-                            : "Ikke fakturert"
-                          : "Gjenstår å fakturere"}
-                      </p>
-                      <p
-                        className={cn(
-                          "font-mono text-lg font-bold",
-                          (offer.orderReserve ??
-                            calcPrice - (offer.invoiced || 0)) < 0
-                            ? "text-red-600"
-                            : (offer.orderReserve ??
-                                  calcPrice - (offer.invoiced || 0)) === 0
-                              ? "text-muted-foreground"
-                              : "text-green-600"
-                        )}
-                      >
-                        {new Intl.NumberFormat("nb-NO", {
-                          style: "currency",
-                          currency: "NOK",
-                          maximumFractionDigits: 0,
-                          signDisplay: "exceptZero",
-                        }).format(
-                          offer.orderReserve ??
-                            calcPrice - (offer.invoiced || 0)
-                        )}
-                      </p>
-                    </div>
-                  </div>
-
-                  {isOrderPhase && showOrderPhase && (
-                    <div className="flex flex-wrap gap-4 border-t pt-4">
-                      <div className="min-w-[200px] flex-1">
-                        <Label className="text-sm text-muted-foreground">
-                          Helsestatus
-                        </Label>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="outline"
-                              className="mt-1 w-full justify-between"
-                            >
-                              {offer.health ? (
-                                <OfferHealthBadge health={offer.health} />
-                              ) : (
-                                <span className="text-muted-foreground">
-                                  Velg status...
-                                </span>
-                              )}
-                              <ChevronDown className="ml-2 h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent
-                            align="start"
-                            className="w-[200px]"
-                          >
-                            <DropdownMenuItem
-                              onClick={() =>
-                                updateHealth.mutate({
-                                  id: offer.id!,
-                                  health: "on_track",
-                                })
-                              }
-                            >
-                              <OfferHealthBadge health="on_track" />
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() =>
-                                updateHealth.mutate({
-                                  id: offer.id!,
-                                  health: "at_risk",
-                                })
-                              }
-                            >
-                              <OfferHealthBadge health="at_risk" />
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() =>
-                                updateHealth.mutate({
-                                  id: offer.id!,
-                                  health: "delayed",
-                                })
-                              }
-                            >
-                              <OfferHealthBadge health="delayed" />
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() =>
-                                updateHealth.mutate({
-                                  id: offer.id!,
-                                  health: "over_budget",
-                                })
-                              }
-                            >
-                              <OfferHealthBadge health="over_budget" />
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                      <div className="min-w-[200px] flex-1">
-                        <Label className="text-sm text-muted-foreground">
-                          Ferdigstillelse: {localCompletionPercent}%
-                        </Label>
-                        <Slider
-                          value={[localCompletionPercent]}
-                          max={100}
-                          min={0}
-                          step={5}
-                          className="mt-3"
-                          onValueChange={(val) =>
-                            setLocalCompletionPercent(val[0])
-                          }
-                          onValueCommit={(val) => {
-                            updateHealth.mutate({
-                              id: offer.id!,
-                              health:
-                                (offer.health as
-                                  | "on_track"
-                                  | "at_risk"
-                                  | "delayed"
-                                  | "over_budget") || "on_track",
-                              completionPercent: val[0],
-                            });
-                          }}
-                        />
+                              ? "text-red-600"
+                              : (offer.orderReserve ??
+                                    calcPrice - (offer.invoiced || 0)) === 0
+                                ? "text-muted-foreground"
+                                : "text-green-600"
+                          )}
+                        >
+                          {new Intl.NumberFormat("nb-NO", {
+                            style: "currency",
+                            currency: "NOK",
+                            maximumFractionDigits: 0,
+                            signDisplay: "exceptZero",
+                          }).format(
+                            offer.orderReserve ??
+                              calcPrice - (offer.invoiced || 0)
+                          )}
+                        </p>
                       </div>
                     </div>
-                  )}
 
-                  <div className="flex w-full justify-end text-xs text-muted-foreground">
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger className="cursor-default">
-                          Synkronisert:{" "}
-                          {offer.dwLastSyncedAt
-                            ? formatDistanceToNow(
-                                new Date(offer.dwLastSyncedAt),
-                                {
-                                  addSuffix: true,
-                                  locale: nb,
+                    {isOrderPhase && showOrderPhase && (
+                      <div className="flex flex-wrap gap-4 border-t pt-4">
+                        <div className="min-w-[200px] flex-1">
+                          <Label className="text-sm text-muted-foreground">
+                            Helsestatus
+                          </Label>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className="mt-1 w-full justify-between"
+                              >
+                                {offer.health ? (
+                                  <OfferHealthBadge health={offer.health} />
+                                ) : (
+                                  <span className="text-muted-foreground">
+                                    Velg status...
+                                  </span>
+                                )}
+                                <ChevronDown className="ml-2 h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                              align="start"
+                              className="w-[200px]"
+                            >
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  updateHealth.mutate({
+                                    id: offer.id!,
+                                    health: "on_track",
+                                  })
                                 }
-                              )
-                            : "Aldri"}
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>
+                              >
+                                <OfferHealthBadge health="on_track" />
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  updateHealth.mutate({
+                                    id: offer.id!,
+                                    health: "at_risk",
+                                  })
+                                }
+                              >
+                                <OfferHealthBadge health="at_risk" />
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  updateHealth.mutate({
+                                    id: offer.id!,
+                                    health: "delayed",
+                                  })
+                                }
+                              >
+                                <OfferHealthBadge health="delayed" />
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  updateHealth.mutate({
+                                    id: offer.id!,
+                                    health: "over_budget",
+                                  })
+                                }
+                              >
+                                <OfferHealthBadge health="over_budget" />
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                        <div className="min-w-[200px] flex-1">
+                          <Label className="text-sm text-muted-foreground">
+                            Ferdigstillelse: {localCompletionPercent}%
+                          </Label>
+                          <Slider
+                            value={[localCompletionPercent]}
+                            max={100}
+                            min={0}
+                            step={5}
+                            className="mt-3"
+                            onValueChange={(val) =>
+                              setLocalCompletionPercent(val[0])
+                            }
+                            onValueCommit={(val) => {
+                              updateHealth.mutate({
+                                id: offer.id!,
+                                health:
+                                  (offer.health as
+                                    | "on_track"
+                                    | "at_risk"
+                                    | "delayed"
+                                    | "over_budget") || "on_track",
+                                completionPercent: val[0],
+                              });
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex w-full justify-end text-xs text-muted-foreground">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger className="cursor-default">
+                            Synkronisert:{" "}
                             {offer.dwLastSyncedAt
-                              ? format(
+                              ? formatDistanceToNow(
                                   new Date(offer.dwLastSyncedAt),
-                                  "dd.MM.yyyy HH:mm"
+                                  {
+                                    addSuffix: true,
+                                    locale: nb,
+                                  }
                                 )
-                              : "Aldri synkronisert"}
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+                              : "Aldri"}
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>
+                              {offer.dwLastSyncedAt
+                                ? format(
+                                    new Date(offer.dwLastSyncedAt),
+                                    "dd.MM.yyyy HH:mm"
+                                  )
+                                : "Aldri synkronisert"}
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
-            <OfferDescription
-              offerId={offer.id!}
-              initialDescription={offer.description || ""}
-            />
+              <OfferDescription
+                offerId={offer.id!}
+                initialDescription={offer.description || ""}
+              />
 
-            <OfferNotesCard notes={offer.notes} />
-          </div>
+              <OfferNotesCard notes={offer.notes} />
+            </TabsContent>
+
+            <TabsContent value="information">
+              <OfferInformationTab />
+            </TabsContent>
+
+            <TabsContent value="economy">
+              <OfferEconomyTab />
+            </TabsContent>
+
+            <TabsContent value="suppliers">
+              <OfferSuppliersTab offerId={resolvedParams.id} />
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
 

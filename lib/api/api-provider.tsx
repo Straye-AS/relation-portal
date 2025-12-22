@@ -27,6 +27,7 @@ import { Notifications } from "@/lib/.generated/Notifications";
 import { Offers } from "@/lib/.generated/Offers";
 import { Projects } from "@/lib/.generated/Projects";
 import { Search } from "@/lib/.generated/Search";
+import { Suppliers } from "@/lib/.generated/Suppliers";
 import { Users } from "@/lib/.generated/Users";
 
 /**
@@ -48,6 +49,7 @@ export interface ApiClient {
   offers: Offers;
   projects: Projects;
   search: Search;
+  suppliers: Suppliers;
   users: Users;
 }
 
@@ -101,6 +103,7 @@ export function ApiProvider({ children }: ApiProviderProps) {
       offers: new Offers(http),
       projects: new Projects(http),
       search: new Search(http),
+      suppliers: new Suppliers(http),
       users: new Users(http),
     };
   }, [getAccessToken]);

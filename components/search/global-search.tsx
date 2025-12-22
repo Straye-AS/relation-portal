@@ -16,6 +16,7 @@ import {
   Loader2,
   DollarSign,
   MapPin,
+  Truck,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ProjectPhaseBadge } from "../projects/project-phase-badge";
@@ -52,8 +53,8 @@ const typeConfig: Record<
     route: "/projects",
   },
   offer: {
-    label: "Tilbud",
-    labelPlural: "Tilbud",
+    label: "Tilbud og ordre",
+    labelPlural: "Tilbud og ordre",
     icon: FileText,
     color: "purple",
     route: "/offers",
@@ -71,6 +72,13 @@ const typeConfig: Record<
     icon: User,
     color: "orange",
     route: "/contacts",
+  },
+  supplier: {
+    label: "Leverandør",
+    labelPlural: "Leverandører",
+    icon: Truck,
+    color: "teal",
+    route: "/suppliers",
   },
 };
 
@@ -111,10 +119,12 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
       offers?: any[];
       deals?: any[];
       contacts?: any[];
+      suppliers?: any[];
     };
 
     const mappedResults: SearchResultItem[] = [];
 
+    // Customers first
     if (response.customers?.length) {
       mappedResults.push(
         ...response.customers.map((item) => ({
@@ -136,21 +146,7 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
       );
     }
 
-    if (response.projects?.length) {
-      mappedResults.push(
-        ...response.projects.map((item) => {
-          return {
-            id: item.id,
-            title: item.name || item.title,
-            header: item.projectNumber,
-            subtitle: `${item.customerName ?? ""}`,
-            type: "project",
-            metadata: <ProjectPhaseBadge phase={item.phase} />,
-          };
-        })
-      );
-    }
-
+    // Offers before projects
     if (response.offers?.length) {
       mappedResults.push(
         ...response.offers.map((item) => {
@@ -174,6 +170,51 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
             ),
           };
         })
+      );
+    }
+
+    // Projects after offers
+    if (response.projects?.length) {
+      mappedResults.push(
+        ...response.projects.map((item) => {
+          return {
+            id: item.id,
+            title: item.name || item.title,
+            header: item.projectNumber,
+            subtitle: `${item.customerName ?? ""}`,
+            type: "project",
+            metadata: (
+              <div className="flex items-center gap-2">
+                <ProjectPhaseBadge phase={item.phase} />
+                <span className="hidden min-w-[120px] text-right md:block">
+                  {item.offerCount} tilbud
+                </span>
+              </div>
+            ),
+          };
+        })
+      );
+    }
+
+    // Suppliers
+    if (response.suppliers?.length) {
+      mappedResults.push(
+        ...response.suppliers.map((item) => ({
+          id: item.id,
+          title: item.name,
+          subtitle: (
+            <Badge variant="outline" className="font-normal">
+              {item.orgNumber ? `Org.nr: ${item.orgNumber}` : "Uten org.nr"}
+            </Badge>
+          ),
+          type: "supplier",
+          metadata: item.city ? (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <MapPin className="h-3 w-3" />
+              <span>{item.city}</span>
+            </div>
+          ) : null,
+        }))
       );
     }
 
@@ -291,6 +332,10 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
         bg: "bg-amber-100 dark:bg-amber-900",
         text: "text-amber-600 dark:text-amber-400",
       },
+      teal: {
+        bg: "bg-teal-100 dark:bg-teal-900",
+        text: "text-teal-600 dark:text-teal-400",
+      },
     };
     return colors[colorName] || colors.blue;
   };
@@ -362,7 +407,7 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
           <Search className="mr-2 h-5 w-5 text-muted-foreground" />
           <Input
             ref={inputRef}
-            placeholder="Søk etter kunder, prosjekter, tilbud eller kontakter..."
+            placeholder="Søk etter kunder, tilbud, prosjekter, leverandører..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}

@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { AppLayout } from "@/components/layout/app-layout";
-import { useCustomers } from "@/hooks/useCustomers";
+import { useSuppliers } from "@/hooks/useSuppliers";
 import { Button } from "@/components/ui/button";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
 import {
@@ -27,23 +27,25 @@ import {
   LayoutGrid,
   List as ListIcon,
   MapPin,
-  Building2,
+  Truck,
   Mail,
   Phone,
   MoreHorizontal,
   ArrowUp,
   ArrowDown,
   ArrowUpDown,
+  Globe,
 } from "lucide-react";
 
-import type { DomainCustomerDTO } from "@/lib/.generated/data-contracts";
+import type { DomainSupplierDTO } from "@/lib/.generated/data-contracts";
+import { SortByEnum6, SortOrderEnum5 } from "@/lib/.generated/data-contracts";
 import { useState } from "react";
+import { SupplierStatusBadge } from "@/components/suppliers/supplier-status-badge";
 
-// Lazy load modal to reduce initial bundle size
-const AddCustomerModal = dynamic(
+const AddSupplierModal = dynamic(
   () =>
-    import("@/components/customers/add-customer-modal").then(
-      (mod) => mod.AddCustomerModal
+    import("@/components/suppliers/add-supplier-modal").then(
+      (mod) => mod.AddSupplierModal
     ),
   { ssr: false }
 );
@@ -59,40 +61,50 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { NewBadge } from "@/components/ui/new-badge";
 import { PaginationControls } from "@/components/pagination-controls";
 import { Badge } from "@/components/ui/badge";
-import { SupplierStatusBadge } from "@/components/suppliers/supplier-status-badge";
 
 type ViewMode = "list" | "card";
 
-export default function CustomersPage() {
+export default function SuppliersPage() {
   const router = useRouter();
   const [page, setPage] = useState(1);
   const pageSize = 20;
 
-  const [sortBy, setSortBy] = useState<string>("name");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [sortBy, setSortBy] = useState<SortByEnum6>(SortByEnum6.Name);
+  const [sortOrder, setSortOrder] = useState<SortOrderEnum5>(
+    SortOrderEnum5.Asc
+  );
 
-  const { data, isLoading } = useCustomers({
+  const { data, isLoading } = useSuppliers({
     page,
     pageSize,
-    sortBy: sortBy as any,
-    sortOrder: sortOrder as any,
+    sortBy,
+    sortOrder,
   });
 
   const [viewMode, setViewMode] = useState<ViewMode>("list");
 
-  // Extract customers from paginated response
-  const customers: DomainCustomerDTO[] = data?.data ?? [];
+  const suppliers: DomainSupplierDTO[] = data?.data ?? [];
 
-  const handleSort = (key: string) => {
+  const handleSort = (key: SortByEnum6) => {
     if (sortBy === key) {
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+      setSortOrder(
+        sortOrder === SortOrderEnum5.Asc
+          ? SortOrderEnum5.Desc
+          : SortOrderEnum5.Asc
+      );
     } else {
       setSortBy(key);
-      setSortOrder("asc");
+      setSortOrder(SortOrderEnum5.Asc);
     }
   };
 
-  const SortButton = ({ column, label }: { column: string; label: string }) => {
+  const SortButton = ({
+    column,
+    label,
+  }: {
+    column: SortByEnum6;
+    label: string;
+  }) => {
     return (
       <Button
         variant="ghost"
@@ -102,7 +114,7 @@ export default function CustomersPage() {
       >
         <span>{label}</span>
         {sortBy === column ? (
-          sortOrder === "asc" ? (
+          sortOrder === SortOrderEnum5.Asc ? (
             <ArrowUp className="ml-2 h-4 w-4" />
           ) : (
             <ArrowDown className="ml-2 h-4 w-4" />
@@ -121,13 +133,13 @@ export default function CustomersPage() {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-3xl font-bold tracking-tight">
-                Kunder{" "}
+                Leverandører{" "}
                 <span className="text-sm text-muted-foreground">
                   ({data?.total ?? 0})
                 </span>
               </h1>
               <p className="text-muted-foreground">
-                Oversikt over alle kunder og deres informasjon
+                Oversikt over alle leverandører og deres informasjon
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -151,7 +163,7 @@ export default function CustomersPage() {
                   <span className="sr-only">Kort visning</span>
                 </Button>
               </div>
-              <AddCustomerModal />
+              <AddSupplierModal />
             </div>
           </div>
         </div>
@@ -171,17 +183,19 @@ export default function CustomersPage() {
                   ))}
                 </div>
               )
-            ) : customers.length === 0 ? (
+            ) : suppliers.length === 0 ? (
               <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-16 text-center animate-in fade-in-50">
                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-                  <Building2 className="h-6 w-6 text-muted-foreground" />
+                  <Truck className="h-6 w-6 text-muted-foreground" />
                 </div>
-                <h3 className="mt-4 text-lg font-semibold">Ingen kunder</h3>
+                <h3 className="mt-4 text-lg font-semibold">
+                  Ingen leverandører
+                </h3>
                 <p className="mb-4 mt-2 max-w-sm text-sm text-muted-foreground">
-                  Du har ikke lagt til noen kunder enda. Opprett din første
-                  kunde for å komme i gang.
+                  Du har ikke lagt til noen leverandører enda. Opprett din
+                  første leverandør for å komme i gang.
                 </p>
-                <AddCustomerModal />
+                <AddSupplierModal />
               </div>
             ) : (
               <div className="duration-500 animate-in fade-in-50">
@@ -191,83 +205,113 @@ export default function CustomersPage() {
                       <TableHeader>
                         <TableRow>
                           <TableHead>
-                            <SortButton column="name" label="Kunde" />
+                            <SortButton
+                              column={SortByEnum6.Name}
+                              label="Leverandør"
+                            />
                           </TableHead>
                           <TableHead>Kontaktinfo</TableHead>
                           <TableHead>
-                            <SortButton column="city" label="Lokasjon" />
+                            <SortButton
+                              column={SortByEnum6.City}
+                              label="Lokasjon"
+                            />
                           </TableHead>
-                          <TableHead>Status</TableHead>
+                          <TableHead>
+                            <SortButton
+                              column={SortByEnum6.Category}
+                              label="Kategori"
+                            />
+                          </TableHead>
+                          <TableHead>
+                            <SortButton
+                              column={SortByEnum6.Status}
+                              label="Status"
+                            />
+                          </TableHead>
                           <TableHead className="text-right">Handling</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {customers.map((customer) => (
+                        {suppliers.map((supplier) => (
                           <TableRow
-                            key={customer.id}
+                            key={supplier.id}
                             className="cursor-pointer hover:bg-muted/50"
                             onClick={() =>
-                              router.push(`/customers/${customer.id}`)
+                              router.push(`/suppliers/${supplier.id}`)
                             }
                           >
                             <TableCell>
                               <div className="flex items-center gap-3">
                                 <Avatar className="h-9 w-9">
                                   <AvatarImage
-                                    src={`https://avatar.vercel.sh/${customer.name}`}
-                                    alt={customer.name}
+                                    src={`https://avatar.vercel.sh/${supplier.name}`}
+                                    alt={supplier.name}
                                   />
                                   <AvatarFallback>
-                                    {customer.name
+                                    {supplier.name
                                       ?.substring(0, 2)
                                       .toUpperCase() ?? "??"}
                                   </AvatarFallback>
                                 </Avatar>
                                 <div className="font-medium">
                                   <div>
-                                    {customer.name}
-                                    <NewBadge createdAt={customer.createdAt} />
+                                    {supplier.name}
+                                    <NewBadge createdAt={supplier.createdAt} />
                                   </div>
                                   <Badge
                                     variant="outline"
                                     className="font-normal"
                                   >
-                                    {customer.orgNumber
-                                      ? `Org.nr: ${customer.orgNumber}`
-                                      : "Privatperson"}
+                                    {supplier.orgNumber
+                                      ? `Org.nr: ${supplier.orgNumber}`
+                                      : "Uten org.nr"}
                                   </Badge>
                                 </div>
                               </div>
                             </TableCell>
                             <TableCell>
                               <div className="flex flex-col gap-1 text-sm">
-                                {customer.email && (
+                                {supplier.email && (
                                   <div className="flex items-center gap-2 text-muted-foreground">
                                     <Mail className="h-3 w-3" />
-                                    <span>{customer.email}</span>
+                                    <span>{supplier.email}</span>
                                   </div>
                                 )}
-                                {customer.phone && (
+                                {supplier.phone && (
                                   <div className="flex items-center gap-2 text-muted-foreground">
                                     <Phone className="h-3 w-3" />
-                                    <span>{customer.phone}</span>
+                                    <span>{supplier.phone}</span>
                                   </div>
                                 )}
                               </div>
                             </TableCell>
                             <TableCell>
-                              {customer.city ? (
+                              {supplier.city ? (
                                 <div className="flex items-center gap-2 text-muted-foreground">
                                   <MapPin className="h-3 w-3" />
-                                  <span>{customer.city}</span>
+                                  <span>{supplier.city}</span>
                                 </div>
+                              ) : (
+                                <span className="text-muted-foreground">-</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="max-w-[200px]">
+                              {supplier.category ? (
+                                <Badge
+                                  variant="secondary"
+                                  className="inline-block max-w-full truncate align-middle"
+                                  title={supplier.category}
+                                >
+                                  {supplier.category}
+                                </Badge>
                               ) : (
                                 <span className="text-muted-foreground">-</span>
                               )}
                             </TableCell>
                             <TableCell>
                               <SupplierStatusBadge
-                                status={customer.status ?? "active"}
+                                status={supplier.status ?? "active"}
                               />
                             </TableCell>
                             <TableCell className="text-right">
@@ -288,7 +332,7 @@ export default function CustomersPage() {
                                   </DropdownMenuLabel>
                                   <DropdownMenuItem asChild>
                                     <Link
-                                      href={`/customers/${customer.id}`}
+                                      href={`/suppliers/${supplier.id}`}
                                       className="cursor-pointer"
                                     >
                                       <Eye className="mr-2 h-4 w-4" />
@@ -296,7 +340,6 @@ export default function CustomersPage() {
                                     </Link>
                                   </DropdownMenuItem>
                                   <DropdownMenuSeparator />
-                                  {/* Add edit/delete actions here later */}
                                 </DropdownMenuContent>
                               </DropdownMenu>
                             </TableCell>
@@ -307,62 +350,94 @@ export default function CustomersPage() {
                   </div>
                 ) : (
                   <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    {customers.map((customer) => (
+                    {suppliers.map((supplier) => (
                       <Card
-                        key={customer.id}
+                        key={supplier.id}
                         className="flex flex-col overflow-hidden transition-all duration-200 hover:shadow-md"
                       >
                         <CardHeader className="flex flex-row items-center gap-4 bg-muted/40 pb-4">
                           <Avatar className="h-12 w-12 border-2 border-background">
                             <AvatarImage
-                              src={`https://avatar.vercel.sh/${customer.name}`}
-                              alt={customer.name}
+                              src={`https://avatar.vercel.sh/${supplier.name}`}
+                              alt={supplier.name}
                             />
                             <AvatarFallback className="text-lg font-bold">
-                              {customer.name?.substring(0, 2).toUpperCase() ??
+                              {supplier.name?.substring(0, 2).toUpperCase() ??
                                 "??"}
                             </AvatarFallback>
                           </Avatar>
                           <div className="grid gap-1">
                             <CardTitle className="text-lg leading-none">
                               <Link
-                                href={`/customers/${customer.id}`}
+                                href={`/suppliers/${supplier.id}`}
                                 className="decoration-primary underline-offset-4 hover:underline"
                               >
-                                {customer.name}
-                                <NewBadge createdAt={customer.createdAt} />
+                                {supplier.name}
+                                <NewBadge createdAt={supplier.createdAt} />
                               </Link>
                             </CardTitle>
                             <CardDescription>
-                              {customer.orgNumber ?? "Privatperson"}
+                              {supplier.orgNumber ?? "Uten org.nr"}
                             </CardDescription>
                           </div>
                         </CardHeader>
                         <CardContent className="flex flex-1 flex-col gap-4 p-6">
+                          <div className="flex items-center gap-2">
+                            <SupplierStatusBadge
+                              status={supplier.status ?? "active"}
+                            />
+                            {supplier.category && (
+                              <Badge
+                                variant="secondary"
+                                className="inline-block max-w-[150px] truncate align-middle"
+                                title={supplier.category}
+                              >
+                                {supplier.category}
+                              </Badge>
+                            )}
+                          </div>
+
                           <div className="grid gap-2 text-sm">
-                            {customer.email && (
+                            {supplier.email && (
                               <div className="flex items-center gap-2 text-muted-foreground">
                                 <Mail className="h-4 w-4" />
                                 <span className="truncate">
-                                  {customer.email}
+                                  {supplier.email}
                                 </span>
                               </div>
                             )}
-                            {customer.phone && (
+                            {supplier.phone && (
                               <div className="flex items-center gap-2 text-muted-foreground">
                                 <Phone className="h-4 w-4" />
-                                <span>{customer.phone}</span>
+                                <span>{supplier.phone}</span>
                               </div>
                             )}
-                            {customer.city && (
+                            {supplier.city && (
                               <div className="flex items-center gap-2 text-muted-foreground">
                                 <MapPin className="h-4 w-4" />
                                 <span className="truncate">
-                                  {customer.address
-                                    ? `${customer.address}, `
+                                  {supplier.address
+                                    ? `${supplier.address}, `
                                     : ""}
-                                  {customer.postalCode} {customer.city}
+                                  {supplier.postalCode} {supplier.city}
                                 </span>
+                              </div>
+                            )}
+                            {supplier.website && (
+                              <div className="flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground">
+                                <Globe className="h-4 w-4" />
+                                <a
+                                  href={
+                                    supplier.website.startsWith("http")
+                                      ? supplier.website
+                                      : `https://${supplier.website}`
+                                  }
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="truncate hover:underline"
+                                >
+                                  {supplier.website}
+                                </a>
                               </div>
                             )}
                           </div>
@@ -370,13 +445,13 @@ export default function CustomersPage() {
                           <div className="mt-auto flex items-center justify-between border-t pt-4">
                             <span className="text-xs text-muted-foreground">
                               Opprettet{" "}
-                              {customer.createdAt
+                              {supplier.createdAt
                                 ? new Date(
-                                    customer.createdAt
+                                    supplier.createdAt
                                   ).toLocaleDateString("nb-NO")
                                 : "-"}
                             </span>
-                            <Link href={`/customers/${customer.id}`}>
+                            <Link href={`/suppliers/${supplier.id}`}>
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -394,15 +469,14 @@ export default function CustomersPage() {
               </div>
             )}
 
-            {/* Pagination info */}
-            {data && customers.length > 0 && (
+            {data && suppliers.length > 0 && (
               <PaginationControls
                 currentPage={page}
                 totalPages={Math.ceil((data.total ?? 0) / pageSize)}
                 onPageChange={setPage}
                 pageSize={pageSize}
                 totalCount={data.total ?? 0}
-                entityName="kunder"
+                entityName="leverandører"
               />
             )}
           </div>

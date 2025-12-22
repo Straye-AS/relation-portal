@@ -27,7 +27,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: "X-Frame-Options",
-            value: "DENY",
+            value: "SAMEORIGIN",
           },
           {
             key: "X-XSS-Protection",
@@ -55,9 +55,9 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: https: blob:",
               "font-src 'self' data:",
-              "connect-src 'self' https://login.microsoftonline.com https://*.microsoftonline.com https://*.azure.com",
+              "connect-src 'self' http://localhost:* https://login.microsoftonline.com https://*.microsoftonline.com https://*.azure.com https://*.proudsmoke-10281cc0.norwayeast.azurecontainerapps.io https://*.azurecontainerapps.io https://data.brreg.no",
               "frame-src 'self' https://login.microsoftonline.com",
-              "frame-ancestors 'none'",
+              "frame-ancestors 'self'",
               "base-uri 'self'",
               "form-action 'self'",
             ].join("; "),

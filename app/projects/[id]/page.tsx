@@ -8,7 +8,13 @@ import {
   useProjectOffers,
 } from "@/hooks/useProjects";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { CardSkeleton } from "@/components/ui/card-skeleton";
 
 // Lazy load modal to reduce initial bundle size
@@ -183,52 +189,51 @@ export default function ProjectDetailPage({
                       </p>
                     </div>
                   </div>
-
-                  <div className="flex flex-col gap-2 border-t pt-4 text-xs text-muted-foreground">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="w-28 shrink-0">Opprettet av</span>
-                        {project.createdByName ?? (
-                          <Badge
-                            variant="secondary"
-                            className="h-4 px-1 text-[10px]"
-                          >
-                            System
-                          </Badge>
-                        )}
-                      </div>
-                      <span>
-                        {project.createdAt
-                          ? format(
-                              new Date(project.createdAt),
-                              "dd.MM.yyyy HH:mm"
-                            )
-                          : "Ukjent"}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="w-28 shrink-0">Sist oppdatert av</span>
-                        {project.updatedByName ?? (
-                          <Badge
-                            variant="secondary"
-                            className="h-4 px-1 text-[10px]"
-                          >
-                            System
-                          </Badge>
-                        )}
-                      </div>
-                      <span>
-                        {project.updatedAt
-                          ? format(
-                              new Date(project.updatedAt),
-                              "dd.MM.yyyy HH:mm"
-                            )
-                          : "Ukjent"}
-                      </span>
-                    </div>
-                  </div>
                 </CardContent>
+                <CardFooter className="flex flex-col gap-2 border-t bg-muted/30 px-6 py-4 text-xs text-muted-foreground">
+                  <div className="flex w-full items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="w-28 shrink-0">Opprettet av</span>
+                      {project.createdByName ?? (
+                        <Badge
+                          variant="secondary"
+                          className="h-4 px-1 text-[10px]"
+                        >
+                          System
+                        </Badge>
+                      )}
+                    </div>
+                    <span>
+                      {project.createdAt
+                        ? format(
+                            new Date(project.createdAt),
+                            "dd.MM.yyyy HH:mm"
+                          )
+                        : "Ukjent"}
+                    </span>
+                  </div>
+                  <div className="flex w-full items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="w-28 shrink-0">Sist oppdatert av</span>
+                      {project.updatedByName ?? (
+                        <Badge
+                          variant="secondary"
+                          className="h-4 px-1 text-[10px]"
+                        >
+                          System
+                        </Badge>
+                      )}
+                    </div>
+                    <span>
+                      {project.updatedAt
+                        ? format(
+                            new Date(project.updatedAt),
+                            "dd.MM.yyyy HH:mm"
+                          )
+                        : "Ukjent"}
+                    </span>
+                  </div>
+                </CardFooter>
               </Card>
 
               {/* Finance card removed - finance tracking has moved to offers */}
