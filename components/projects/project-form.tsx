@@ -18,7 +18,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { DomainCreateProjectRequest } from "@/lib/.generated/data-contracts";
-import { DomainCreateProjectRequestPhaseEnum } from "@/lib/.generated/data-contracts";
 import { useAllCustomers } from "@/hooks/useCustomers";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { SmartDatePicker } from "@/components/ui/smart-date-picker";
@@ -80,7 +79,6 @@ export function ProjectForm({
 
   const handleSubmit = async (values: ProjectFormValues) => {
     const payload: DomainCreateProjectRequest = {
-      phase: DomainCreateProjectRequestPhaseEnum.Tilbud,
       customerId: values.customerId || undefined,
       name: values.name,
       description: values.description || undefined,

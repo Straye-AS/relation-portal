@@ -306,13 +306,11 @@ describe("useCreateProject", () => {
     await act(async () => {
       await result.current.mutateAsync({
         name: "New Project",
-        customerId: "cust-1",
       });
     });
 
     expect(mockProjectsCreate).toHaveBeenCalledWith({
       name: "New Project",
-      customerId: "cust-1",
     });
   });
 });
