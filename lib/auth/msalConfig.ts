@@ -15,9 +15,10 @@ export const msalConfig: Configuration = {
   },
   cache: {
     cacheLocation: "localStorage",
-    storeAuthStateInCookie: false,
+    storeAuthStateInCookie: true,
   },
   system: {
+    allowRedirectInIframe: true,
     loggerOptions: {
       loggerCallback: (level, message, containsPii) => {
         if (containsPii) {

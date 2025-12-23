@@ -10,7 +10,7 @@ interface OfferHealthBadgeProps {
 
 const HEALTH_LABELS: Record<OfferHealth, string> = {
   on_track: "På sporet",
-  at_risk: "I risiko",
+  at_risk: "Underfakturert",
   delayed: "Forsinket",
   over_budget: "Over budsjett",
 };

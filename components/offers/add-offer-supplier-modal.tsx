@@ -121,7 +121,7 @@ export function AddOfferSupplierModal({
           Legg til leverandør
         </Button>
       </DialogTrigger>
-      <DialogContent className="flex max-h-[90vh] w-[95vw] max-w-[95vw] flex-col overflow-hidden p-0 lg:max-w-4xl xl:max-w-5xl">
+      <DialogContent className="flex max-h-[90vh] w-[95vw] max-w-[95vw] flex-col overflow-hidden p-0 lg:w-[80vw] lg:max-w-[80vw]">
         <DialogHeader className="flex-none border-b p-6">
           <DialogTitle>Legg til leverandør</DialogTitle>
           <DialogDescription>
@@ -151,7 +151,7 @@ export function AddOfferSupplierModal({
           </div>
 
           {/* Supplier table */}
-          <div className="flex-1 overflow-y-auto rounded-lg border">
+          <div className="flex-1 overflow-auto rounded-lg border">
             {isLoadingSuppliers ? (
               <div className="flex items-center justify-center py-16">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -167,7 +167,7 @@ export function AddOfferSupplierModal({
                 </p>
               </div>
             ) : (
-              <Table>
+              <Table className="min-w-[700px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[50px]"></TableHead>
@@ -253,9 +253,15 @@ export function AddOfferSupplierModal({
                           <span className="text-muted-foreground">-</span>
                         )}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="max-w-[200px]">
                         {supplier.category ? (
-                          <Badge variant="secondary">{supplier.category}</Badge>
+                          <Badge
+                            variant="secondary"
+                            className="inline-block max-w-full truncate align-middle"
+                            title={supplier.category}
+                          >
+                            {supplier.category}
+                          </Badge>
                         ) : (
                           <span className="text-muted-foreground">-</span>
                         )}

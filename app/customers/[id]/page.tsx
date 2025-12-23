@@ -469,15 +469,100 @@ export default function CustomerDetailPage({
                 <TabsTrigger value="offers">
                   Tilbud ({customer.stats?.totalOffers ?? "?"})
                 </TabsTrigger>
-                <TabsTrigger value="documents">Dokumenter</TabsTrigger>
+                <TabsTrigger value="documents">
+                  Dokumenter ({customer.stats?.fileCount ?? 0})
+                </TabsTrigger>
                 <TabsTrigger value="contacts">
                   Kontakter ({contacts.length})
                 </TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview" className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-                  <Card className="col-span-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  {/* Contacts */}
+                  <Card className="order-1 md:order-2">
+                    <CardHeader className="flex flex-row items-center justify-between">
+                      <div>
+                        <CardTitle>Kontaktpersoner</CardTitle>
+                        <CardDescription>
+                          Nøkkelpersoner hos kunden
+                        </CardDescription>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIsContactModalOpen(true)}
+                      >
+                        <Users className="mr-2 h-4 w-4" />
+                        Legg til
+                      </Button>
+                    </CardHeader>
+                    <CardContent>
+                      {isLoadingContacts && (
+                        <div className="py-8 text-center text-sm text-muted-foreground">
+                          Laster kontakter...
+                        </div>
+                      )}
+                      {!isLoadingContacts && contacts.length > 0 && (
+                        <div className="space-y-2">
+                          {contacts.slice(0, 4).map((contact: CustomerContact) => (
+                            <div
+                              key={contact.id}
+                              className="flex cursor-pointer items-center justify-between rounded-lg border p-3 hover:bg-muted/50"
+                              onClick={() => handleTabChange("contacts")}
+                            >
+                              <div className="flex items-center gap-3">
+                                <Avatar className="h-9 w-9">
+                                  <AvatarFallback>
+                                    {contact.name?.substring(0, 2).toUpperCase()}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <p className="text-sm font-medium leading-none">
+                                    {contact.name}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {contact.role || "Ingen rolle"}
+                                  </p>
+                                </div>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setContactToDelete(contact);
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {!isLoadingContacts && contacts.length === 0 && (
+                        <div className="flex flex-col items-center justify-center gap-2 py-8 text-center">
+                          <Users className="h-10 w-10 text-muted-foreground/50" />
+                          <p className="text-sm text-muted-foreground">
+                            Ingen kontakter registrert
+                          </p>
+                        </div>
+                      )}
+                      {contacts.length > 4 && (
+                        <Button
+                          variant="link"
+                          className="mt-4 w-full text-xs"
+                          onClick={() => handleTabChange("contacts")}
+                        >
+                          Se alle {contacts.length} kontakter
+                        </Button>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Activity */}
+                  <Card className="order-2 md:order-1">
                     <CardHeader>
                       <CardTitle>Siste aktivitet</CardTitle>
                       <CardDescription>
@@ -491,93 +576,6 @@ export default function CustomerDetailPage({
                           Ingen nylige endringer funnet.
                         </p>
                         {/* Placeholder for future activity feed integration */}
-                      </div>
-                    </CardContent>
-                  </Card>
-                  <Card className="col-span-3">
-                    <CardHeader>
-                      <CardTitle>Kontaktpersoner</CardTitle>
-                      <CardDescription>
-                        Nøkkelpersoner hos kunden
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        {isLoadingContacts && (
-                          <div className="py-8 text-center text-sm text-muted-foreground">
-                            Laster kontakter...
-                          </div>
-                        )}
-                        {!isLoadingContacts &&
-                          contacts
-                            .slice(0, 3)
-                            .map((contact: CustomerContact) => (
-                              <div
-                                key={contact.id}
-                                className="flex cursor-pointer items-center justify-between rounded-md p-2 hover:bg-muted/50"
-                                onClick={() => handleTabChange("contacts")}
-                              >
-                                <div className="flex items-center gap-3">
-                                  <Avatar className="h-9 w-9">
-                                    <AvatarFallback>
-                                      {contact.name
-                                        ?.substring(0, 2)
-                                        .toUpperCase()}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <div>
-                                    <p className="text-sm font-medium leading-none">
-                                      {contact.name}
-                                    </p>
-                                    <p className="text-xs text-muted-foreground">
-                                      {contact.role || "Ingen rolle"}
-                                    </p>
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 text-destructive hover:text-destructive"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setContactToDelete(contact);
-                                    }}
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              </div>
-                            ))}
-                        {!isLoadingContacts && contacts.length === 0 && (
-                          <div className="flex flex-col items-center justify-center gap-2 py-4 text-center">
-                            <p className="text-sm text-muted-foreground">
-                              Ingen kontakter registrert
-                            </p>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setIsContactModalOpen(true)}
-                            >
-                              Legg til kontakt
-                            </Button>
-                          </div>
-                        )}
-                        {contacts.length > 3 && (
-                          <Button
-                            variant="link"
-                            className="w-full text-xs"
-                            onClick={() =>
-                              document
-                                .querySelector<HTMLElement>(
-                                  '[value="contacts"]'
-                                )
-                                ?.click()
-                            }
-                          >
-                            Se alle kontakter
-                          </Button>
-                        )}
                       </div>
                     </CardContent>
                   </Card>

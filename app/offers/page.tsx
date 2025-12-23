@@ -1,8 +1,11 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { Suspense } from "react";
 import { AppLayout } from "@/components/layout/app-layout";
 import { useOffers } from "@/hooks/useOffers";
+import { useCompanyStore } from "@/store/company-store";
+import { OfferStatusBadge } from "@/components/offers/offer-status-badge";
 import { Button } from "@/components/ui/button";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { OfferListTable } from "@/components/offers/offer-list-table";
@@ -19,7 +22,8 @@ import {
 import { X } from "lucide-react";
 import { DomainOfferPhase } from "@/lib/.generated/data-contracts";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
+import { useQueryParams } from "@/hooks/useQueryParams";
 
 // Lazy load modal to reduce initial bundle size
 const AddOfferModal = dynamic(
@@ -33,30 +37,44 @@ const AddOfferModal = dynamic(
 import { COMPANIES } from "@/lib/api/types";
 import { PaginationControls } from "@/components/pagination-controls";
 
-export default function OffersPage() {
-  const [page, setPage] = useState(1);
+// URL parameter schema for offers page
+const offersParamsSchema = {
+  page: { type: "number" as const, default: 1 },
+  phase: { type: "string" as const, default: "all" },
+  company: { type: "string" as const, default: "all" },
+  includeExpired: { type: "boolean" as const, default: false },
+};
+
+function OffersPageContent() {
+  const { params, setParam, setParams, resetParams } =
+    useQueryParams(offersParamsSchema);
+
+  const {
+    page,
+    phase: phaseFilter,
+    company: companyFilter,
+    includeExpired,
+  } = params;
+  const { selectedCompanyId } = useCompanyStore();
+  const showCompanyFilter =
+    selectedCompanyId === "all" || selectedCompanyId === "gruppen";
   const pageSize = 20;
 
-  // Sort State
-  const [sortBy] = useState<string>("updatedAt");
-  const [sortOrder] = useState<"asc" | "desc">("desc");
-
-  // Filters State
-  const [phaseFilter, setPhaseFilter] = useState<string>("all");
-  const [companyFilter, setCompanyFilter] = useState<string>("all");
-  const [includeExpired, setIncludeExpired] = useState(false);
+  // Sort State (not exposed in URL for now)
+  const sortBy = "updatedAt";
+  const sortOrder = "desc";
 
   const { data, isLoading } = useOffers({
     page,
     pageSize,
-    sortBy: sortBy as any,
-    sortOrder: sortOrder as any,
+    sortBy,
+    sortOrder,
     // Pass filters to API
     phase:
       phaseFilter === "all" || phaseFilter === "gruppen"
         ? undefined
-        : (phaseFilter as any),
-  });
+        : phaseFilter,
+  } as Parameters<typeof useOffers>[0]);
 
   // Extract offers from paginated response
   const offers = useMemo<DomainOfferDTO[]>(() => {
@@ -113,6 +131,26 @@ export default function OffersPage() {
     });
   }, [offers, phaseFilter, companyFilter, includeExpired]);
 
+  const handlePageChange = (newPage: number) => {
+    setParam("page", newPage);
+  };
+
+  const handlePhaseChange = (value: string) => {
+    setParams({ phase: value, page: 1 });
+  };
+
+  const handleCompanyChange = (value: string) => {
+    setParams({ company: value, page: 1 });
+  };
+
+  const handleIncludeExpiredChange = (checked: boolean) => {
+    setParam("includeExpired", checked);
+  };
+
+  const handleResetFilters = () => {
+    resetParams();
+  };
+
   return (
     <AppLayout disableScroll>
       <div className="flex h-full flex-col">
@@ -135,58 +173,52 @@ export default function OffersPage() {
 
           {/* Filters Bar */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-            <Select
-              value={companyFilter}
-              onValueChange={(val) => {
-                setCompanyFilter(val);
-                setPage(1);
-              }}
-            >
-              <SelectTrigger className="w-[200px] bg-card">
-                <SelectValue placeholder="Selskap" />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.values(COMPANIES).map((company) => (
-                  <SelectItem key={company.id} value={company.id}>
-                    <div className="flex items-center gap-2">
-                      {company.id !== "all" && (
-                        <div
-                          className="h-2 w-2 rounded-full"
-                          style={{ backgroundColor: company.color }}
-                        />
-                      )}
-                      <span>{company.name}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select
-              value={phaseFilter}
-              onValueChange={(val) => {
-                setPhaseFilter(val);
-                setPage(1);
-              }}
-            >
+            {showCompanyFilter && (
+              <Select value={companyFilter} onValueChange={handleCompanyChange}>
+                <SelectTrigger className="w-[200px] bg-card">
+                  <SelectValue placeholder="Selskap" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.values(COMPANIES).map((company) => (
+                    <SelectItem key={company.id} value={company.id}>
+                      <div className="flex items-center gap-2">
+                        {company.id !== "all" && (
+                          <div
+                            className="h-2 w-2 rounded-full"
+                            style={{ backgroundColor: company.color }}
+                          />
+                        )}
+                        <span>{company.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            <Select value={phaseFilter} onValueChange={handlePhaseChange}>
               <SelectTrigger className="w-[180px] bg-card">
                 <SelectValue placeholder="Fase" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Alle faser</SelectItem>
                 <SelectItem value={DomainOfferPhase.OfferPhaseInProgress}>
-                  I gang
+                  <OfferStatusBadge
+                    phase={DomainOfferPhase.OfferPhaseInProgress}
+                  />
                 </SelectItem>
                 <SelectItem value={DomainOfferPhase.OfferPhaseSent}>
-                  Sendt
+                  <OfferStatusBadge phase={DomainOfferPhase.OfferPhaseSent} />
                 </SelectItem>
                 <SelectItem value={DomainOfferPhase.OfferPhaseOrder}>
-                  Ordre
+                  <OfferStatusBadge phase={DomainOfferPhase.OfferPhaseOrder} />
                 </SelectItem>
                 <SelectItem value={DomainOfferPhase.OfferPhaseCompleted}>
-                  Ferdig
+                  <OfferStatusBadge
+                    phase={DomainOfferPhase.OfferPhaseCompleted}
+                  />
                 </SelectItem>
                 <SelectItem value={DomainOfferPhase.OfferPhaseLost}>
-                  Tapt
+                  <OfferStatusBadge phase={DomainOfferPhase.OfferPhaseLost} />
                 </SelectItem>
               </SelectContent>
             </Select>
@@ -195,7 +227,9 @@ export default function OffersPage() {
               <Checkbox
                 id="include-expired"
                 checked={includeExpired}
-                onCheckedChange={(checked) => setIncludeExpired(!!checked)}
+                onCheckedChange={(checked) =>
+                  handleIncludeExpiredChange(!!checked)
+                }
               />
               <label
                 htmlFor="include-expired"
@@ -210,12 +244,7 @@ export default function OffersPage() {
               includeExpired) && (
               <Button
                 variant="ghost"
-                onClick={() => {
-                  setCompanyFilter("all");
-                  setPhaseFilter("all");
-                  setIncludeExpired(false);
-                  setPage(1);
-                }}
+                onClick={handleResetFilters}
                 className="px-2 lg:px-3"
               >
                 Nullstill
@@ -254,7 +283,7 @@ export default function OffersPage() {
               <PaginationControls
                 currentPage={page}
                 totalPages={Math.ceil((data.total ?? 0) / pageSize)}
-                onPageChange={setPage}
+                onPageChange={handlePageChange}
                 pageSize={pageSize}
                 totalCount={data.total ?? 0}
                 entityName="tilbud"
@@ -264,5 +293,33 @@ export default function OffersPage() {
         </div>
       </div>
     </AppLayout>
+  );
+}
+
+export default function OffersPage() {
+  return (
+    <Suspense
+      fallback={
+        <AppLayout disableScroll>
+          <div className="flex h-full flex-col">
+            <div className="flex-none space-y-4 border-b bg-background px-4 py-4 md:px-8">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-3xl font-bold">Tilbud</h1>
+                  <p className="text-muted-foreground">
+                    Oversikt over alle tilbud og deres status
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto px-4 py-6 md:px-8">
+              <TableSkeleton rows={10} columns={8} />
+            </div>
+          </div>
+        </AppLayout>
+      }
+    >
+      <OffersPageContent />
+    </Suspense>
   );
 }

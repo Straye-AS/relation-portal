@@ -132,7 +132,7 @@ export const OfferRow = memo(function OfferRow({ offer }: OfferRowProps) {
           }).format(marginRatio)}
         </span>
       </TableCell>
-      <TableCell>
+      <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
         {offer.updatedAt ? (
           <Tooltip>
             <TooltipTrigger asChild>

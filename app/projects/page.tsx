@@ -1,8 +1,11 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { Suspense } from "react";
 import { AppLayout } from "@/components/layout/app-layout";
 import { useProjects, useDeleteProject } from "@/hooks/useProjects";
+import { useCompanyStore } from "@/store/company-store";
+import { ProjectPhaseBadge } from "@/components/projects/project-phase-badge";
 
 import type { Project } from "@/lib/api/types";
 import { Button } from "@/components/ui/button";
@@ -13,6 +16,7 @@ import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { DeleteConfirmationModal } from "@/components/ui/delete-confirmation-modal";
+import { useQueryParams } from "@/hooks/useQueryParams";
 
 // Lazy load modal to reduce initial bundle size
 const AddOfferModal = dynamic(
@@ -36,20 +40,31 @@ import { ProjectListTable } from "@/components/projects/project-list-table";
 import { PaginationControls } from "@/components/pagination-controls";
 import { useMemo } from "react";
 
-export default function ProjectsPage() {
-  const router = useRouter();
-  const [page, setPage] = useState(1);
-  const pageSize = 20;
+// URL parameter schema for projects page
+const projectsParamsSchema = {
+  page: { type: "number" as const, default: 1 },
+  phase: { type: "string" as const, default: "all" },
+  company: { type: "string" as const, default: "all" },
+};
 
-  const [phaseFilter, setPhaseFilter] = useState<string>("all");
-  const [companyFilter, setCompanyFilter] = useState<string>("all");
+function ProjectsPageContent() {
+  const router = useRouter();
+  const { params, setParam, setParams, resetParams } =
+    useQueryParams(projectsParamsSchema);
+
+  const { page, phase: phaseFilter, company: companyFilter } = params;
+  const { selectedCompanyId } = useCompanyStore();
+  const showCompanyFilter =
+    selectedCompanyId === "all" || selectedCompanyId === "gruppen";
+  const pageSize = 20;
 
   const { data, isLoading } = useProjects({
     page,
     pageSize,
-    sortBy: "updatedAt" as any,
-    sortOrder: "desc" as any,
-    phase: phaseFilter === "all" ? undefined : (phaseFilter as any),
+    sortBy: "updatedAt" as unknown as undefined,
+    sortOrder: "desc" as unknown as undefined,
+    phase:
+      phaseFilter === "all" ? undefined : (phaseFilter as unknown as undefined),
   });
 
   const deleteProject = useDeleteProject();
@@ -96,6 +111,22 @@ export default function ProjectsPage() {
     }
   };
 
+  const handlePageChange = (newPage: number) => {
+    setParam("page", newPage);
+  };
+
+  const handlePhaseChange = (value: string) => {
+    setParams({ phase: value, page: 1 });
+  };
+
+  const handleCompanyChange = (value: string) => {
+    setParams({ company: value, page: 1 });
+  };
+
+  const handleResetFilters = () => {
+    resetParams();
+  };
+
   return (
     <AppLayout disableScroll>
       <div className="flex h-full flex-col">
@@ -122,49 +153,39 @@ export default function ProjectsPage() {
 
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
             {/* Company Filter */}
-            <Select
-              value={companyFilter}
-              onValueChange={(val) => {
-                setCompanyFilter(val);
-                setPage(1);
-              }}
-            >
-              <SelectTrigger className="w-[200px] bg-card">
-                <SelectValue placeholder="Selskap" />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.values(COMPANIES).map((company) => (
-                  <SelectItem key={company.id} value={company.id}>
-                    <div className="flex items-center gap-2">
-                      {company.id !== "all" && (
-                        <div
-                          className="h-2 w-2 rounded-full"
-                          style={{ backgroundColor: company.color }}
-                        />
-                      )}
-                      <span>{company.name}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {showCompanyFilter && (
+              <Select value={companyFilter} onValueChange={handleCompanyChange}>
+                <SelectTrigger className="w-[200px] bg-card">
+                  <SelectValue placeholder="Selskap" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.values(COMPANIES).map((company) => (
+                    <SelectItem key={company.id} value={company.id}>
+                      <div className="flex items-center gap-2">
+                        {company.id !== "all" && (
+                          <div
+                            className="h-2 w-2 rounded-full"
+                            style={{ backgroundColor: company.color }}
+                          />
+                        )}
+                        <span>{company.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
 
             {/* Phase Filter */}
-            <Select
-              value={phaseFilter}
-              onValueChange={(val) => {
-                setPhaseFilter(val);
-                setPage(1);
-              }}
-            >
+            <Select value={phaseFilter} onValueChange={handlePhaseChange}>
               <SelectTrigger className="w-[180px] bg-card">
                 <SelectValue placeholder="Fase" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Alle faser</SelectItem>
-                {Object.entries(PROJECT_PHASE_LABELS).map(([key, label]) => (
+                {Object.keys(PROJECT_PHASE_LABELS).map((key) => (
                   <SelectItem key={key} value={key}>
-                    {label}
+                    <ProjectPhaseBadge phase={key} />
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -173,11 +194,7 @@ export default function ProjectsPage() {
             {(phaseFilter !== "all" || companyFilter !== "all") && (
               <Button
                 variant="ghost"
-                onClick={() => {
-                  setPhaseFilter("all");
-                  setCompanyFilter("all");
-                  setPage(1);
-                }}
+                onClick={handleResetFilters}
                 className="px-2 lg:px-3"
               >
                 Nullstill
@@ -204,7 +221,7 @@ export default function ProjectsPage() {
                     </p>
                     <Link href="/projects/new">
                       <Button className="mt-4">
-                        Opprett ditt første prosjekt
+                        Opprett ditt forste prosjekt
                       </Button>
                     </Link>
                   </>
@@ -231,7 +248,7 @@ export default function ProjectsPage() {
                 <PaginationControls
                   currentPage={page}
                   totalPages={Math.ceil((data.total ?? 0) / pageSize)}
-                  onPageChange={setPage}
+                  onPageChange={handlePageChange}
                   pageSize={pageSize}
                   totalCount={data.total ?? 0}
                   entityName="prosjekter"
@@ -247,7 +264,7 @@ export default function ProjectsPage() {
               }}
               onConfirm={handleDeleteConfirm}
               title="Slett prosjekt"
-              description="Er du sikker på at du vil slette dette prosjektet? Dette vil fjerne prosjektet, all data, og alle linker til tilknyttede tilbud permanent."
+              description="Er du sikker pa at du vil slette dette prosjektet? Dette vil fjerne prosjektet, all data, og alle linker til tilknyttede tilbud permanent."
               itemTitle={projectToDelete?.name}
               isLoading={deleteProject.isPending}
             />
@@ -266,5 +283,33 @@ export default function ProjectsPage() {
         </div>
       </div>
     </AppLayout>
+  );
+}
+
+export default function ProjectsPage() {
+  return (
+    <Suspense
+      fallback={
+        <AppLayout disableScroll>
+          <div className="flex h-full flex-col">
+            <div className="flex-none space-y-4 border-b bg-background px-4 py-4 md:px-8">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-3xl font-bold">Prosjekter</h1>
+                  <p className="text-muted-foreground">
+                    Oversikt over alle prosjekter og deres status
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto px-4 py-6 md:px-8">
+              <TableSkeleton rows={10} columns={7} />
+            </div>
+          </div>
+        </AppLayout>
+      }
+    >
+      <ProjectsPageContent />
+    </Suspense>
   );
 }
