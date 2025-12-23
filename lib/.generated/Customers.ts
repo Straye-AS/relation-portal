@@ -115,7 +115,7 @@ export class Customers<SecurityDataType = unknown> {
    */
   customersCreate = (
     request: DomainCreateCustomerRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainCustomerDTO, DomainErrorResponse>({
       path: `/customers`,
@@ -185,7 +185,7 @@ export class Customers<SecurityDataType = unknown> {
    */
   customersDetail = (
     { id, ...query }: CustomersDetailParams,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainCustomerWithDetailsDTO, DomainErrorResponse>({
       path: `/customers/${id}`,
@@ -213,7 +213,7 @@ export class Customers<SecurityDataType = unknown> {
   customersUpdate = (
     { id, ...query }: CustomersUpdateParams,
     request: DomainUpdateCustomerRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainCustomerDTO, DomainErrorResponse>({
       path: `/customers/${id}`,
@@ -240,7 +240,7 @@ export class Customers<SecurityDataType = unknown> {
    */
   customersDelete = (
     { id, ...query }: CustomersDeleteParams,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<void, DomainErrorResponse>({
       path: `/customers/${id}`,
@@ -266,7 +266,7 @@ export class Customers<SecurityDataType = unknown> {
   addressUpdate = (
     { id, ...query }: AddressUpdateParams,
     request: DomainUpdateCustomerAddressRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainCustomerDTO, DomainErrorResponse>({
       path: `/customers/${id}/address`,
@@ -294,7 +294,7 @@ export class Customers<SecurityDataType = unknown> {
   cityUpdate = (
     { id, ...query }: CityUpdateParams,
     request: DomainUpdateCustomerCityRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainCustomerDTO, DomainErrorResponse>({
       path: `/customers/${id}/city`,
@@ -322,7 +322,7 @@ export class Customers<SecurityDataType = unknown> {
   companyUpdate = (
     { id, ...query }: CompanyUpdateParams,
     request: DomainUpdateCustomerCompanyRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainCustomerDTO, DomainErrorResponse>({
       path: `/customers/${id}/company`,
@@ -350,7 +350,7 @@ export class Customers<SecurityDataType = unknown> {
   contactInfoUpdate = (
     { id, ...query }: ContactInfoUpdateParams,
     request: DomainUpdateCustomerContactInfoRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainCustomerDTO, DomainErrorResponse>({
       path: `/customers/${id}/contact-info`,
@@ -376,7 +376,7 @@ export class Customers<SecurityDataType = unknown> {
    */
   contactsList = (
     { id, ...query }: ContactsListParams2,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainContactDTO[], DomainErrorResponse>({
       path: `/customers/${id}/contacts`,
@@ -403,7 +403,7 @@ export class Customers<SecurityDataType = unknown> {
   contactsCreate = (
     { id, ...query }: ContactsCreateParams1,
     request: DomainCreateContactRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainContactDTO, DomainErrorResponse>({
       path: `/customers/${id}/contacts`,
@@ -431,7 +431,7 @@ export class Customers<SecurityDataType = unknown> {
   creditLimitUpdate = (
     { id, ...query }: CreditLimitUpdateParams,
     request: DomainUpdateCustomerCreditLimitRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainCustomerDTO, DomainErrorResponse>({
       path: `/customers/${id}/credit-limit`,
@@ -459,7 +459,7 @@ export class Customers<SecurityDataType = unknown> {
   customerClassUpdate = (
     { id, ...query }: CustomerClassUpdateParams,
     request: DomainUpdateCustomerClassRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainCustomerDTO, DomainErrorResponse>({
       path: `/customers/${id}/customer-class`,
@@ -487,7 +487,7 @@ export class Customers<SecurityDataType = unknown> {
   industryUpdate = (
     { id, ...query }: IndustryUpdateParams,
     request: DomainUpdateCustomerIndustryRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainCustomerDTO, DomainErrorResponse>({
       path: `/customers/${id}/industry`,
@@ -515,7 +515,7 @@ export class Customers<SecurityDataType = unknown> {
   isInternalUpdate = (
     { id, ...query }: IsInternalUpdateParams,
     request: DomainUpdateCustomerIsInternalRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainCustomerDTO, DomainErrorResponse>({
       path: `/customers/${id}/is-internal`,
@@ -543,7 +543,7 @@ export class Customers<SecurityDataType = unknown> {
   notesUpdate = (
     { id, ...query }: NotesUpdateParams,
     request: DomainUpdateCustomerNotesRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainCustomerDTO, DomainErrorResponse>({
       path: `/customers/${id}/notes`,
@@ -572,7 +572,7 @@ export class Customers<SecurityDataType = unknown> {
  */
   offersList = (
     { id, ...query }: OffersListParams,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<
       DomainPaginatedResponse & {
@@ -605,7 +605,7 @@ export class Customers<SecurityDataType = unknown> {
   postalCodeUpdate = (
     { id, ...query }: PostalCodeUpdateParams,
     request: DomainUpdateCustomerPostalCodeRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainCustomerDTO, DomainErrorResponse>({
       path: `/customers/${id}/postal-code`,
@@ -634,7 +634,7 @@ export class Customers<SecurityDataType = unknown> {
  */
   projectsList = (
     { id, ...query }: ProjectsListParams,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<
       DomainPaginatedResponse & {
@@ -667,7 +667,7 @@ export class Customers<SecurityDataType = unknown> {
   statusUpdate = (
     { id, ...query }: StatusUpdateParams,
     request: DomainUpdateCustomerStatusRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainCustomerDTO, DomainErrorResponse>({
       path: `/customers/${id}/status`,
@@ -695,7 +695,7 @@ export class Customers<SecurityDataType = unknown> {
   tierUpdate = (
     { id, ...query }: TierUpdateParams,
     request: DomainUpdateCustomerTierRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainCustomerDTO, DomainErrorResponse>({
       path: `/customers/${id}/tier`,
@@ -723,7 +723,7 @@ export class Customers<SecurityDataType = unknown> {
   websiteUpdate = (
     { id, ...query }: WebsiteUpdateParams,
     request: DomainUpdateCustomerWebsiteRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainCustomerDTO, DomainErrorResponse>({
       path: `/customers/${id}/website`,

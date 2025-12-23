@@ -15,11 +15,8 @@ interface ParamConfig<T> {
 
 type ParamSchema = Record<string, ParamConfig<string | number | boolean>>;
 
-type InferParamType<T extends ParamConfig<unknown>> = T extends ParamConfig<
-  infer U
->
-  ? U
-  : never;
+type InferParamType<T extends ParamConfig<unknown>> =
+  T extends ParamConfig<infer U> ? U : never;
 
 type InferParams<T extends ParamSchema> = {
   [K in keyof T]: InferParamType<T[K]>;
@@ -120,7 +117,10 @@ export function useQueryParams<T extends ParamSchema>(schema: T) {
         if (value === config.default) {
           currentParams.delete(key);
         } else {
-          currentParams.set(key, serializeValue(value as string | number | boolean));
+          currentParams.set(
+            key,
+            serializeValue(value as string | number | boolean)
+          );
         }
       }
 
@@ -170,7 +170,7 @@ export function useQueryParams<T extends ParamSchema>(schema: T) {
  * Pre-configured with page, sortBy, sortOrder, and viewMode.
  */
 export function useListPageParams<
-  TExtra extends ParamSchema = Record<string, never>
+  TExtra extends ParamSchema = Record<string, never>,
 >(extraSchema?: TExtra) {
   const baseSchema = {
     page: { type: "number" as const, default: 1 },
@@ -179,9 +179,7 @@ export function useListPageParams<
     viewMode: { type: "string" as const, default: "list" },
   };
 
-  const schema = extraSchema
-    ? { ...baseSchema, ...extraSchema }
-    : baseSchema;
+  const schema = extraSchema ? { ...baseSchema, ...extraSchema } : baseSchema;
 
   return useQueryParams(schema);
 }

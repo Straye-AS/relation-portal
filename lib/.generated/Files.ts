@@ -79,7 +79,7 @@ export class Files<SecurityDataType = unknown> {
   filesCreate = (
     { id, ...query }: FilesCreateParams,
     data: FilesCreatePayload,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainFileDTO, DomainAPIError>({
       path: `/customers/${id}/files`,
@@ -104,7 +104,7 @@ export class Files<SecurityDataType = unknown> {
    */
   filesDetail = (
     { id, ...query }: FilesDetailParams,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainFileDTO, DomainAPIError>({
       path: `/files/${id}`,
@@ -128,7 +128,7 @@ export class Files<SecurityDataType = unknown> {
    */
   filesDelete = (
     { id, ...query }: FilesDeleteParams,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<void, DomainAPIError>({
       path: `/files/${id}`,
@@ -150,7 +150,7 @@ export class Files<SecurityDataType = unknown> {
    */
   downloadList = (
     { id, ...query }: DownloadListParams,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<void, DomainAPIError>({
       path: `/files/${id}/download`,
@@ -175,7 +175,7 @@ export class Files<SecurityDataType = unknown> {
    */
   filesList2 = (
     { id, ...query }: FilesList2Params,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainFileDTO[], DomainAPIError>({
       path: `/offers/${id}/files`,
@@ -203,7 +203,7 @@ export class Files<SecurityDataType = unknown> {
   filesCreate2 = (
     { id, ...query }: FilesCreate2Params,
     data: FilesCreate2Payload,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainFileDTO, DomainAPIError>({
       path: `/offers/${id}/files`,
@@ -229,7 +229,7 @@ export class Files<SecurityDataType = unknown> {
    */
   suppliersFilesList = (
     { offerId, supplierId, ...query }: SuppliersFilesListParams,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainFileDTO[], DomainAPIError>({
       path: `/offers/${offerId}/suppliers/${supplierId}/files`,
@@ -255,7 +255,7 @@ export class Files<SecurityDataType = unknown> {
   suppliersFilesCreate = (
     { offerId, supplierId, ...query }: SuppliersFilesCreateParams,
     data: SuppliersFilesCreatePayload,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainFileDTO, DomainAPIError>({
       path: `/offers/${offerId}/suppliers/${supplierId}/files`,
@@ -283,7 +283,7 @@ export class Files<SecurityDataType = unknown> {
    */
   filesList3 = (
     { id, ...query }: FilesList3Params,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainFileDTO[], DomainAPIError>({
       path: `/projects/${id}/files`,
@@ -311,7 +311,7 @@ export class Files<SecurityDataType = unknown> {
   filesCreate3 = (
     { id, ...query }: FilesCreate3Params,
     data: FilesCreate3Payload,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainFileDTO, DomainAPIError>({
       path: `/projects/${id}/files`,
@@ -339,7 +339,7 @@ export class Files<SecurityDataType = unknown> {
    */
   filesList4 = (
     { id, ...query }: FilesList4Params,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainFileDTO[], DomainAPIError>({
       path: `/suppliers/${id}/files`,
@@ -367,7 +367,7 @@ export class Files<SecurityDataType = unknown> {
   filesCreate4 = (
     { id, ...query }: FilesCreate4Params,
     data: FilesCreate4Payload,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainFileDTO, DomainAPIError>({
       path: `/suppliers/${id}/files`,

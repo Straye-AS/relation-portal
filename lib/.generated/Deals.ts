@@ -81,7 +81,7 @@ export class Deals<SecurityDataType = unknown> {
    */
   dealsCreate = (
     request: DomainCreateDealRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainDealDTO, any>({
       path: `/deals`,
@@ -179,7 +179,7 @@ export class Deals<SecurityDataType = unknown> {
    */
   dealsDetail = (
     { id, ...query }: DealsDetailParams,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<HandlerDealWithHistoryResponse, any>({
       path: `/deals/${id}`,
@@ -201,7 +201,7 @@ export class Deals<SecurityDataType = unknown> {
   dealsUpdate = (
     { id, ...query }: DealsUpdateParams,
     request: DomainUpdateDealRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainDealDTO, any>({
       path: `/deals/${id}`,
@@ -224,7 +224,7 @@ export class Deals<SecurityDataType = unknown> {
    */
   dealsDelete = (
     { id, ...query }: DealsDeleteParams,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<void, any>({
       path: `/deals/${id}`,
@@ -244,7 +244,7 @@ export class Deals<SecurityDataType = unknown> {
    */
   activitiesList = (
     { id, ...query }: ActivitiesListParams2,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainActivityDTO[], any>({
       path: `/deals/${id}/activities`,
@@ -267,7 +267,7 @@ export class Deals<SecurityDataType = unknown> {
   advanceCreate = (
     { id, ...query }: AdvanceCreateParams,
     request: DomainUpdateDealStageRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainDealDTO, any>({
       path: `/deals/${id}/advance`,
@@ -293,7 +293,7 @@ export class Deals<SecurityDataType = unknown> {
   createOfferCreate = (
     { id, ...query }: CreateOfferCreateParams,
     request: DomainCreateOfferFromDealRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainCreateOfferFromDealResponse, DomainErrorResponse>({
       path: `/deals/${id}/create-offer`,
@@ -316,7 +316,7 @@ export class Deals<SecurityDataType = unknown> {
    */
   historyList = (
     { id, ...query }: HistoryListParams,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainDealStageHistoryDTO[], any>({
       path: `/deals/${id}/history`,
@@ -339,7 +339,7 @@ export class Deals<SecurityDataType = unknown> {
   loseCreate = (
     { id, ...query }: LoseCreateParams,
     request: DomainLoseDealRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainDealDTO, DomainErrorResponse>({
       path: `/deals/${id}/lose`,
@@ -362,7 +362,7 @@ export class Deals<SecurityDataType = unknown> {
    */
   reopenCreate = (
     { id, ...query }: ReopenCreateParams,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainDealDTO, any>({
       path: `/deals/${id}/reopen`,

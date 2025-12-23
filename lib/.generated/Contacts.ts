@@ -70,7 +70,7 @@ export class Contacts<SecurityDataType = unknown> {
    */
   contactsCreate = (
     request: DomainCreateContactRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainContactDTO, Record<string, any>>({
       path: `/contacts`,
@@ -95,7 +95,7 @@ export class Contacts<SecurityDataType = unknown> {
    */
   contactsDetail = (
     { id, ...query }: ContactsDetailParams,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainContactDTO, Record<string, any>>({
       path: `/contacts/${id}`,
@@ -120,7 +120,7 @@ export class Contacts<SecurityDataType = unknown> {
   contactsUpdate = (
     { id, ...query }: ContactsUpdateParams,
     request: DomainUpdateContactRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainContactDTO, Record<string, any>>({
       path: `/contacts/${id}`,
@@ -146,7 +146,7 @@ export class Contacts<SecurityDataType = unknown> {
    */
   contactsDelete = (
     { id, ...query }: ContactsDeleteParams,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<void, Record<string, any>>({
       path: `/contacts/${id}`,
@@ -171,7 +171,7 @@ export class Contacts<SecurityDataType = unknown> {
   relationshipsCreate = (
     { id, ...query }: RelationshipsCreateParams,
     request: DomainAddContactRelationshipRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainContactRelationshipDTO, Record<string, any>>({
       path: `/contacts/${id}/relationships`,
@@ -197,7 +197,7 @@ export class Contacts<SecurityDataType = unknown> {
    */
   relationshipsDelete = (
     { id, relationshipId, ...query }: RelationshipsDeleteParams,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<void, Record<string, any>>({
       path: `/contacts/${id}/relationships/${relationshipId}`,
@@ -221,7 +221,7 @@ export class Contacts<SecurityDataType = unknown> {
    */
   contactsList2 = (
     { entityType, id, ...query }: ContactsList2Params,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainContactDTO[], Record<string, any>>({
       path: `/${entityType}/${id}/contacts`,

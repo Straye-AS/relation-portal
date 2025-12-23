@@ -65,7 +65,7 @@ export class Audit<SecurityDataType = unknown> {
    */
   entityDetail = (
     { entityType, entityId, ...query }: EntityDetailParams,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<HandlerAuditLogDTO[], Record<string, string>>({
       path: `/audit/entity/${entityType}/${entityId}`,
@@ -134,7 +134,7 @@ export class Audit<SecurityDataType = unknown> {
    */
   auditDetail = (
     { id, ...query }: AuditDetailParams,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<HandlerAuditLogDTO, Record<string, string>>({
       path: `/audit/${id}`,

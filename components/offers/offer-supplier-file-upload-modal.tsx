@@ -15,10 +15,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { Upload, X, Loader2, AlertCircle } from "lucide-react";
 import { useUploadOfferSupplierFile } from "@/hooks/useFiles";
-import {
-  formatFileSize,
-  getFileTypeIcon,
-} from "@/hooks/useCustomerDocuments";
+import { formatFileSize, getFileTypeIcon } from "@/hooks/useCustomerDocuments";
 import { FILE_ICONS, GenericFileIcon } from "@/components/ui/file-icons";
 import { toast } from "sonner";
 

@@ -10,19 +10,25 @@ import { ProjectPhaseBadge } from "@/components/projects/project-phase-badge";
 import type { Project } from "@/lib/api/types";
 import { Button } from "@/components/ui/button";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
-import Link from "next/link";
-import { Plus } from "lucide-react";
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { DeleteConfirmationModal } from "@/components/ui/delete-confirmation-modal";
 import { useQueryParams } from "@/hooks/useQueryParams";
 
-// Lazy load modal to reduce initial bundle size
+// Lazy load modals to reduce initial bundle size
 const AddOfferModal = dynamic(
   () =>
     import("@/components/offers/add-offer-modal").then(
       (mod) => mod.AddOfferModal
+    ),
+  { ssr: false }
+);
+
+const AddProjectModal = dynamic(
+  () =>
+    import("@/components/projects/add-project-modal").then(
+      (mod) => mod.AddProjectModal
     ),
   { ssr: false }
 );
@@ -143,12 +149,7 @@ function ProjectsPageContent() {
                 Oversikt over alle prosjekter og deres status
               </p>
             </div>
-            <Link href="/projects/new">
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Nytt prosjekt
-              </Button>
-            </Link>
+            <AddProjectModal />
           </div>
 
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
@@ -219,11 +220,9 @@ function ProjectsPageContent() {
                     <p className="text-muted-foreground">
                       Ingen prosjekter funnet
                     </p>
-                    <Link href="/projects/new">
-                      <Button className="mt-4">
-                        Opprett ditt forste prosjekt
-                      </Button>
-                    </Link>
+                    <div className="mt-4">
+                      <AddProjectModal />
+                    </div>
                   </>
                 )}
               </div>

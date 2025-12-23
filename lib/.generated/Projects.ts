@@ -95,7 +95,7 @@ export class Projects<SecurityDataType = unknown> {
    */
   projectsCreate = (
     request: DomainCreateProjectRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainProjectDTO, DomainAPIError>({
       path: `/projects`,
@@ -122,7 +122,7 @@ export class Projects<SecurityDataType = unknown> {
    */
   projectsDetail = (
     { id, ...query }: ProjectsDetailParams,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainProjectWithDetailsDTO, DomainAPIError>({
       path: `/projects/${id}`,
@@ -150,7 +150,7 @@ export class Projects<SecurityDataType = unknown> {
   projectsUpdate = (
     { id, ...query }: ProjectsUpdateParams,
     request: DomainUpdateProjectRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainProjectDTO, DomainAPIError>({
       path: `/projects/${id}`,
@@ -177,7 +177,7 @@ export class Projects<SecurityDataType = unknown> {
    */
   projectsDelete = (
     { id, ...query }: ProjectsDeleteParams,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<void, DomainAPIError>({
       path: `/projects/${id}`,
@@ -202,7 +202,7 @@ export class Projects<SecurityDataType = unknown> {
    */
   activitiesList = (
     { id, ...query }: ActivitiesListParams6,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainActivityDTO[], DomainAPIError>({
       path: `/projects/${id}/activities`,
@@ -230,7 +230,7 @@ export class Projects<SecurityDataType = unknown> {
   datesUpdate = (
     { id, ...query }: DatesUpdateParams,
     request: DomainUpdateProjectDatesRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainProjectDTO, DomainAPIError>({
       path: `/projects/${id}/dates`,
@@ -258,7 +258,7 @@ export class Projects<SecurityDataType = unknown> {
   descriptionUpdate = (
     { id, ...query }: DescriptionUpdateParams2,
     request: DomainUpdateProjectDescriptionRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainProjectDTO, DomainAPIError>({
       path: `/projects/${id}/description`,
@@ -286,7 +286,7 @@ export class Projects<SecurityDataType = unknown> {
   nameUpdate = (
     { id, ...query }: NameUpdateParams,
     request: DomainUpdateProjectNameRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainProjectDTO, DomainAPIError>({
       path: `/projects/${id}/name`,
@@ -312,7 +312,7 @@ export class Projects<SecurityDataType = unknown> {
    */
   offersList = (
     { id, ...query }: OffersListParams4,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainOfferDTO[], DomainAPIError>({
       path: `/projects/${id}/offers`,
@@ -339,7 +339,7 @@ export class Projects<SecurityDataType = unknown> {
   phaseUpdate = (
     { id, ...query }: PhaseUpdateParams,
     request: DomainUpdateProjectPhaseRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainProjectDTO, DomainAPIError>({
       path: `/projects/${id}/phase`,
@@ -367,7 +367,7 @@ export class Projects<SecurityDataType = unknown> {
   projectNumberUpdate = (
     { id, ...query }: ProjectNumberUpdateParams,
     request: DomainUpdateProjectNumberRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainProjectDTO, DomainAPIError>({
       path: `/projects/${id}/project-number`,
@@ -395,7 +395,7 @@ export class Projects<SecurityDataType = unknown> {
   reopenCreate = (
     { id, ...query }: ReopenCreateParams4,
     request: DomainReopenProjectRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainReopenProjectResponse, DomainAPIError>({
       path: `/projects/${id}/reopen`,

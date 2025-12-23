@@ -108,7 +108,7 @@ export class Suppliers<SecurityDataType = unknown> {
    */
   suppliersCreate = (
     request: DomainCreateSupplierRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainSupplierDTO, DomainErrorResponse>({
       path: `/suppliers`,
@@ -134,7 +134,7 @@ export class Suppliers<SecurityDataType = unknown> {
    */
   suppliersDetail = (
     { id, ...query }: SuppliersDetailParams,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainSupplierWithDetailsDTO, DomainErrorResponse>({
       path: `/suppliers/${id}`,
@@ -162,7 +162,7 @@ export class Suppliers<SecurityDataType = unknown> {
   suppliersUpdate = (
     { id, ...query }: SuppliersUpdateParams2,
     request: DomainUpdateSupplierRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainSupplierDTO, DomainErrorResponse>({
       path: `/suppliers/${id}`,
@@ -190,7 +190,7 @@ export class Suppliers<SecurityDataType = unknown> {
    */
   suppliersDelete = (
     { id, ...query }: SuppliersDeleteParams2,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<void, DomainErrorResponse>({
       path: `/suppliers/${id}`,
@@ -216,7 +216,7 @@ export class Suppliers<SecurityDataType = unknown> {
   addressUpdate = (
     { id, ...query }: AddressUpdateParams2,
     request: DomainUpdateSupplierAddressRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainSupplierDTO, DomainErrorResponse>({
       path: `/suppliers/${id}/address`,
@@ -244,7 +244,7 @@ export class Suppliers<SecurityDataType = unknown> {
   categoryUpdate = (
     { id, ...query }: CategoryUpdateParams,
     request: DomainUpdateSupplierCategoryRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainSupplierDTO, DomainErrorResponse>({
       path: `/suppliers/${id}/category`,
@@ -272,7 +272,7 @@ export class Suppliers<SecurityDataType = unknown> {
   cityUpdate = (
     { id, ...query }: CityUpdateParams2,
     request: DomainUpdateSupplierCityRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainSupplierDTO, DomainErrorResponse>({
       path: `/suppliers/${id}/city`,
@@ -299,7 +299,7 @@ export class Suppliers<SecurityDataType = unknown> {
    */
   contactsList = (
     { id, ...query }: ContactsListParams4,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainSupplierContactDTO[], DomainErrorResponse>({
       path: `/suppliers/${id}/contacts`,
@@ -326,7 +326,7 @@ export class Suppliers<SecurityDataType = unknown> {
   contactsCreate = (
     { id, ...query }: ContactsCreateParams3,
     request: DomainCreateSupplierContactRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainSupplierContactDTO, DomainErrorResponse>({
       path: `/suppliers/${id}/contacts`,
@@ -353,7 +353,7 @@ export class Suppliers<SecurityDataType = unknown> {
    */
   contactsDetail = (
     { id, contactId, ...query }: ContactsDetailParams2,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainSupplierContactDTO, DomainErrorResponse>({
       path: `/suppliers/${id}/contacts/${contactId}`,
@@ -380,7 +380,7 @@ export class Suppliers<SecurityDataType = unknown> {
   contactsUpdate = (
     { id, contactId, ...query }: ContactsUpdateParams2,
     request: DomainUpdateSupplierContactRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainSupplierContactDTO, DomainErrorResponse>({
       path: `/suppliers/${id}/contacts/${contactId}`,
@@ -408,7 +408,7 @@ export class Suppliers<SecurityDataType = unknown> {
    */
   contactsDelete = (
     { id, contactId, ...query }: ContactsDeleteParams2,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<void, DomainErrorResponse>({
       path: `/suppliers/${id}/contacts/${contactId}`,
@@ -434,7 +434,7 @@ export class Suppliers<SecurityDataType = unknown> {
   emailUpdate = (
     { id, ...query }: EmailUpdateParams,
     request: DomainUpdateSupplierEmailRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainSupplierDTO, DomainErrorResponse>({
       path: `/suppliers/${id}/email`,
@@ -462,7 +462,7 @@ export class Suppliers<SecurityDataType = unknown> {
   notesUpdate = (
     { id, ...query }: NotesUpdateParams4,
     request: DomainUpdateSupplierNotesRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainSupplierDTO, DomainErrorResponse>({
       path: `/suppliers/${id}/notes`,
@@ -492,7 +492,7 @@ export class Suppliers<SecurityDataType = unknown> {
  */
   offersList = (
     { id, ...query }: OffersListParams6,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<
       DomainPaginatedResponse & {
@@ -525,7 +525,7 @@ export class Suppliers<SecurityDataType = unknown> {
   paymentTermsUpdate = (
     { id, ...query }: PaymentTermsUpdateParams,
     request: DomainUpdateSupplierPaymentTermsRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainSupplierDTO, DomainErrorResponse>({
       path: `/suppliers/${id}/payment-terms`,
@@ -553,7 +553,7 @@ export class Suppliers<SecurityDataType = unknown> {
   phoneUpdate = (
     { id, ...query }: PhoneUpdateParams,
     request: DomainUpdateSupplierPhoneRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainSupplierDTO, DomainErrorResponse>({
       path: `/suppliers/${id}/phone`,
@@ -581,7 +581,7 @@ export class Suppliers<SecurityDataType = unknown> {
   postalCodeUpdate = (
     { id, ...query }: PostalCodeUpdateParams2,
     request: DomainUpdateSupplierPostalCodeRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainSupplierDTO, DomainErrorResponse>({
       path: `/suppliers/${id}/postal-code`,
@@ -609,7 +609,7 @@ export class Suppliers<SecurityDataType = unknown> {
   statusUpdate = (
     { id, ...query }: StatusUpdateParams2,
     request: DomainUpdateSupplierStatusRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainSupplierDTO, DomainErrorResponse>({
       path: `/suppliers/${id}/status`,
@@ -637,7 +637,7 @@ export class Suppliers<SecurityDataType = unknown> {
   websiteUpdate = (
     { id, ...query }: WebsiteUpdateParams2,
     request: DomainUpdateSupplierWebsiteRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainSupplierDTO, DomainErrorResponse>({
       path: `/suppliers/${id}/website`,

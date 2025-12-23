@@ -86,7 +86,7 @@ export class Activities<SecurityDataType = unknown> {
    */
   activitiesCreate = (
     body: DomainCreateActivityRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainActivityDTO, DomainErrorResponse>({
       path: `/activities`,
@@ -187,7 +187,7 @@ export class Activities<SecurityDataType = unknown> {
    */
   activitiesDetail = (
     { id, ...query }: ActivitiesDetailParams,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainActivityDTO, DomainErrorResponse>({
       path: `/activities/${id}`,
@@ -215,7 +215,7 @@ export class Activities<SecurityDataType = unknown> {
   activitiesUpdate = (
     { id, ...query }: ActivitiesUpdateParams,
     body: DomainUpdateActivityRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainActivityDTO, DomainErrorResponse>({
       path: `/activities/${id}`,
@@ -243,7 +243,7 @@ export class Activities<SecurityDataType = unknown> {
    */
   activitiesDelete = (
     { id, ...query }: ActivitiesDeleteParams,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<void, DomainErrorResponse>({
       path: `/activities/${id}`,
@@ -270,7 +270,7 @@ export class Activities<SecurityDataType = unknown> {
   attendeesCreate = (
     { id, ...query }: AttendeesCreateParams,
     body: DomainAddAttendeeRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainActivityDTO, DomainErrorResponse>({
       path: `/activities/${id}/attendees`,
@@ -298,7 +298,7 @@ export class Activities<SecurityDataType = unknown> {
    */
   attendeesDelete = (
     { id, userId, ...query }: AttendeesDeleteParams,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainActivityDTO, DomainErrorResponse>({
       path: `/activities/${id}/attendees/${userId}`,
@@ -326,7 +326,7 @@ export class Activities<SecurityDataType = unknown> {
   completeCreate = (
     { id, ...query }: CompleteCreateParams,
     body: DomainCompleteActivityRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainActivityDTO, DomainErrorResponse>({
       path: `/activities/${id}/complete`,
@@ -355,7 +355,7 @@ export class Activities<SecurityDataType = unknown> {
   followUpCreate = (
     { id, ...query }: FollowUpCreateParams,
     body: DomainCreateFollowUpRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainActivityDTO, DomainErrorResponse>({
       path: `/activities/${id}/follow-up`,

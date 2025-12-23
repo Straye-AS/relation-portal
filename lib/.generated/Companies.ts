@@ -60,7 +60,7 @@ export class Companies<SecurityDataType = unknown> {
    */
   companiesDetail = (
     { id, ...query }: CompaniesDetailParams,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainCompanyDetailDTO, DomainAPIError>({
       path: `/companies/${id}`,
@@ -85,7 +85,7 @@ export class Companies<SecurityDataType = unknown> {
   companiesUpdate = (
     { id, ...query }: CompaniesUpdateParams,
     body: DomainUpdateCompanyRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainCompanyDetailDTO, DomainAPIError>({
       path: `/companies/${id}`,

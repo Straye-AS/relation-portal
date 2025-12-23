@@ -505,40 +505,44 @@ export default function CustomerDetailPage({
                       )}
                       {!isLoadingContacts && contacts.length > 0 && (
                         <div className="space-y-2">
-                          {contacts.slice(0, 4).map((contact: CustomerContact) => (
-                            <div
-                              key={contact.id}
-                              className="flex cursor-pointer items-center justify-between rounded-lg border p-3 hover:bg-muted/50"
-                              onClick={() => handleTabChange("contacts")}
-                            >
-                              <div className="flex items-center gap-3">
-                                <Avatar className="h-9 w-9">
-                                  <AvatarFallback>
-                                    {contact.name?.substring(0, 2).toUpperCase()}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <div>
-                                  <p className="text-sm font-medium leading-none">
-                                    {contact.name}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">
-                                    {contact.role || "Ingen rolle"}
-                                  </p>
-                                </div>
-                              </div>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setContactToDelete(contact);
-                                }}
+                          {contacts
+                            .slice(0, 4)
+                            .map((contact: CustomerContact) => (
+                              <div
+                                key={contact.id}
+                                className="flex cursor-pointer items-center justify-between rounded-lg border p-3 hover:bg-muted/50"
+                                onClick={() => handleTabChange("contacts")}
                               >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          ))}
+                                <div className="flex items-center gap-3">
+                                  <Avatar className="h-9 w-9">
+                                    <AvatarFallback>
+                                      {contact.name
+                                        ?.substring(0, 2)
+                                        .toUpperCase()}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                    <p className="text-sm font-medium leading-none">
+                                      {contact.name}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {contact.role || "Ingen rolle"}
+                                    </p>
+                                  </div>
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setContactToDelete(contact);
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ))}
                         </div>
                       )}
                       {!isLoadingContacts && contacts.length === 0 && (

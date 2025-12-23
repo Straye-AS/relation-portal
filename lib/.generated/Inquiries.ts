@@ -66,7 +66,7 @@ export class Inquiries<SecurityDataType = unknown> {
    */
   inquiriesCreate = (
     request: DomainCreateInquiryRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainOfferDTO, DomainErrorResponse>({
       path: `/inquiries`,
@@ -92,7 +92,7 @@ export class Inquiries<SecurityDataType = unknown> {
    */
   inquiriesDetail = (
     { id, ...query }: InquiriesDetailParams,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainOfferDTO, DomainErrorResponse>({
       path: `/inquiries/${id}`,
@@ -116,7 +116,7 @@ export class Inquiries<SecurityDataType = unknown> {
    */
   inquiriesDelete = (
     { id, ...query }: InquiriesDeleteParams,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<void, DomainErrorResponse>({
       path: `/inquiries/${id}`,
@@ -140,7 +140,7 @@ export class Inquiries<SecurityDataType = unknown> {
   convertCreate = (
     { id, ...query }: ConvertCreateParams,
     request: DomainConvertInquiryRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainConvertInquiryResponse, DomainErrorResponse>({
       path: `/inquiries/${id}/convert`,

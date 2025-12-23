@@ -82,7 +82,10 @@ export function FileCard({
             {file.companyId && (
               <>
                 <span>•</span>
-                <CompanyBadge companyId={file.companyId} className="text-[10px] px-1.5 py-0" />
+                <CompanyBadge
+                  companyId={file.companyId}
+                  className="px-1.5 py-0 text-[10px]"
+                />
               </>
             )}
           </div>

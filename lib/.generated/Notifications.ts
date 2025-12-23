@@ -45,7 +45,7 @@ export class Notifications<SecurityDataType = unknown> {
  */
   notificationsList = (
     query: NotificationsListParams,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<
       DomainPaginatedResponse & {
@@ -119,7 +119,7 @@ export class Notifications<SecurityDataType = unknown> {
    */
   notificationsDetail = (
     { id, ...query }: NotificationsDetailParams,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainNotificationDTO, DomainErrorResponse>({
       path: `/notifications/${id}`,
@@ -146,7 +146,7 @@ export class Notifications<SecurityDataType = unknown> {
    */
   readUpdate = (
     { id, ...query }: ReadUpdateParams,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<void, DomainErrorResponse>({
       path: `/notifications/${id}/read`,

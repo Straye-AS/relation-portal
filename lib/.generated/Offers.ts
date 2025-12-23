@@ -160,7 +160,7 @@ export class Offers<SecurityDataType = unknown> {
    */
   offersCreate = (
     request: DomainCreateOfferRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainOfferDTO, DomainErrorResponse>({
       path: `/offers`,
@@ -224,7 +224,7 @@ export class Offers<SecurityDataType = unknown> {
    */
   offersDetail = (
     { id, ...query }: OffersDetailParams,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainOfferWithItemsDTO, any>({
       path: `/offers/${id}`,
@@ -246,7 +246,7 @@ export class Offers<SecurityDataType = unknown> {
   offersUpdate = (
     { id, ...query }: OffersUpdateParams,
     request: DomainUpdateOfferRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainOfferDTO, any>({
       path: `/offers/${id}`,
@@ -272,7 +272,7 @@ export class Offers<SecurityDataType = unknown> {
    */
   offersDelete = (
     { id, ...query }: OffersDeleteParams,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<void, DomainErrorResponse>({
       path: `/offers/${id}`,
@@ -296,7 +296,7 @@ export class Offers<SecurityDataType = unknown> {
   acceptCreate = (
     { id, ...query }: AcceptCreateParams,
     request: DomainAcceptOfferRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainAcceptOfferResponse, DomainErrorResponse>({
       path: `/offers/${id}/accept`,
@@ -323,7 +323,7 @@ export class Offers<SecurityDataType = unknown> {
   acceptOrderCreate = (
     { id, ...query }: AcceptOrderCreateParams,
     request: DomainAcceptOrderRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainAcceptOrderResponse, DomainErrorResponse>({
       path: `/offers/${id}/accept-order`,
@@ -346,7 +346,7 @@ export class Offers<SecurityDataType = unknown> {
    */
   activitiesList = (
     { id, ...query }: ActivitiesListParams4,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainActivityDTO[], any>({
       path: `/offers/${id}/activities`,
@@ -369,7 +369,7 @@ export class Offers<SecurityDataType = unknown> {
   advanceCreate = (
     { id, ...query }: AdvanceCreateParams2,
     request: DomainAdvanceOfferRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainOfferDTO, any>({
       path: `/offers/${id}/advance`,
@@ -395,7 +395,7 @@ export class Offers<SecurityDataType = unknown> {
    */
   budgetList = (
     { id, ...query }: BudgetListParams,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<Record<string, any>, DomainAPIError>({
       path: `/offers/${id}/budget`,
@@ -420,7 +420,7 @@ export class Offers<SecurityDataType = unknown> {
    */
   budgetDimensionsList = (
     { id, ...query }: BudgetDimensionsListParams,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainBudgetItemDTO[], DomainAPIError>({
       path: `/offers/${id}/budget/dimensions`,
@@ -446,7 +446,7 @@ export class Offers<SecurityDataType = unknown> {
   budgetDimensionsCreate = (
     { id, ...query }: BudgetDimensionsCreateParams,
     request: DomainAddOfferBudgetItemRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainBudgetItemDTO, DomainAPIError>({
       path: `/offers/${id}/budget/dimensions`,
@@ -473,7 +473,7 @@ export class Offers<SecurityDataType = unknown> {
   budgetDimensionsUpdate = (
     { id, dimensionId, ...query }: BudgetDimensionsUpdateParams,
     request: DomainUpdateBudgetItemRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainBudgetItemDTO, DomainAPIError>({
       path: `/offers/${id}/budget/dimensions/${dimensionId}`,
@@ -499,7 +499,7 @@ export class Offers<SecurityDataType = unknown> {
    */
   budgetDimensionsDelete = (
     { id, dimensionId, ...query }: BudgetDimensionsDeleteParams,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<void, DomainAPIError>({
       path: `/offers/${id}/budget/dimensions/${dimensionId}`,
@@ -524,7 +524,7 @@ export class Offers<SecurityDataType = unknown> {
   budgetReorderUpdate = (
     { id, ...query }: BudgetReorderUpdateParams,
     request: DomainReorderBudgetItemsRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<void, DomainAPIError>({
       path: `/offers/${id}/budget/reorder`,
@@ -550,7 +550,7 @@ export class Offers<SecurityDataType = unknown> {
   cloneCreate = (
     { id, ...query }: CloneCreateParams,
     request: DomainCloneOfferRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainOfferDTO, DomainErrorResponse>({
       path: `/offers/${id}/clone`,
@@ -576,7 +576,7 @@ export class Offers<SecurityDataType = unknown> {
    */
   completeCreate = (
     { id, ...query }: CompleteCreateParams2,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainOfferDTO, DomainErrorResponse>({
       path: `/offers/${id}/complete`,
@@ -601,7 +601,7 @@ export class Offers<SecurityDataType = unknown> {
   costUpdate = (
     { id, ...query }: CostUpdateParams,
     request: DomainUpdateOfferCostRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainOfferDTO, DomainErrorResponse>({
       path: `/offers/${id}/cost`,
@@ -628,7 +628,7 @@ export class Offers<SecurityDataType = unknown> {
   customerUpdate = (
     { id, ...query }: CustomerUpdateParams,
     request: DomainUpdateOfferCustomerRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainOfferDTO, DomainErrorResponse>({
       path: `/offers/${id}/customer`,
@@ -655,7 +655,7 @@ export class Offers<SecurityDataType = unknown> {
   customerHasWonProjectUpdate = (
     { id, ...query }: CustomerHasWonProjectUpdateParams,
     request: DomainUpdateOfferCustomerHasWonProjectRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainOfferDTO, DomainErrorResponse>({
       path: `/offers/${id}/customer-has-won-project`,
@@ -682,7 +682,7 @@ export class Offers<SecurityDataType = unknown> {
   descriptionUpdate = (
     { id, ...query }: DescriptionUpdateParams,
     request: DomainUpdateOfferDescriptionRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainOfferDTO, DomainErrorResponse>({
       path: `/offers/${id}/description`,
@@ -708,7 +708,7 @@ export class Offers<SecurityDataType = unknown> {
    */
   detailList = (
     { id, ...query }: DetailListParams,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainOfferDetailDTO, DomainErrorResponse>({
       path: `/offers/${id}/detail`,
@@ -733,7 +733,7 @@ export class Offers<SecurityDataType = unknown> {
   dueDateUpdate = (
     { id, ...query }: DueDateUpdateParams,
     request: DomainUpdateOfferDueDateRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainOfferDTO, DomainErrorResponse>({
       path: `/offers/${id}/due-date`,
@@ -760,7 +760,7 @@ export class Offers<SecurityDataType = unknown> {
   endDateUpdate = (
     { id, ...query }: EndDateUpdateParams,
     request: DomainUpdateOfferEndDateRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainOfferDTO, DomainErrorResponse>({
       path: `/offers/${id}/end-date`,
@@ -787,7 +787,7 @@ export class Offers<SecurityDataType = unknown> {
   expirationDateUpdate = (
     { id, ...query }: ExpirationDateUpdateParams,
     request: DomainUpdateOfferExpirationDateRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainOfferDTO, DomainErrorResponse>({
       path: `/offers/${id}/expiration-date`,
@@ -815,7 +815,7 @@ export class Offers<SecurityDataType = unknown> {
   externalReferenceUpdate = (
     { id, ...query }: ExternalReferenceUpdateParams,
     request: DomainUpdateOfferExternalReferenceRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainOfferDTO, DomainErrorResponse>({
       path: `/offers/${id}/external-reference`,
@@ -841,7 +841,7 @@ export class Offers<SecurityDataType = unknown> {
    */
   externalSyncList = (
     { id, ...query }: ExternalSyncListParams,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainOfferExternalSyncResponse, DomainErrorResponse>({
       path: `/offers/${id}/external-sync`,
@@ -866,7 +866,7 @@ export class Offers<SecurityDataType = unknown> {
   healthUpdate = (
     { id, ...query }: HealthUpdateParams,
     request: DomainUpdateOfferHealthRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainOfferDTO, DomainErrorResponse>({
       path: `/offers/${id}/health`,
@@ -893,7 +893,7 @@ export class Offers<SecurityDataType = unknown> {
   invoicedUpdate = (
     { id, ...query }: InvoicedUpdateParams,
     request: DomainUpdateOfferInvoicedRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainOfferDTO, DomainErrorResponse>({
       path: `/offers/${id}/invoiced`,
@@ -935,7 +935,7 @@ export class Offers<SecurityDataType = unknown> {
   itemsCreate = (
     { id, ...query }: ItemsCreateParams,
     request: DomainCreateOfferItemRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainOfferItemDTO, any>({
       path: `/offers/${id}/items`,
@@ -962,7 +962,7 @@ export class Offers<SecurityDataType = unknown> {
   notesUpdate = (
     { id, ...query }: NotesUpdateParams2,
     request: DomainUpdateOfferNotesRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainOfferDTO, DomainErrorResponse>({
       path: `/offers/${id}/notes`,
@@ -990,7 +990,7 @@ export class Offers<SecurityDataType = unknown> {
   offerNumberUpdate = (
     { id, ...query }: OfferNumberUpdateParams,
     request: DomainUpdateOfferNumberRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainOfferDTO, DomainErrorResponse>({
       path: `/offers/${id}/offer-number`,
@@ -1017,7 +1017,7 @@ export class Offers<SecurityDataType = unknown> {
   probabilityUpdate = (
     { id, ...query }: ProbabilityUpdateParams,
     request: DomainUpdateOfferProbabilityRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainOfferDTO, DomainErrorResponse>({
       path: `/offers/${id}/probability`,
@@ -1044,7 +1044,7 @@ export class Offers<SecurityDataType = unknown> {
   projectUpdate = (
     { id, ...query }: ProjectUpdateParams,
     request: DomainUpdateOfferProjectRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainOfferDTO, DomainErrorResponse>({
       path: `/offers/${id}/project`,
@@ -1070,7 +1070,7 @@ export class Offers<SecurityDataType = unknown> {
    */
   projectDelete = (
     { id, ...query }: ProjectDeleteParams,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainOfferDTO, DomainErrorResponse>({
       path: `/offers/${id}/project`,
@@ -1094,7 +1094,7 @@ export class Offers<SecurityDataType = unknown> {
    */
   recalculateCreate = (
     { id, ...query }: RecalculateCreateParams,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainOfferDTO, DomainErrorResponse>({
       path: `/offers/${id}/recalculate`,
@@ -1119,7 +1119,7 @@ export class Offers<SecurityDataType = unknown> {
   rejectCreate = (
     { id, ...query }: RejectCreateParams,
     request: DomainRejectOfferRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainOfferDTO, DomainErrorResponse>({
       path: `/offers/${id}/reject`,
@@ -1145,7 +1145,7 @@ export class Offers<SecurityDataType = unknown> {
    */
   reopenCreate = (
     { id, ...query }: ReopenCreateParams2,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainOfferDTO, DomainErrorResponse>({
       path: `/offers/${id}/reopen`,
@@ -1170,7 +1170,7 @@ export class Offers<SecurityDataType = unknown> {
   responsibleUpdate = (
     { id, ...query }: ResponsibleUpdateParams,
     request: DomainUpdateOfferResponsibleRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainOfferDTO, DomainErrorResponse>({
       path: `/offers/${id}/responsible`,
@@ -1196,7 +1196,7 @@ export class Offers<SecurityDataType = unknown> {
    */
   sendCreate = (
     { id, ...query }: SendCreateParams,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainOfferDTO, DomainErrorResponse>({
       path: `/offers/${id}/send`,
@@ -1221,7 +1221,7 @@ export class Offers<SecurityDataType = unknown> {
   sentDateUpdate = (
     { id, ...query }: SentDateUpdateParams,
     request: DomainUpdateOfferSentDateRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainOfferDTO, DomainErrorResponse>({
       path: `/offers/${id}/sent-date`,
@@ -1248,7 +1248,7 @@ export class Offers<SecurityDataType = unknown> {
   spentUpdate = (
     { id, ...query }: SpentUpdateParams,
     request: DomainUpdateOfferSpentRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainOfferDTO, DomainErrorResponse>({
       path: `/offers/${id}/spent`,
@@ -1275,7 +1275,7 @@ export class Offers<SecurityDataType = unknown> {
   startDateUpdate = (
     { id, ...query }: StartDateUpdateParams,
     request: DomainUpdateOfferStartDateRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainOfferDTO, DomainErrorResponse>({
       path: `/offers/${id}/start-date`,
@@ -1301,7 +1301,7 @@ export class Offers<SecurityDataType = unknown> {
    */
   suppliersList = (
     { id, ...query }: SuppliersListParams,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainOfferSupplierWithDetailsDTO[], DomainErrorResponse>(
       {
@@ -1310,7 +1310,7 @@ export class Offers<SecurityDataType = unknown> {
         secure: true,
         format: "json",
         ...params,
-      },
+      }
     );
   /**
    * @description Links a supplier to an offer with optional status and notes
@@ -1329,7 +1329,7 @@ export class Offers<SecurityDataType = unknown> {
   suppliersCreate = (
     { id, ...query }: SuppliersCreateParams,
     request: DomainAddOfferSupplierRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainOfferSupplierWithDetailsDTO, DomainErrorResponse>({
       path: `/offers/${id}/suppliers`,
@@ -1356,7 +1356,7 @@ export class Offers<SecurityDataType = unknown> {
   suppliersUpdate = (
     { id, supplierId, ...query }: SuppliersUpdateParams,
     request: DomainUpdateOfferSupplierRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainOfferSupplierWithDetailsDTO, DomainErrorResponse>({
       path: `/offers/${id}/suppliers/${supplierId}`,
@@ -1382,7 +1382,7 @@ export class Offers<SecurityDataType = unknown> {
    */
   suppliersDelete = (
     { id, supplierId, ...query }: SuppliersDeleteParams,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<void, DomainErrorResponse>({
       path: `/offers/${id}/suppliers/${supplierId}`,
@@ -1406,7 +1406,7 @@ export class Offers<SecurityDataType = unknown> {
   suppliersContactUpdate = (
     { id, supplierId, ...query }: SuppliersContactUpdateParams,
     request: DomainUpdateOfferSupplierContactRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainOfferSupplierWithDetailsDTO, DomainErrorResponse>({
       path: `/offers/${id}/suppliers/${supplierId}/contact`,
@@ -1433,7 +1433,7 @@ export class Offers<SecurityDataType = unknown> {
   suppliersNotesUpdate = (
     { id, supplierId, ...query }: SuppliersNotesUpdateParams,
     request: DomainUpdateOfferSupplierNotesRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainOfferSupplierWithDetailsDTO, DomainErrorResponse>({
       path: `/offers/${id}/suppliers/${supplierId}/notes`,
@@ -1460,7 +1460,7 @@ export class Offers<SecurityDataType = unknown> {
   suppliersStatusUpdate = (
     { id, supplierId, ...query }: SuppliersStatusUpdateParams,
     request: DomainUpdateOfferSupplierStatusRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainOfferSupplierWithDetailsDTO, DomainErrorResponse>({
       path: `/offers/${id}/suppliers/${supplierId}/status`,
@@ -1487,7 +1487,7 @@ export class Offers<SecurityDataType = unknown> {
   titleUpdate = (
     { id, ...query }: TitleUpdateParams,
     request: DomainUpdateOfferTitleRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainOfferDTO, DomainErrorResponse>({
       path: `/offers/${id}/title`,
@@ -1514,7 +1514,7 @@ export class Offers<SecurityDataType = unknown> {
   valueUpdate = (
     { id, ...query }: ValueUpdateParams,
     request: DomainUpdateOfferValueRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainOfferDTO, DomainErrorResponse>({
       path: `/offers/${id}/value`,
@@ -1541,7 +1541,7 @@ export class Offers<SecurityDataType = unknown> {
   postOffers = (
     { id, ...query }: PostOffersParams,
     request: DomainWinOfferRequest,
-    params: RequestParams = {},
+    params: RequestParams = {}
   ) =>
     this.http.request<DomainWinOfferResponse, DomainErrorResponse>({
       path: `/offers/${id}/win`,
