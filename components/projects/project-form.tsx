@@ -79,7 +79,6 @@ export function ProjectForm({
 
   const handleSubmit = async (values: ProjectFormValues) => {
     const payload: DomainCreateProjectRequest = {
-      customerId: values.customerId || undefined,
       name: values.name,
       description: values.description || undefined,
       startDate: values.startDate?.toISOString(),
