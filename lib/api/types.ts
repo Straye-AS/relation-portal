@@ -20,6 +20,7 @@ export type {
   DomainNotificationDTO as Notification,
   DomainAuthUserDTO as AuthUser,
   DomainFileDTO as FileInfo,
+  DomainFileDTO as FileDTO,
   DomainAuditLog as AuditLog,
   DomainSearchResult as SearchResult,
   DomainDashboardMetrics,

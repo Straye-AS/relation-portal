@@ -7,3 +7,6 @@ coverage
 *.lock
 pnpm-lock.yaml
 package-lock.json
+**/.generated
+lib/.generated
+

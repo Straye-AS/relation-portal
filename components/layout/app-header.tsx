@@ -73,10 +73,10 @@ export function AppHeader() {
           </Link>
         </div>
 
-        <div className="absolute left-1/2 top-1/2 hidden w-full max-w-xl -translate-x-1/2 -translate-y-1/2 transform justify-center sm:flex">
+        <div className="hidden flex-1 justify-center md:flex">
           <Button
             variant="outline"
-            className="w-full justify-between gap-2 bg-muted/40 text-muted-foreground hover:bg-accent hover:text-accent-foreground dark:border-0 dark:bg-secondary dark:text-secondary-foreground dark:hover:bg-secondary/80"
+            className="w-full max-w-xs justify-between gap-2 bg-muted/40 text-muted-foreground hover:bg-accent/10 hover:text-muted-foreground dark:border-0 dark:bg-secondary dark:text-secondary-foreground dark:hover:bg-secondary/80 lg:max-w-sm"
             onClick={() => setSearchOpen(true)}
           >
             <div className="flex items-center gap-2">
@@ -93,7 +93,7 @@ export function AppHeader() {
           <Button
             variant="ghost"
             size="icon"
-            className="sm:hidden"
+            className="md:hidden"
             onClick={() => setSearchOpen(true)}
           >
             <Search className="h-5 w-5" />

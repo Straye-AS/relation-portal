@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "ESLINT_USE_FLAT_CONFIG=false eslint app components hooks lib tests",
+    "lint": "ESLINT_USE_FLAT_CONFIG=false eslint app components hooks lib tests --max-warnings=-1",
     "lint:fix": "ESLINT_USE_FLAT_CONFIG=false eslint app components hooks lib tests --fix",
     "lint:staged": "ESLINT_USE_FLAT_CONFIG=false eslint --fix",
     "format": "prettier --write .",

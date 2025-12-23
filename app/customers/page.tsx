@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { Suspense } from "react";
 import { AppLayout } from "@/components/layout/app-layout";
 import { useCustomers } from "@/hooks/useCustomers";
 import { Button } from "@/components/ui/button";
@@ -37,7 +38,8 @@ import {
 } from "lucide-react";
 
 import type { DomainCustomerDTO } from "@/lib/.generated/data-contracts";
-import { useState } from "react";
+import { SortByEnum1, SortOrderEnum } from "@/lib/.generated/data-contracts";
+import { useQueryParams } from "@/hooks/useQueryParams";
 
 // Lazy load modal to reduce initial bundle size
 const AddCustomerModal = dynamic(
@@ -63,33 +65,45 @@ import { SupplierStatusBadge } from "@/components/suppliers/supplier-status-badg
 
 type ViewMode = "list" | "card";
 
-export default function CustomersPage() {
-  const router = useRouter();
-  const [page, setPage] = useState(1);
-  const pageSize = 20;
+// URL parameter schema for customers page
+const customersParamsSchema = {
+  page: { type: "number" as const, default: 1 },
+  sortBy: { type: "string" as const, default: "name" },
+  sortOrder: { type: "string" as const, default: "asc" },
+  viewMode: { type: "string" as const, default: "list" },
+};
 
-  const [sortBy, setSortBy] = useState<string>("name");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+function CustomersPageContent() {
+  const router = useRouter();
+  const { params, setParam, setParams } = useQueryParams(customersParamsSchema);
+
+  const { page, sortBy, sortOrder, viewMode } = params;
+  const pageSize = 20;
 
   const { data, isLoading } = useCustomers({
     page,
     pageSize,
-    sortBy: sortBy as any,
-    sortOrder: sortOrder as any,
+    sortBy: sortBy as SortByEnum1,
+    sortOrder: sortOrder as SortOrderEnum,
   });
-
-  const [viewMode, setViewMode] = useState<ViewMode>("list");
 
   // Extract customers from paginated response
   const customers: DomainCustomerDTO[] = data?.data ?? [];
 
   const handleSort = (key: string) => {
     if (sortBy === key) {
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+      setParam("sortOrder", sortOrder === "asc" ? "desc" : "asc");
     } else {
-      setSortBy(key);
-      setSortOrder("asc");
+      setParams({ sortBy: key, sortOrder: "asc" });
     }
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setParam("page", newPage);
+  };
+
+  const handleViewModeChange = (mode: ViewMode) => {
+    setParam("viewMode", mode);
   };
 
   const SortButton = ({ column, label }: { column: string; label: string }) => {
@@ -136,7 +150,7 @@ export default function CustomersPage() {
                   variant={viewMode === "list" ? "secondary" : "ghost"}
                   size="sm"
                   className="h-8 w-8 p-0"
-                  onClick={() => setViewMode("list")}
+                  onClick={() => handleViewModeChange("list")}
                 >
                   <ListIcon className="h-4 w-4" />
                   <span className="sr-only">Liste visning</span>
@@ -145,7 +159,7 @@ export default function CustomersPage() {
                   variant={viewMode === "card" ? "secondary" : "ghost"}
                   size="sm"
                   className="h-8 w-8 p-0"
-                  onClick={() => setViewMode("card")}
+                  onClick={() => handleViewModeChange("card")}
                 >
                   <LayoutGrid className="h-4 w-4" />
                   <span className="sr-only">Kort visning</span>
@@ -179,7 +193,7 @@ export default function CustomersPage() {
                 <h3 className="mt-4 text-lg font-semibold">Ingen kunder</h3>
                 <p className="mb-4 mt-2 max-w-sm text-sm text-muted-foreground">
                   Du har ikke lagt til noen kunder enda. Opprett din første
-                  kunde for å komme i gang.
+                  kunde for a komme i gang.
                 </p>
                 <AddCustomerModal />
               </div>
@@ -278,7 +292,7 @@ export default function CustomersPage() {
                                     className="h-8 w-8 p-0"
                                     onClick={(e) => e.stopPropagation()}
                                   >
-                                    <span className="sr-only">Åpne meny</span>
+                                    <span className="sr-only">Apne meny</span>
                                     <MoreHorizontal className="h-4 w-4" />
                                   </Button>
                                 </DropdownMenuTrigger>
@@ -399,7 +413,7 @@ export default function CustomersPage() {
               <PaginationControls
                 currentPage={page}
                 totalPages={Math.ceil((data.total ?? 0) / pageSize)}
-                onPageChange={setPage}
+                onPageChange={handlePageChange}
                 pageSize={pageSize}
                 totalCount={data.total ?? 0}
                 entityName="kunder"
@@ -409,5 +423,33 @@ export default function CustomersPage() {
         </div>
       </div>
     </AppLayout>
+  );
+}
+
+export default function CustomersPage() {
+  return (
+    <Suspense
+      fallback={
+        <AppLayout disableScroll>
+          <div className="flex h-full flex-col">
+            <div className="flex-none space-y-4 border-b bg-background px-4 py-4 md:px-8">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h1 className="text-3xl font-bold tracking-tight">Kunder</h1>
+                  <p className="text-muted-foreground">
+                    Oversikt over alle kunder og deres informasjon
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto px-4 py-6 md:px-8">
+              <TableSkeleton rows={10} columns={6} />
+            </div>
+          </div>
+        </AppLayout>
+      }
+    >
+      <CustomersPageContent />
+    </Suspense>
   );
 }

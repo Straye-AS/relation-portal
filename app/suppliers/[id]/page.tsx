@@ -19,6 +19,7 @@ import { AddSupplierContactModal } from "@/components/suppliers/add-supplier-con
 import { DeleteConfirmationModal } from "@/components/ui/delete-confirmation-modal";
 import { SupplierOffersTab } from "@/components/suppliers/supplier-offers-tab";
 import { SupplierNotes } from "@/components/suppliers/supplier-notes";
+import { SupplierFileManager } from "@/components/files/entity-file-manager";
 import { ContactInfoCard } from "@/components/shared/contact-info-card";
 import { SyncWithBrregButton } from "@/components/shared/sync-with-brreg-button";
 import type { BrregMappedData } from "@/lib/brreg";
@@ -332,6 +333,9 @@ export default function SupplierDetailPage({
                 <TabsTrigger value="contacts">
                   Kontakter ({contacts.length})
                 </TabsTrigger>
+                <TabsTrigger value="documents">
+                  Dokumenter ({supplier?.fileCount ?? 0})
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview" className="space-y-4">
@@ -529,6 +533,17 @@ export default function SupplierDetailPage({
                         ))}
                       </div>
                     )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="documents">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Dokumenter</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <SupplierFileManager supplierId={resolvedParams.id} />
                   </CardContent>
                 </Card>
               </TabsContent>

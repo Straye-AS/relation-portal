@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import {
   Card,
   CardContent,
@@ -19,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Tooltip,
   TooltipContent,
@@ -54,6 +55,7 @@ import {
 } from "@/hooks/useOfferSuppliers";
 import { useSupplier } from "@/hooks/useSuppliers";
 import { AddOfferSupplierModal } from "@/components/offers/add-offer-supplier-modal";
+import { OfferSupplierFileManager } from "@/components/files/entity-file-manager";
 import { DeleteConfirmationModal } from "@/components/ui/delete-confirmation-modal";
 import { DomainOfferSupplierStatus } from "@/lib/.generated/data-contracts";
 import type { DomainOfferSupplierWithDetailsDTO } from "@/lib/.generated/data-contracts";
@@ -145,6 +147,7 @@ function ExpandedRowContent({
   const [editedNotes, setEditedNotes] = useState(offerSupplier.notes ?? "");
   const [isEditingNotes, setIsEditingNotes] = useState(false);
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("details");
 
   const contacts = supplierDetails?.contacts ?? [];
   const selectedContact = contacts.find(
@@ -188,239 +191,258 @@ function ExpandedRowContent({
   };
 
   return (
-    <div className="space-y-4 bg-muted/30 p-4">
-      <div className="grid gap-6 sm:grid-cols-2">
-        {/* Category */}
-        <div>
-          <p className="mb-1 text-sm text-muted-foreground">Kategori</p>
-          <div className="flex items-center gap-2">
-            {offerSupplier.supplier?.category ? (
-              <span className="font-medium">
-                {offerSupplier.supplier.category}
-              </span>
-            ) : (
-              <>
-                <span className="italic text-muted-foreground">Ikke satt</span>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <AlertTriangle className="h-4 w-4 cursor-pointer text-orange-500" />
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-[280px]">
-                    <p className="font-medium">Kategori mangler</p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Denne leverandøren har ikke en kategori. Åpne leverandøren
-                      for å sette kategori.
-                    </p>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="mt-2 w-full"
-                      asChild
-                    >
-                      <Link
-                        href={`/suppliers/${offerSupplier.supplier?.id}`}
-                        target="_blank"
-                      >
-                        Åpne leverandør
-                      </Link>
-                    </Button>
-                  </TooltipContent>
-                </Tooltip>
-              </>
-            )}
-          </div>
-        </div>
+    <div className="bg-muted/30 p-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="mb-4">
+          <TabsTrigger value="details">Detaljer</TabsTrigger>
+          <TabsTrigger value="files">Filer</TabsTrigger>
+        </TabsList>
 
-        {/* Contact Person */}
-        <div>
-          <p className="mb-1 text-sm text-muted-foreground">
-            Kontaktperson
-            {updateContact.isPending && (
-              <Loader2 className="ml-2 inline h-3 w-3 animate-spin" />
-            )}
-          </p>
-          <div className="group flex items-center gap-2">
-            {contacts.length > 0 ? (
-              <div
-                role="button"
-                onClick={() => setIsContactModalOpen(true)}
-                className="-ml-1 cursor-pointer rounded border border-transparent p-1 px-1 font-medium transition-colors hover:border-input hover:bg-transparent"
-              >
-                {selectedContact ? (
-                  selectedContact.fullName ||
-                  `${selectedContact.firstName || ""} ${selectedContact.lastName || ""}`.trim()
+        <TabsContent value="details" className="space-y-4">
+          <div className="grid gap-6 sm:grid-cols-2">
+            {/* Category */}
+            <div>
+              <p className="mb-1 text-sm text-muted-foreground">Kategori</p>
+              <div className="flex items-center gap-2">
+                {offerSupplier.supplier?.category ? (
+                  <span className="font-medium">
+                    {offerSupplier.supplier.category}
+                  </span>
                 ) : (
-                  <span className="italic text-muted-foreground">
-                    Velg kontaktperson
+                  <>
+                    <span className="italic text-muted-foreground">
+                      Ikke satt
+                    </span>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <AlertTriangle className="h-4 w-4 cursor-pointer text-orange-500" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-[280px]">
+                        <p className="font-medium">Kategori mangler</p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Denne leverandøren har ikke en kategori. Åpne
+                          leverandøren for å sette kategori.
+                        </p>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="mt-2 w-full"
+                          asChild
+                        >
+                          <Link
+                            href={`/suppliers/${offerSupplier.supplier?.id}`}
+                            target="_blank"
+                          >
+                            Åpne leverandør
+                          </Link>
+                        </Button>
+                      </TooltipContent>
+                    </Tooltip>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Contact Person */}
+            <div>
+              <p className="mb-1 text-sm text-muted-foreground">
+                Kontaktperson
+                {updateContact.isPending && (
+                  <Loader2 className="ml-2 inline h-3 w-3 animate-spin" />
+                )}
+              </p>
+              <div className="group flex items-center gap-2">
+                {contacts.length > 0 ? (
+                  <div
+                    role="button"
+                    onClick={() => setIsContactModalOpen(true)}
+                    className="-ml-1 cursor-pointer rounded border border-transparent p-1 px-1 font-medium transition-colors hover:border-input hover:bg-transparent"
+                  >
+                    {selectedContact ? (
+                      selectedContact.fullName ||
+                      `${selectedContact.firstName || ""} ${selectedContact.lastName || ""}`.trim()
+                    ) : (
+                      <span className="italic text-muted-foreground">
+                        Velg kontaktperson
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <>
+                    <span className="italic text-muted-foreground">
+                      Ingen kontakter
+                    </span>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <AlertTriangle className="h-4 w-4 cursor-pointer text-orange-500" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-[280px]">
+                        <p className="font-medium">Ingen kontaktpersoner</p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Denne leverandøren har ingen kontaktpersoner. Åpne
+                          leverandøren for å legge til kontakter.
+                        </p>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="mt-2 w-full"
+                          asChild
+                        >
+                          <Link
+                            href={`/suppliers/${offerSupplier.supplier?.id}`}
+                            target="_blank"
+                          >
+                            Åpne leverandør
+                          </Link>
+                        </Button>
+                      </TooltipContent>
+                    </Tooltip>
+                  </>
+                )}
+              </div>
+
+              {/* Contact Selection Dialog */}
+              <Dialog
+                open={isContactModalOpen}
+                onOpenChange={setIsContactModalOpen}
+              >
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Velg kontaktperson</DialogTitle>
+                    <DialogDescription>
+                      Velg en kontaktperson fra {offerSupplier.supplier?.name}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-1">
+                    {/* None option */}
+                    <button
+                      onClick={() => handleContactSelect(null)}
+                      className={cn(
+                        "flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-muted",
+                        !offerSupplier.contactId && "bg-muted"
+                      )}
+                    >
+                      <span className="text-muted-foreground">Ingen valgt</span>
+                      {!offerSupplier.contactId && (
+                        <Check className="h-4 w-4 text-primary" />
+                      )}
+                    </button>
+                    {/* Contact options */}
+                    {contacts.map((contact) => (
+                      <button
+                        key={contact.id}
+                        onClick={() => handleContactSelect(contact.id ?? null)}
+                        className={cn(
+                          "flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-muted",
+                          offerSupplier.contactId === contact.id && "bg-muted"
+                        )}
+                      >
+                        <div>
+                          <div className="font-medium">
+                            {contact.fullName ||
+                              `${contact.firstName || ""} ${contact.lastName || ""}`.trim()}
+                          </div>
+                          {contact.title && (
+                            <div className="text-xs text-muted-foreground">
+                              {contact.title}
+                            </div>
+                          )}
+                        </div>
+                        {offerSupplier.contactId === contact.id && (
+                          <Check className="h-4 w-4 text-primary" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </div>
+
+          {/* Notes with Markdown */}
+          <div className="space-y-2">
+            <p className="flex items-center gap-2 text-sm text-muted-foreground">
+              <FileText className="h-3.5 w-3.5" />
+              Notater
+              {updateSupplier.isPending && (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              )}
+            </p>
+
+            {isEditingNotes ? (
+              <div className="space-y-1">
+                <Textarea
+                  autoFocus
+                  placeholder="Notater om leverandøren for dette tilbudet... (Markdown støttes)"
+                  value={editedNotes}
+                  onChange={(e) => setEditedNotes(e.target.value)}
+                  onBlur={handleNotesBlur}
+                  rows={4}
+                  className="font-mono text-sm"
+                />
+                <span className="text-xs text-muted-foreground">
+                  Markdown: **bold**, *italic*, - lister - Klikk utenfor for å
+                  lagre
+                </span>
+              </div>
+            ) : (
+              <div
+                onClick={() => setIsEditingNotes(true)}
+                className={cn(
+                  "min-h-[60px] cursor-pointer rounded-md border border-transparent p-3 text-sm transition-colors hover:border-muted hover:bg-muted/30",
+                  !editedNotes && "flex items-center justify-center"
+                )}
+              >
+                {editedNotes ? (
+                  <ReactMarkdown components={markdownComponents}>
+                    {editedNotes}
+                  </ReactMarkdown>
+                ) : (
+                  <span className="text-muted-foreground">
+                    Klikk for å legge til notater...
                   </span>
                 )}
               </div>
-            ) : (
-              <>
-                <span className="italic text-muted-foreground">
-                  Ingen kontakter
-                </span>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <AlertTriangle className="h-4 w-4 cursor-pointer text-orange-500" />
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-[280px]">
-                    <p className="font-medium">Ingen kontaktpersoner</p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Denne leverandøren har ingen kontaktpersoner. Åpne
-                      leverandøren for å legge til kontakter.
-                    </p>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="mt-2 w-full"
-                      asChild
-                    >
-                      <Link
-                        href={`/suppliers/${offerSupplier.supplier?.id}`}
-                        target="_blank"
-                      >
-                        Åpne leverandør
-                      </Link>
-                    </Button>
-                  </TooltipContent>
-                </Tooltip>
-              </>
             )}
           </div>
 
-          {/* Contact Selection Dialog */}
-          <Dialog
-            open={isContactModalOpen}
-            onOpenChange={setIsContactModalOpen}
-          >
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>Velg kontaktperson</DialogTitle>
-                <DialogDescription>
-                  Velg en kontaktperson fra {offerSupplier.supplier?.name}
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-1">
-                {/* None option */}
-                <button
-                  onClick={() => handleContactSelect(null)}
-                  className={cn(
-                    "flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-muted",
-                    !offerSupplier.contactId && "bg-muted"
-                  )}
+          {/* Actions */}
+          <div className="flex items-center justify-between border-t pt-4">
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" asChild>
+                <Link
+                  href={`/suppliers/${offerSupplier.supplier?.id}`}
+                  target="_blank"
                 >
-                  <span className="text-muted-foreground">Ingen valgt</span>
-                  {!offerSupplier.contactId && (
-                    <Check className="h-4 w-4 text-primary" />
-                  )}
-                </button>
-                {/* Contact options */}
-                {contacts.map((contact) => (
-                  <button
-                    key={contact.id}
-                    onClick={() => handleContactSelect(contact.id ?? null)}
-                    className={cn(
-                      "flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-muted",
-                      offerSupplier.contactId === contact.id && "bg-muted"
-                    )}
-                  >
-                    <div>
-                      <div className="font-medium">
-                        {contact.fullName ||
-                          `${contact.firstName || ""} ${contact.lastName || ""}`.trim()}
-                      </div>
-                      {contact.title && (
-                        <div className="text-xs text-muted-foreground">
-                          {contact.title}
-                        </div>
-                      )}
-                    </div>
-                    {offerSupplier.contactId === contact.id && (
-                      <Check className="h-4 w-4 text-primary" />
-                    )}
-                  </button>
-                ))}
-              </div>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
-
-      {/* Notes with Markdown */}
-      <div className="space-y-2">
-        <p className="flex items-center gap-2 text-sm text-muted-foreground">
-          <FileText className="h-3.5 w-3.5" />
-          Notater
-          {updateSupplier.isPending && (
-            <Loader2 className="h-3 w-3 animate-spin" />
-          )}
-        </p>
-
-        {isEditingNotes ? (
-          <div className="space-y-1">
-            <Textarea
-              autoFocus
-              placeholder="Notater om leverandøren for dette tilbudet... (Markdown støttes)"
-              value={editedNotes}
-              onChange={(e) => setEditedNotes(e.target.value)}
-              onBlur={handleNotesBlur}
-              rows={4}
-              className="font-mono text-sm"
-            />
-            <span className="text-xs text-muted-foreground">
-              Markdown: **bold**, *italic*, - lister • Klikk utenfor for å lagre
-            </span>
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                  Åpne leverandør
+                </Link>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onDelete}
+                disabled={isDeleting}
+                className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
+              >
+                {isDeleting ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="mr-2 h-4 w-4" />
+                )}
+                Fjern fra tilbud
+              </Button>
+            </div>
           </div>
-        ) : (
-          <div
-            onClick={() => setIsEditingNotes(true)}
-            className={cn(
-              "min-h-[60px] cursor-pointer rounded-md border border-transparent p-3 text-sm transition-colors hover:border-muted hover:bg-muted/30",
-              !editedNotes && "flex items-center justify-center"
-            )}
-          >
-            {editedNotes ? (
-              <ReactMarkdown components={markdownComponents}>
-                {editedNotes}
-              </ReactMarkdown>
-            ) : (
-              <span className="text-muted-foreground">
-                Klikk for å legge til notater...
-              </span>
-            )}
-          </div>
-        )}
-      </div>
+        </TabsContent>
 
-      {/* Actions */}
-      <div className="flex items-center justify-between border-t pt-4">
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" asChild>
-            <Link
-              href={`/suppliers/${offerSupplier.supplier?.id}`}
-              target="_blank"
-            >
-              <ExternalLink className="mr-2 h-4 w-4" />
-              Åpne leverandør
-            </Link>
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onDelete}
-            disabled={isDeleting}
-            className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
-          >
-            {isDeleting ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Trash2 className="mr-2 h-4 w-4" />
-            )}
-            Fjern fra tilbud
-          </Button>
-        </div>
-      </div>
+        <TabsContent value="files">
+          <OfferSupplierFileManager
+            offerId={offerId}
+            supplierId={offerSupplier.supplier?.id ?? ""}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
@@ -488,8 +510,8 @@ export function OfferSuppliersTab({ offerId }: OfferSuppliersTabProps) {
             </p>
           </div>
         ) : (
-          <div className="rounded-md border">
-            <Table>
+          <div className="overflow-auto rounded-md border">
+            <Table className="min-w-[600px]">
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-[40px]"></TableHead>
@@ -503,9 +525,8 @@ export function OfferSuppliersTab({ offerId }: OfferSuppliersTabProps) {
                 {suppliers.map((offerSupplier) => {
                   const isExpanded = expandedId === offerSupplier.id;
                   return (
-                    <>
+                    <Fragment key={offerSupplier.id}>
                       <TableRow
-                        key={offerSupplier.id}
                         className={cn(
                           "cursor-pointer transition-colors hover:bg-muted/50",
                           isExpanded && "bg-muted/50"
@@ -578,7 +599,7 @@ export function OfferSuppliersTab({ offerId }: OfferSuppliersTabProps) {
                           </TableCell>
                         </TableRow>
                       )}
-                    </>
+                    </Fragment>
                   );
                 })}
               </TableBody>

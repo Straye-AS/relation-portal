@@ -141,6 +141,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { OfferInformationTab } from "@/components/offers/tabs/offer-information-tab";
 import { OfferEconomyTab } from "@/components/offers/tabs/offer-economy-tab";
 import { OfferSuppliersTab } from "@/components/offers/tabs/offer-suppliers-tab";
+import { OfferFileManager } from "@/components/files/entity-file-manager";
 
 export default function OfferDetailPage({
   params,
@@ -953,47 +954,51 @@ export default function OfferDetailPage({
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-4 py-6 md:px-8">
-          {offer.phase === "lost" && (
-            <Alert className="mb-4 border-amber-200 bg-amber-100 text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
-              <Info className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-              <AlertTitle className="ml-2 text-amber-900 dark:text-amber-100">
-                Tilbudet er tapt
-              </AlertTitle>
-              <AlertDescription className="ml-2 text-amber-800 dark:text-amber-200">
-                Dette tilbudet er i en tapt tilstand, og mange felter kan derfor
-                ikke oppdateres. Dette er for å bevare historikken.
-              </AlertDescription>
-            </Alert>
-          )}
-          {offer.phase === "completed" && (
-            <Alert className="mb-4 border-green-200 bg-green-100 text-green-900 dark:border-green-800 dark:bg-green-950/30 dark:text-green-200">
-              <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
-              <AlertTitle className="ml-2 text-green-900 dark:text-green-100">
-                Ordren er fullført
-              </AlertTitle>
-              <AlertDescription className="ml-2 text-green-800 dark:text-green-200">
-                Denne ordren er ferdigstilt og alle felter kan ikke lenger
-                redigeres. Alle kostnader og fakturaer er bokført. Du kan
-                gjenåpne ordren hvis det er behov for justeringer.
-              </AlertDescription>
-            </Alert>
-          )}
-
+        <div className="flex-1 overflow-y-auto px-4 py-2">
           {/* Tabs Section */}
           <Tabs
             value={activeTab}
             className="w-full space-y-4"
             onValueChange={handleTabChange}
           >
-            <div className="sticky top-0 z-10 -mt-2 bg-background pb-2 pt-2">
+            <div className="sticky top-0 z-30 bg-background pb-2 before:absolute before:-top-96 before:left-0 before:right-0 before:h-96 before:bg-background">
               <TabsList>
                 <TabsTrigger value="overview">Oversikt</TabsTrigger>
                 <TabsTrigger value="information">Informasjon</TabsTrigger>
                 <TabsTrigger value="economy">Økonomi</TabsTrigger>
                 <TabsTrigger value="suppliers">Leverandører</TabsTrigger>
+                <TabsTrigger value="documents">
+                  Dokumenter ({offer?.filesCount ?? 0})
+                </TabsTrigger>
               </TabsList>
             </div>
+
+            {/* Status callouts shown below tabs */}
+            {offer.phase === "lost" && (
+              <Alert className="border-amber-200 bg-amber-100 text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+                <Info className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                <AlertTitle className="ml-2 text-amber-900 dark:text-amber-100">
+                  Tilbudet er tapt
+                </AlertTitle>
+                <AlertDescription className="ml-2 text-amber-800 dark:text-amber-200">
+                  Dette tilbudet er i en tapt tilstand, og mange felter kan
+                  derfor ikke oppdateres. Dette er for å bevare historikken.
+                </AlertDescription>
+              </Alert>
+            )}
+            {offer.phase === "completed" && (
+              <Alert className="border-green-200 bg-green-100 text-emerald-950 dark:border-green-800 dark:bg-green-950/30 dark:text-green-200">
+                <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+                <AlertTitle className="text-emerald-950 dark:text-green-100">
+                  Ordren er fullført
+                </AlertTitle>
+                <AlertDescription className="text-emerald-900 dark:text-green-200">
+                  Denne ordren er ferdigstilt og alle felter kan ikke lenger
+                  redigeres. Alle kostnader og fakturaer er bokført. Du kan
+                  gjenåpne ordren hvis det er behov for justeringer.
+                </AlertDescription>
+              </Alert>
+            )}
 
             <TabsContent value="overview" className="space-y-6">
               {/* Legacy "won" alert removed - new flow uses order/completed phases */}
@@ -2032,7 +2037,13 @@ export default function OfferDetailPage({
                         <OfferStatusBadge phase="completed" />
                       ) : (
                         offer.health && (
-                          <OfferHealthBadge health={offer.health} />
+                          <OfferHealthBadge
+                            health={
+                              (offer.invoiced ?? 0) >= (offer.spent ?? 0)
+                                ? "on_track"
+                                : "at_risk"
+                            }
+                          />
                         )
                       )}
                     </CardTitle>
@@ -2527,8 +2538,19 @@ export default function OfferDetailPage({
               <OfferEconomyTab />
             </TabsContent>
 
-            <TabsContent value="suppliers">
+            <TabsContent value="suppliers" className="relative z-0">
               <OfferSuppliersTab offerId={resolvedParams.id} />
+            </TabsContent>
+
+            <TabsContent value="documents">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Dokumenter</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <OfferFileManager offerId={resolvedParams.id} />
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
         </div>

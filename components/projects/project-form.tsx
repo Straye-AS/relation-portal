@@ -18,7 +18,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { DomainCreateProjectRequest } from "@/lib/.generated/data-contracts";
-import { DomainCreateProjectRequestPhaseEnum } from "@/lib/.generated/data-contracts";
 import { useAllCustomers } from "@/hooks/useCustomers";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { SmartDatePicker } from "@/components/ui/smart-date-picker";
@@ -41,7 +40,7 @@ import type { DomainCustomerDTO } from "@/lib/.generated/data-contracts";
 
 const projectSchema = z.object({
   name: z.string().min(2, "Navn må være minst 2 tegn").max(200),
-  customerId: z.string().min(1, "Du må velge en kunde"),
+  customerId: z.string().optional(),
   description: z.string().optional(),
   startDate: z.date().optional(),
   endDate: z.date().optional(),
@@ -80,10 +79,8 @@ export function ProjectForm({
 
   const handleSubmit = async (values: ProjectFormValues) => {
     const payload: DomainCreateProjectRequest = {
-      phase: DomainCreateProjectRequestPhaseEnum.Tilbud,
-      customerId: values.customerId,
       name: values.name,
-      description: values.description,
+      description: values.description || undefined,
       startDate: values.startDate?.toISOString(),
       endDate: values.endDate?.toISOString(),
     };
@@ -114,9 +111,7 @@ export function ProjectForm({
           name="customerId"
           render={({ field }) => (
             <FormItem className="flex flex-col">
-              <FormLabel>
-                Kunde <span className="text-destructive">*</span>
-              </FormLabel>
+              <FormLabel>Kunde</FormLabel>
               <FormControl>
                 {lockedCustomerId ? (
                   <div className="flex h-10 w-full items-center rounded-md border border-input bg-muted px-3 py-2 text-sm text-muted-foreground">
