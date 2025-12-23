@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useState, type KeyboardEvent } from "react";
+import { Fragment, useState } from "react";
 import {
   Card,
   CardContent,
@@ -33,16 +33,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
   Truck,
   Trash2,
   ExternalLink,
@@ -54,10 +44,6 @@ import {
   User,
   Check,
   AlertTriangle,
-  Upload,
-  Download,
-  FolderOpen,
-  Files,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import type { Components } from "react-markdown";
@@ -71,13 +57,10 @@ import { useSupplier } from "@/hooks/useSuppliers";
 import { AddOfferSupplierModal } from "@/components/offers/add-offer-supplier-modal";
 import { OfferSupplierFileManager } from "@/components/files/entity-file-manager";
 import { DeleteConfirmationModal } from "@/components/ui/delete-confirmation-modal";
-import { FILE_ICONS } from "@/components/ui/file-icons";
 import { DomainOfferSupplierStatus } from "@/lib/.generated/data-contracts";
 import type { DomainOfferSupplierWithDetailsDTO } from "@/lib/.generated/data-contracts";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { formatDistanceToNow } from "date-fns";
-import { nb } from "date-fns/locale";
 
 const markdownComponents: Components = {
   p: ({ className, ...props }) => (
