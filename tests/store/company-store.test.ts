@@ -5,7 +5,7 @@ import {
   getCompanyById,
   getAccessibleCompanies,
 } from "@/store/company-store";
-import { COMPANIES } from "@/lib/api/types";
+import { COMPANIES, type CompanyId } from "@/lib/api/types";
 
 describe("company-store", () => {
   beforeEach(() => {
@@ -127,7 +127,8 @@ describe("getCompanyById", () => {
   });
 
   it("returns undefined for invalid id", () => {
-    const company = getCompanyById("invalid" as any);
+    // Cast to CompanyId to test invalid input handling
+    const company = getCompanyById("invalid" as CompanyId);
     expect(company).toBeUndefined();
   });
 });

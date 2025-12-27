@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useApi } from "@/lib/api/api-provider";
 import { useNotificationStore } from "@/store/useNotificationStore";
+import { logger } from "@/lib/logging";
 
 /**
  * Mark a single notification as read
@@ -22,7 +23,7 @@ export function useMarkNotificationAsRead() {
       queryClient.invalidateQueries({ queryKey: ["notifications", "count"] });
     },
     onError: (error: Error) => {
-      console.error("Failed to mark notification as read:", error);
+      logger.error("Failed to mark notification as read", error);
     },
   });
 }
@@ -45,7 +46,7 @@ export function useMarkAllNotificationsAsRead() {
       queryClient.invalidateQueries({ queryKey: ["notifications", "count"] });
     },
     onError: (error: Error) => {
-      console.error("Failed to mark all notifications as read:", error);
+      logger.error("Failed to mark all notifications as read", error);
     },
   });
 }

@@ -10,6 +10,7 @@
 import { type ReactNode } from "react";
 import { usePermissions, type PermissionCheck } from "@/hooks/usePermissions";
 import { Skeleton } from "@/components/ui/skeleton";
+import { logger } from "@/lib/logging";
 
 interface PermissionGateProps {
   /**
@@ -118,7 +119,7 @@ export function PermissionGate({
     hasPermission = can(resource, action);
   } else {
     // No permissions specified - allow access
-    console.warn(
+    logger.warn(
       "[PermissionGate] No permissions specified, defaulting to allow"
     );
     hasPermission = true;

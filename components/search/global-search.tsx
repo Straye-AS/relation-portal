@@ -27,6 +27,66 @@ interface GlobalSearchProps {
   onOpenChange: (open: boolean) => void;
 }
 
+// Type definitions for search API response
+interface SearchCustomer {
+  id: string;
+  name: string;
+  orgNumber?: string;
+  city?: string;
+}
+
+interface SearchOffer {
+  id: string;
+  title: string;
+  offerNumber?: string;
+  externalReference?: string;
+  customerName?: string;
+  phase?: string;
+  value?: number;
+}
+
+interface SearchProject {
+  id: string;
+  name?: string;
+  title?: string;
+  projectNumber?: string;
+  customerName?: string;
+  phase?: string;
+  offerCount?: number;
+}
+
+interface SearchSupplier {
+  id: string;
+  name: string;
+  orgNumber?: string;
+  city?: string;
+}
+
+interface SearchDeal {
+  id: string;
+  title: string;
+  customerName?: string;
+  stage?: string;
+}
+
+interface SearchContact {
+  id: string;
+  firstName?: string;
+  lastName?: string;
+  name?: string;
+  email?: string;
+  phone?: string;
+}
+
+interface SearchResponse {
+  customers?: SearchCustomer[];
+  projects?: SearchProject[];
+  offers?: SearchOffer[];
+  deals?: SearchDeal[];
+  contacts?: SearchContact[];
+  suppliers?: SearchSupplier[];
+}
+
 // Map search result types to display information
 const typeConfig: Record<
   string,
@@ -84,7 +144,7 @@ const typeConfig: Record<
 
 interface SearchResultItem {
   id: string;
-  title: string;
+  title: string | undefined;
   subtitle?: React.ReactNode;
   header?: string;
   type: string;
@@ -113,14 +173,7 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
     if (!data) return [];
 
     // The API returns a categorized object
-    const response = data as {
-      customers?: any[];
-      projects?: any[];
-      offers?: any[];
-      deals?: any[];
-      contacts?: any[];
-      suppliers?: any[];
-    };
+    const response = data as SearchResponse;
 
     const mappedResults: SearchResultItem[] = [];
 
@@ -162,7 +215,7 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
             type: "offer",
             metadata: (
               <div className="flex items-center gap-2">
-                <OfferStatusBadge phase={item.phase} />
+                <OfferStatusBadge phase={item.phase ?? "draft"} />
                 <span className="hidden min-w-[120px] text-right md:block">
                   {(item.value || 0).toLocaleString()} NOK
                 </span>
@@ -185,7 +238,7 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
             type: "project",
             metadata: (
               <div className="flex items-center gap-2">
-                <ProjectPhaseBadge phase={item.phase} />
+                <ProjectPhaseBadge phase={item.phase ?? "tilbud"} />
                 <span className="hidden min-w-[120px] text-right md:block">
                   {item.offerCount} tilbud
                 </span>

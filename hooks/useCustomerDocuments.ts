@@ -10,6 +10,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { logger } from "@/lib/logging";
 
 export interface CustomerDocument {
   id: string;
@@ -186,7 +187,7 @@ export function useUploadCustomerDocument() {
       toast.success("Dokument lastet opp (mock - backend ikke klar)");
     },
     onError: (error: Error) => {
-      console.error("Failed to upload document:", error);
+      logger.error("Failed to upload document", error);
       toast.error("Kunne ikke laste opp dokumentet");
     },
   });
@@ -221,7 +222,7 @@ export function useDeleteCustomerDocument() {
       toast.success("Dokument slettet (mock - backend ikke klar)");
     },
     onError: (error: Error) => {
-      console.error("Failed to delete document:", error);
+      logger.error("Failed to delete document", error);
       toast.error("Kunne ikke slette dokumentet");
     },
   });
@@ -245,7 +246,7 @@ export function useDownloadDocument() {
       return { success: true };
     },
     onError: (error: Error) => {
-      console.error("Failed to download document:", error);
+      logger.error("Failed to download document", error);
       toast.error("Kunne ikke laste ned dokumentet");
     },
   });

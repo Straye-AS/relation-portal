@@ -42,6 +42,7 @@ import type {
   DomainCreateOfferRequest,
   DomainCustomerDTO,
   DomainProjectDTO,
+  DomainCompanyID,
 } from "@/lib/.generated/data-contracts";
 import {
   DomainOfferPhase,
@@ -171,7 +172,7 @@ export function OfferForm({
       ...values,
       phase: DomainOfferPhase.OfferPhaseInProgress, // Start as InProgress by default
       status: DomainOfferStatus.OfferStatusActive,
-      companyId: (values.companyId || user?.company?.id) as any,
+      companyId: (values.companyId || user?.company?.id) as DomainCompanyID,
       responsibleUserId: user?.id ?? "",
       dueDate: values.dueDate ? values.dueDate.toISOString() : undefined,
       expirationDate: values.expirationDate
@@ -192,10 +193,13 @@ export function OfferForm({
   };
 
   // Border styling helper (same as CustomerForm)
-  const getInputClass = (fieldName: string, hasError: boolean) => {
+  const getInputClass = (
+    fieldName: keyof OfferFormValues,
+    hasError: boolean
+  ) => {
     // Check if dirty or has value for top-level fields
     // For nested (items), dirtyFields structure is nested.
-    const hasValue = !!form.getValues(fieldName as any);
+    const hasValue = !!form.getValues(fieldName);
     const isValid = hasValue && !hasError;
 
     return cn(

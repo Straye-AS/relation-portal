@@ -20,6 +20,7 @@ export function OfferListTable({ offers }: OfferListTableProps) {
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead className="w-8"></TableHead>
             <TableHead>Nr.</TableHead>
             <TableHead>Tittel</TableHead>
             <TableHead>Kunde</TableHead>

@@ -376,6 +376,15 @@ export interface PaginationParams {
   pageSize?: number;
 }
 
+// Generic paginated response with proper typing
+export interface PaginatedResponse<T> {
+  data?: T[];
+  page?: number;
+  pageSize?: number;
+  total?: number;
+  totalPages?: number;
+}
+
 // Sort parameters
 export type SortDirection = "asc" | "desc";
 

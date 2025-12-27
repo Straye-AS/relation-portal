@@ -13,6 +13,7 @@ import { useApi } from "@/lib/api/api-provider";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useCompanyStore } from "@/store/company-store";
+import { logger } from "@/lib/logging";
 import type {
   DomainCreateActivityRequest,
   DomainUpdateActivityRequest,
@@ -24,16 +25,7 @@ import type {
 /**
  * Fetch paginated list of activities
  */
-// Extended params to support manual additions not yet in generated types
-interface ExtendedActivitiesListParams extends Partial<ActivitiesListParams> {
-  from?: string;
-  to?: string;
-}
-
-/**
- * Fetch paginated list of activities
- */
-export function useActivities(params?: ExtendedActivitiesListParams) {
+export function useActivities(params?: Partial<ActivitiesListParams>) {
   const api = useApi();
   const { isAuthenticated } = useAuth();
   const { selectedCompanyId } = useCompanyStore();
@@ -41,8 +33,7 @@ export function useActivities(params?: ExtendedActivitiesListParams) {
   return useQuery({
     queryKey: ["activities", params, selectedCompanyId],
     queryFn: async () => {
-      // Cast to any to bypass strict type checking until generated types are updated
-      const response = await api.activities.activitiesList(params as any);
+      const response = await api.activities.activitiesList(params ?? {});
       return response.data;
     },
     enabled: isAuthenticated,
@@ -140,7 +131,7 @@ export function useCreateActivity() {
       toast.success("Aktivitet opprettet");
     },
     onError: (error: Error) => {
-      console.error("Failed to create activity:", error);
+      logger.error("Failed to create activity", error);
       toast.error("Kunne ikke opprette aktivitet");
     },
   });
@@ -170,7 +161,7 @@ export function useUpdateActivity() {
       toast.success("Aktivitet oppdatert");
     },
     onError: (error: Error) => {
-      console.error("Failed to update activity:", error);
+      logger.error("Failed to update activity", error);
       toast.error("Kunne ikke oppdatere aktivitet");
     },
   });
@@ -192,7 +183,7 @@ export function useDeleteActivity() {
       toast.success("Aktivitet slettet");
     },
     onError: (error: Error) => {
-      console.error("Failed to delete activity:", error);
+      logger.error("Failed to delete activity", error);
       toast.error("Kunne ikke slette aktivitet");
     },
   });
@@ -217,7 +208,7 @@ export function useCompleteActivity() {
       toast.success("Aktivitet fullført");
     },
     onError: (error: Error) => {
-      console.error("Failed to complete activity:", error);
+      logger.error("Failed to complete activity", error);
       toast.error("Kunne ikke fullføre aktivitet");
     },
   });
@@ -250,7 +241,7 @@ export function useCreateFollowUp() {
       toast.success("Oppfølging opprettet");
     },
     onError: (error: Error) => {
-      console.error("Failed to create follow-up:", error);
+      logger.error("Failed to create follow-up", error);
       toast.error("Kunne ikke opprette oppfølging");
     },
   });
@@ -273,7 +264,7 @@ export function useAddAttendee() {
       toast.success("Deltaker lagt til");
     },
     onError: (error: Error) => {
-      console.error("Failed to add attendee:", error);
+      logger.error("Failed to add attendee", error);
       toast.error("Kunne ikke legge til deltaker");
     },
   });
@@ -295,7 +286,7 @@ export function useRemoveAttendee() {
       toast.success("Deltaker fjernet");
     },
     onError: (error: Error) => {
-      console.error("Failed to remove attendee:", error);
+      logger.error("Failed to remove attendee", error);
       toast.error("Kunne ikke fjerne deltaker");
     },
   });

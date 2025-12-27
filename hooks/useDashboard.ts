@@ -11,6 +11,10 @@ import { useQuery } from "@tanstack/react-query";
 import { useApi } from "@/lib/api/api-provider";
 import { useCompanyStore } from "@/store/company-store";
 import { useAuth } from "@/hooks/useAuth";
+import {
+  TimeRangeEnum,
+  type MetricsListParams,
+} from "@/lib/.generated/data-contracts";
 
 /**
  * Fetch dashboard metrics
@@ -47,13 +51,16 @@ export function useDashboard(params: DashboardParams = {}) {
     queryFn: async () => {
       // If we have custom dates, we don't send timeRange
       // If we don't have custom dates, we send timeRange (defaulting to rolling12months if undefined)
-      const queryParams: any = {};
+      const queryParams: MetricsListParams = {};
 
       if (fromDate) queryParams.fromDate = fromDate;
       if (toDate) queryParams.toDate = toDate;
 
       if (!fromDate && !toDate) {
-        queryParams.timeRange = timeRange ?? "rolling12months";
+        queryParams.timeRange =
+          timeRange === "allTime"
+            ? TimeRangeEnum.AllTime
+            : TimeRangeEnum.Rolling12Months;
       }
 
       const response = await api.dashboard.metricsList(queryParams);

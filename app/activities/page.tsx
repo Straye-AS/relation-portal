@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 import { nb } from "date-fns/locale";
-import type { Activity } from "@/lib/api/types";
+import type { Activity, PaginatedResponse } from "@/lib/api/types";
 import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 import { DateRange } from "react-day-picker";
 import { Button } from "@/components/ui/button";
@@ -54,8 +54,9 @@ export default function ActivitiesPage() {
     to: dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : undefined,
   });
 
-  const activities = (rawData as any)?.data as Activity[] | undefined;
-  const totalCount = (rawData as any)?.total ?? 0;
+  const paginatedData = rawData as PaginatedResponse<Activity> | undefined;
+  const activities = paginatedData?.data;
+  const totalCount = paginatedData?.total ?? 0;
   const totalPages = Math.ceil(totalCount / pageSize);
 
   const handleDateRangeChange = (range: DateRange | undefined) => {

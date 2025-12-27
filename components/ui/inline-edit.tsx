@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Check, X, Loader2, Edit2 } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
+import { logger } from "@/lib/logging";
 
 export interface InlineEditProps {
   value: string | number;
@@ -57,7 +58,10 @@ export function InlineEdit({
       // Reset value to initial if failed? Or keep modification?
       // Usually keep modification to allow retry, but here we just reset editing state on success
       // If error, we stay in editing mode?
-      console.error(error);
+      logger.error(
+        "Failed to save inline edit",
+        error instanceof Error ? error : undefined
+      );
     } finally {
       setIsLoading(false);
     }

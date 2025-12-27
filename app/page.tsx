@@ -26,7 +26,7 @@ import { OfferListModal } from "@/components/dashboard/offer-list-modal";
 import { useOffers } from "@/hooks/useOffers";
 
 import { Offer as DomainOfferDTO, DashboardMetrics } from "@/lib/api/types";
-import { SortByEnum2, SortOrderEnum1 } from "@/lib/.generated/data-contracts";
+import { SortByEnum4, SortOrderEnum3 } from "@/lib/.generated/data-contracts";
 
 export default function DashboardPage() {
   const { userCompany } = useCompanyStore();
@@ -71,11 +71,11 @@ export default function DashboardPage() {
   // Fetch offers for the selected phase
   const { data: offersData } = useOffers(
     {
-      phase: selectedPhase as any,
+      phase: selectedPhase ?? undefined,
       page,
       pageSize,
-      sortBy: SortByEnum2.UpdatedAt,
-      sortOrder: SortOrderEnum1.Desc,
+      sortBy: SortByEnum4.UpdatedAt,
+      sortOrder: SortOrderEnum3.Desc,
     },
     { enabled: !!selectedPhase }
   );

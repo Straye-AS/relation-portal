@@ -13,6 +13,7 @@ import { useApi } from "@/lib/api/api-provider";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useCompanyStore } from "@/store/company-store";
+import { logger } from "@/lib/logging";
 import type {
   DomainCreateDealRequest,
   DomainUpdateDealRequest,
@@ -147,7 +148,7 @@ export function useCreateDeal() {
       toast.success("Salg opprettet");
     },
     onError: (error: Error) => {
-      console.error("Failed to create deal:", error);
+      logger.error("Failed to create deal", error);
       toast.error("Kunne ikke opprette salg");
     },
   });
@@ -177,7 +178,7 @@ export function useUpdateDeal() {
       toast.success("Salg oppdatert");
     },
     onError: (error: Error) => {
-      console.error("Failed to update deal:", error);
+      logger.error("Failed to update deal", error);
       toast.error("Kunne ikke oppdatere salg");
     },
   });
@@ -199,7 +200,7 @@ export function useDeleteDeal() {
       toast.success("Salg slettet");
     },
     onError: (error: Error) => {
-      console.error("Failed to delete deal:", error);
+      logger.error("Failed to delete deal", error);
       toast.error("Kunne ikke slette salg");
     },
   });
@@ -231,7 +232,7 @@ export function useAdvanceDeal() {
       toast.success("Salg avansert til neste fase");
     },
     onError: (error: Error) => {
-      console.error("Failed to advance deal:", error);
+      logger.error("Failed to advance deal", error);
       toast.error("Kunne ikke avansere salg");
     },
   });
@@ -262,7 +263,7 @@ export function useLoseDeal() {
       toast.info("Salg markert som tapt");
     },
     onError: (error: Error) => {
-      console.error("Failed to mark deal as lost:", error);
+      logger.error("Failed to mark deal as lost", error);
       toast.error("Kunne ikke markere salg som tapt");
     },
   });
@@ -287,7 +288,7 @@ export function useReopenDeal() {
       toast.success("Salg gjenåpnet");
     },
     onError: (error: Error) => {
-      console.error("Failed to reopen deal:", error);
+      logger.error("Failed to reopen deal", error);
       toast.error("Kunne ikke gjenåpne salg");
     },
   });
@@ -312,7 +313,7 @@ export function useCreateOfferFromDeal() {
       toast.success("Tilbud opprettet fra salg");
     },
     onError: (error: Error) => {
-      console.error("Failed to create offer from deal:", error);
+      logger.error("Failed to create offer from deal", error);
       toast.error("Kunne ikke opprette tilbud fra salg");
     },
   });

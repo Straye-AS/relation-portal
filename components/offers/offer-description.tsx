@@ -9,6 +9,7 @@ import { Edit2, Save, X } from "lucide-react";
 import { useUpdateOfferDescription } from "@/hooks/useOffers";
 import { cn } from "@/lib/utils";
 import type { Components } from "react-markdown";
+import { logger } from "@/lib/logging";
 
 interface OfferDescriptionProps {
   offerId: string;
@@ -81,7 +82,10 @@ export function OfferDescription({
       });
       setIsEditing(false);
     } catch (error) {
-      console.error("Failed to update description", error);
+      logger.error(
+        "Failed to update description",
+        error instanceof Error ? error : undefined
+      );
     }
   };
 

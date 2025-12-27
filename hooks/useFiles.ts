@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useApi } from "@/lib/api/api-provider";
 import { toast } from "sonner";
 import { FileDTO } from "@/lib/api/types";
+import { logger } from "@/lib/logging";
 
 /**
  * Customer Files Hook
@@ -157,7 +158,10 @@ async function uploadFileDirect(
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error("Direct upload failed:", response.status, errorText);
+    logger.error("Direct upload failed", {
+      status: response.status,
+      errorText,
+    });
     throw new Error(`Upload failed: ${response.status} ${response.statusText}`);
   }
 
@@ -200,8 +204,8 @@ export function useUploadCustomerFile() {
       });
       toast.success("Fil lastet opp");
     },
-    onError: (error) => {
-      console.error("Customer upload failed:", error);
+    onError: (error: Error) => {
+      logger.error("Customer upload failed", error);
       toast.error("Kunne ikke laste opp filen");
     },
   });
@@ -247,8 +251,8 @@ export function useUploadProjectFile() {
       });
       toast.success("Fil lastet opp");
     },
-    onError: (error) => {
-      console.error("Project upload failed:", error);
+    onError: (error: Error) => {
+      logger.error("Project upload failed", error);
       toast.error("Kunne ikke laste opp filen");
     },
   });
@@ -284,8 +288,8 @@ export function useUploadOfferFile() {
       });
       toast.success("Fil lastet opp");
     },
-    onError: (error) => {
-      console.error("Offer upload failed:", error);
+    onError: (error: Error) => {
+      logger.error("Offer upload failed", error);
       toast.error("Kunne ikke laste opp filen");
     },
   });
@@ -327,8 +331,8 @@ export function useUploadSupplierFile() {
       });
       toast.success("Fil lastet opp");
     },
-    onError: (error) => {
-      console.error("Supplier upload failed:", error);
+    onError: (error: Error) => {
+      logger.error("Supplier upload failed", error);
       toast.error("Kunne ikke laste opp filen");
     },
   });
@@ -377,8 +381,8 @@ export function useUploadOfferSupplierFile() {
       });
       toast.success("Fil lastet opp");
     },
-    onError: (error) => {
-      console.error("Offer-Supplier upload failed:", error);
+    onError: (error: Error) => {
+      logger.error("Offer-Supplier upload failed", error);
       toast.error("Kunne ikke laste opp filen");
     },
   });
@@ -400,8 +404,8 @@ export function useDeleteFile() {
       queryClient.invalidateQueries({ queryKey: ["files"] });
       toast.success("Fil slettet");
     },
-    onError: (error) => {
-      console.error("Delete failed:", error);
+    onError: (error: Error) => {
+      logger.error("Delete failed", error);
       toast.error("Kunne ikke slette filen");
     },
   });
@@ -454,7 +458,7 @@ export function useDownloadFile() {
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
       } catch (error) {
-        console.error("Download failed:", error);
+        logger.error("Download failed", error as Error);
         throw error;
       }
     },

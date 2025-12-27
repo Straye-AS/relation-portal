@@ -117,7 +117,12 @@ import { ProjectListTable } from "@/components/projects/project-list-table";
 import { CustomerListTable } from "@/components/customers/customer-list-table";
 import { cn, formatOfferNumber } from "@/lib/utils";
 import { SmartDatePicker } from "@/components/ui/smart-date-picker";
-import type { DomainProjectDTO } from "@/lib/.generated/data-contracts";
+import {
+  DomainOfferWarning,
+  type DomainProjectDTO,
+  SortByEnum1,
+  SortOrderEnum,
+} from "@/lib/.generated/data-contracts";
 import type { Project } from "@/lib/api/types";
 import { COMPANIES, type CompanyId } from "@/lib/api/types";
 
@@ -193,8 +198,8 @@ export default function OfferDetailPage({
       page: customerPage,
       pageSize: customerPageSize,
       search: debouncedCustomerSearch || undefined,
-      sortBy: "name" as any,
-      sortOrder: "asc" as any,
+      sortBy: SortByEnum1.Name,
+      sortOrder: SortOrderEnum.Asc,
     },
     { enabled: isCustomerModalOpen }
   );
@@ -282,7 +287,9 @@ export default function OfferDetailPage({
   const [localCompletionPercent, setLocalCompletionPercent] = useState(0);
 
   // Project confirmation state
-  const [pendingProject, setPendingProject] = useState<any>(null);
+  const [pendingProject, setPendingProject] = useState<DomainProjectDTO | null>(
+    null
+  );
   const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false);
   const [showChangeConfirm, setShowChangeConfirm] = useState(false);
 
@@ -823,130 +830,133 @@ export default function OfferDetailPage({
                   open={showCompleteConfirm}
                   onOpenChange={setShowCompleteConfirm}
                 >
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Marker som ferdig?</AlertDialogTitle>
-                      <AlertDialogDescription asChild>
-                        <div className="space-y-4">
-                          {/* Check for potential issues */}
-                          {(() => {
-                            const invoicedPercent =
-                              calcPrice > 0
-                                ? ((offer.invoiced || 0) / calcPrice) * 100
-                                : 0;
-                            const spentPercent =
-                              calcCost > 0
-                                ? ((offer.spent || 0) / calcCost) * 100
-                                : 0;
-                            const completionPercent =
-                              offer.completionPercent || 0;
+                  <AlertDialogContent className="max-w-xl">
+                    {(() => {
+                      const invoicedPercent =
+                        calcPrice > 0
+                          ? ((offer.invoiced || 0) / calcPrice) * 100
+                          : 0;
+                      const spentPercent =
+                        calcCost > 0
+                          ? ((offer.spent || 0) / calcCost) * 100
+                          : 0;
+                      const hasWarnings =
+                        invoicedPercent < 100 || spentPercent < 80;
 
-                            const hasWarnings =
-                              invoicedPercent < 100 ||
-                              spentPercent < 80 ||
-                              completionPercent < 100;
-
-                            if (hasWarnings) {
-                              return (
-                                <>
-                                  <Alert className="border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
-                                    <Info className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                                    <AlertTitle className="ml-2 text-amber-900 dark:text-amber-100">
-                                      Er du sikker?
+                      return (
+                        <>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>
+                              {hasWarnings
+                                ? "Marker som ferdig?"
+                                : "Klar til å fullføre!"}
+                            </AlertDialogTitle>
+                            <AlertDialogDescription asChild>
+                              <div className="space-y-4">
+                                {hasWarnings ? (
+                                  <>
+                                    <Alert className="border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+                                      <Info className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                                      <AlertTitle className="ml-2 text-amber-900 dark:text-amber-100">
+                                        Er du sikker?
+                                      </AlertTitle>
+                                      <AlertDescription className="ml-2 text-amber-800 dark:text-amber-200">
+                                        Tallene indikerer at ordren kanskje ikke
+                                        er helt ferdig:
+                                      </AlertDescription>
+                                    </Alert>
+                                    <ul className="ml-4 list-disc space-y-1 text-sm text-muted-foreground">
+                                      {invoicedPercent < 100 && (
+                                        <li>
+                                          Fakturert:{" "}
+                                          <span className="font-medium text-foreground">
+                                            {Math.round(invoicedPercent)}%
+                                          </span>{" "}
+                                          av total pris (
+                                          {new Intl.NumberFormat("nb-NO", {
+                                            style: "currency",
+                                            currency: "NOK",
+                                            maximumFractionDigits: 0,
+                                          }).format(offer.invoiced || 0)}{" "}
+                                          av{" "}
+                                          {new Intl.NumberFormat("nb-NO", {
+                                            style: "currency",
+                                            currency: "NOK",
+                                            maximumFractionDigits: 0,
+                                          }).format(calcPrice)}
+                                          )
+                                        </li>
+                                      )}
+                                      {spentPercent < 80 && (
+                                        <li>
+                                          Påløpte kostnader:{" "}
+                                          <span className="font-medium text-foreground">
+                                            {Math.round(spentPercent)}%
+                                          </span>{" "}
+                                          av beregnet kostnad. <br />
+                                          Dette vil i så fall gi en dekningsgrad
+                                          på{" "}
+                                          <span
+                                            className={`font-medium ${
+                                              (offer.invoiced || 0) <
+                                              (offer.spent || 0)
+                                                ? "text-red-600"
+                                                : "text-green-600"
+                                            }`}
+                                          >
+                                            {Math.round(
+                                              (((offer.invoiced || 0) -
+                                                (offer.spent || 0)) /
+                                                (offer.invoiced || 1)) *
+                                                100
+                                            )}
+                                            %
+                                          </span>
+                                        </li>
+                                      )}
+                                    </ul>
+                                  </>
+                                ) : (
+                                  <Alert className="border-green-200 bg-green-50 text-green-900 dark:border-green-800 dark:bg-green-950/30 dark:text-green-200">
+                                    <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                    <AlertTitle className="ml-2 text-green-900 dark:text-green-100">
+                                      Alt ser bra ut!
                                     </AlertTitle>
-                                    <AlertDescription className="ml-2 text-amber-800 dark:text-amber-200">
-                                      Tallene indikerer at ordren kanskje ikke
-                                      er helt ferdig:
+                                    <AlertDescription className="ml-2 text-green-800 dark:text-green-200">
+                                      Ordren er klar til å markeres som
+                                      fullført.
                                     </AlertDescription>
                                   </Alert>
-                                  <ul className="ml-4 list-disc space-y-1 text-sm text-muted-foreground">
-                                    {invoicedPercent < 100 && (
-                                      <li>
-                                        Fakturert:{" "}
-                                        <span className="font-medium text-foreground">
-                                          {Math.round(invoicedPercent)}%
-                                        </span>{" "}
-                                        av total pris (
-                                        {new Intl.NumberFormat("nb-NO", {
-                                          style: "currency",
-                                          currency: "NOK",
-                                          maximumFractionDigits: 0,
-                                        }).format(offer.invoiced || 0)}{" "}
-                                        av{" "}
-                                        {new Intl.NumberFormat("nb-NO", {
-                                          style: "currency",
-                                          currency: "NOK",
-                                          maximumFractionDigits: 0,
-                                        }).format(calcPrice)}
-                                        )
-                                      </li>
-                                    )}
-                                    {spentPercent < 80 && (
-                                      <li>
-                                        Påløpte kostnader:{" "}
-                                        <span className="font-medium text-foreground">
-                                          {Math.round(spentPercent)}%
-                                        </span>{" "}
-                                        av beregnet kostnad. <br />
-                                        Dette vil i så fall gi en dekningsgrad
-                                        på{" "}
-                                        <span
-                                          className={`font-medium ${
-                                            (offer.invoiced || 0) <
-                                            (offer.spent || 0)
-                                              ? "text-red-600"
-                                              : "text-green-600"
-                                          }`}
-                                        >
-                                          {Math.round(
-                                            (((offer.invoiced || 0) -
-                                              (offer.spent || 0)) /
-                                              (offer.invoiced || 1)) *
-                                              100
-                                          )}
-                                          %
-                                        </span>
-                                      </li>
-                                    )}
-                                    {completionPercent < 100 && (
-                                      <li>
-                                        Ferdigstillelse:{" "}
-                                        <span className="font-medium text-foreground">
-                                          {completionPercent}%
-                                        </span>
-                                      </li>
-                                    )}
-                                  </ul>
-                                </>
-                              );
-                            }
-                            return (
-                              <p>
-                                Tallene ser bra ut! Ordren ser ut til å være
-                                fullført.
-                              </p>
-                            );
-                          })()}
-                          <p className="text-sm text-muted-foreground">
-                            Når ordren er markert som ferdig vil den låses for
-                            videre redigering. Du kan senere gjenåpne den via
-                            menyen hvis nødvendig.
-                          </p>
-                        </div>
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Avbryt</AlertDialogCancel>
-                      <AlertDialogAction
-                        className="bg-slate-600 hover:bg-slate-700"
-                        onClick={() => {
-                          completeOffer.mutate(offer.id!);
-                          setShowCompleteConfirm(false);
-                        }}
-                      >
-                        Marker som ferdig
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
+                                )}
+                                <p className="text-sm text-muted-foreground">
+                                  Når ordren er markert som ferdig vil den låses
+                                  for videre redigering. Du kan senere gjenåpne
+                                  den via menyen hvis nødvendig.
+                                </p>
+                              </div>
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Avbryt</AlertDialogCancel>
+                            <AlertDialogAction
+                              className={
+                                hasWarnings
+                                  ? "bg-slate-600 hover:bg-slate-700"
+                                  : "bg-green-600 hover:bg-green-700"
+                              }
+                              onClick={() => {
+                                completeOffer.mutate(offer.id!);
+                                setShowCompleteConfirm(false);
+                              }}
+                            >
+                              {hasWarnings
+                                ? "Marker som ferdig likevel"
+                                : "Fullfør ordren"}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </>
+                      );
+                    })()}
                   </AlertDialogContent>
                 </AlertDialog>
               </div>
@@ -999,6 +1009,88 @@ export default function OfferDetailPage({
                 </AlertDescription>
               </Alert>
             )}
+
+            {/* Warnings for order phase */}
+            {offer.phase === "order" &&
+              offer.warnings &&
+              offer.warnings.length > 0 && (
+                <Alert className="border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+                  <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                  <AlertTitle className="ml-2 text-amber-900 dark:text-amber-100">
+                    Advarsel
+                  </AlertTitle>
+                  <AlertDescription className="ml-2 space-y-2 text-amber-800 dark:text-amber-200">
+                    {offer.warnings.map((warning, idx) => (
+                      <div key={idx} className="flex flex-col gap-1">
+                        {warning ===
+                          DomainOfferWarning.OfferWarningValueNotEqualsDWTotalFixedPrice && (
+                          <>
+                            <p>
+                              <strong>Verdi avviker fra CW:</strong>{" "}
+                              Tilbudsverdien ({" "}
+                              {new Intl.NumberFormat("nb-NO", {
+                                style: "currency",
+                                currency: "NOK",
+                                maximumFractionDigits: 0,
+                              }).format(offer.value ?? 0)}
+                              ) stemmer ikke overens med fastpris i CW (
+                              {new Intl.NumberFormat("nb-NO", {
+                                style: "currency",
+                                currency: "NOK",
+                                maximumFractionDigits: 0,
+                              }).format(offer.dwTotalFixedPrice ?? 0)}
+                              ).
+                            </p>
+                            <p className="text-sm text-amber-700 dark:text-amber-300">
+                              <strong>Løsning:</strong> Du kan endre verdien til
+                              å samsvare med fastpris i CW, eller endre verdien
+                              i CW om den er feil der.
+                            </p>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="mt-2 w-fit"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                updateValue.mutate({
+                                  id: offer.id!,
+                                  data: {
+                                    value: offer.dwTotalFixedPrice || 0,
+                                  },
+                                });
+                              }}
+                              disabled={updateValue.isPending}
+                            >
+                              {updateValue.isPending ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              ) : null}
+                              Oppdater kalkulert pris til:{" "}
+                              {new Intl.NumberFormat("nb-NO", {
+                                style: "currency",
+                                currency: "NOK",
+                                maximumFractionDigits: 0,
+                              }).format(offer.dwTotalFixedPrice || 0)}
+                            </Button>
+                          </>
+                        )}
+                        {warning ===
+                          DomainOfferWarning.OfferWarningMissingDWTotalFixedPrice && (
+                          <>
+                            <p>
+                              <strong>Mangler fastpris i CW:</strong> Denne
+                              ordren har ikke en registrert fastpris i CW.
+                            </p>
+                            <p className="text-sm text-amber-700 dark:text-amber-300">
+                              <strong>Løsning:</strong> Legg inn fastpris på
+                              prosjektet CW.
+                            </p>
+                          </>
+                        )}
+                      </div>
+                    ))}
+                  </AlertDescription>
+                </Alert>
+              )}
 
             <TabsContent value="overview" className="space-y-6">
               {/* Legacy "won" alert removed - new flow uses order/completed phases */}
@@ -1132,7 +1224,7 @@ export default function OfferDetailPage({
                         Ekstern referanse
                       </p>
                       <InlineEdit
-                        value={(offer as any).externalReference || ""}
+                        value={offer.externalReference || ""}
                         placeholder="Legg til ekstern ref..."
                         onSave={async (val) => {
                           await updateExternalReference.mutateAsync({
@@ -1671,9 +1763,10 @@ export default function OfferDetailPage({
                                 "hover:border-input hover:bg-transparent"
                             )}
                           />
-                          {offer.dwTotalIncome !== undefined &&
-                            offer.dwTotalIncome > (offer.value || 0) &&
-                            (offer.invoiced || 0) !== 0 && (
+                          {offer.warnings &&
+                            offer.warnings.includes(
+                              DomainOfferWarning.OfferWarningValueNotEqualsDWTotalFixedPrice
+                            ) && (
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <AlertTriangle className="h-5 w-5 cursor-pointer text-orange-500" />
@@ -1688,7 +1781,7 @@ export default function OfferDetailPage({
                                       style: "currency",
                                       currency: "NOK",
                                       maximumFractionDigits: 0,
-                                    }).format(offer.dwTotalIncome)}
+                                    }).format(offer.dwTotalFixedPrice || 0)}
                                     . Vil du oppdatere total pris?
                                   </p>
                                   <Button
@@ -1700,7 +1793,7 @@ export default function OfferDetailPage({
                                       updateValue.mutate({
                                         id: offer.id!,
                                         data: {
-                                          value: offer.dwTotalIncome || 0,
+                                          value: offer.dwTotalFixedPrice || 0,
                                         },
                                       });
                                     }}
@@ -1714,7 +1807,7 @@ export default function OfferDetailPage({
                                       style: "currency",
                                       currency: "NOK",
                                       maximumFractionDigits: 0,
-                                    }).format(offer.dwTotalIncome)}
+                                    }).format(offer.dwTotalFixedPrice || 0)}
                                   </Button>
                                 </TooltipContent>
                               </Tooltip>

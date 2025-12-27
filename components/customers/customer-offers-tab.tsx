@@ -31,7 +31,12 @@ import { OfferListTable } from "@/components/offers/offer-list-table";
 import { PaginationControls } from "@/components/pagination-controls";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { useCustomerOffers } from "@/hooks/useCustomers";
-import { DomainOfferPhase } from "@/lib/.generated/data-contracts";
+import {
+  DomainOfferPhase,
+  PhaseEnum,
+  SortByEnum2,
+  SortOrderEnum1,
+} from "@/lib/.generated/data-contracts";
 import type { DomainOfferDTO } from "@/lib/.generated/data-contracts";
 
 interface CustomerOffersTabProps {
@@ -47,9 +52,9 @@ export function CustomerOffersTab({ customerId }: CustomerOffersTabProps) {
   const { data, isLoading } = useCustomerOffers(customerId, {
     page,
     pageSize,
-    sortBy: "updatedAt" as any,
-    sortOrder: "desc" as any,
-    phase: phaseFilter === "all" ? undefined : (phaseFilter as any),
+    sortBy: SortByEnum2.UpdatedAt,
+    sortOrder: SortOrderEnum1.Desc,
+    phase: phaseFilter === "all" ? undefined : (phaseFilter as PhaseEnum),
   });
 
   const offers = useMemo(() => {

@@ -34,6 +34,11 @@ import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { PROJECT_PHASE_LABELS } from "@/lib/api/types";
 import { useCustomerProjects } from "@/hooks/useCustomers";
 import type { Project } from "@/lib/api/types";
+import {
+  SortByEnum3,
+  SortOrderEnum2,
+  PhaseEnum1,
+} from "@/lib/.generated/data-contracts";
 
 interface CustomerProjectsTabProps {
   customerId: string;
@@ -49,9 +54,9 @@ export function CustomerProjectsTab({ customerId }: CustomerProjectsTabProps) {
   const { data, isLoading } = useCustomerProjects(customerId, {
     page,
     pageSize,
-    sortBy: "updatedAt" as any,
-    sortOrder: "desc" as any,
-    phase: phaseFilter === "all" ? undefined : (phaseFilter as any),
+    sortBy: SortByEnum3.UpdatedAt,
+    sortOrder: SortOrderEnum2.Desc,
+    phase: phaseFilter === "all" ? undefined : (phaseFilter as PhaseEnum1),
   });
 
   const projects = useMemo(() => {

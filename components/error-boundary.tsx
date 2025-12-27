@@ -4,6 +4,7 @@ import { Component, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertTriangle, RefreshCw } from "lucide-react";
+import { logger } from "@/lib/logging";
 
 interface Props {
   children: ReactNode;
@@ -33,12 +34,10 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     // Log error to monitoring service in production
-    if (process.env.NODE_ENV === "production") {
-      // TODO: Send to error monitoring service (e.g., Sentry)
-      console.error("Error caught by boundary:", error, errorInfo);
-    } else {
-      console.error("Error caught by boundary:", error, errorInfo);
-    }
+    logger.error("Error caught by boundary:", error, {
+      component: "ErrorBoundary",
+      componentStack: errorInfo.componentStack ?? undefined,
+    });
   }
 
   handleReset = () => {

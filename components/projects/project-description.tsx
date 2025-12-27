@@ -9,6 +9,7 @@ import { Edit2, Save, X } from "lucide-react";
 import { useUpdateProjectDescription } from "@/hooks/useProjects";
 import { cn } from "@/lib/utils";
 import type { Components } from "react-markdown";
+import { logger } from "@/lib/logging";
 
 interface ProjectDescriptionProps {
   projectId: string;
@@ -82,7 +83,10 @@ export function ProjectDescription({
       });
       setIsEditing(false);
     } catch (error) {
-      console.error("Failed to update description", error);
+      logger.error(
+        "Failed to update description",
+        error instanceof Error ? error : undefined
+      );
     }
   };
 

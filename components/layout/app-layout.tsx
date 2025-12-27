@@ -45,7 +45,7 @@ export function AppLayout({
       (typeof window === "undefined" || getAuthModePreference() === "local");
 
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-muted/40">
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background">
         <div className="w-full max-w-md space-y-6 rounded-lg bg-card p-8 shadow-lg">
           <div className="space-y-4 text-center">
             <div className="flex justify-center">
@@ -77,7 +77,7 @@ export function AppLayout({
           <Button onClick={login} className="w-full" size="lg">
             {isLocalMode
               ? "Logg inn som testutvikler"
-              : "Logg inn med Microsoft"}
+              : "Logg inn med din Straye epost"}
           </Button>
 
           <p className="text-center text-xs text-muted-foreground">

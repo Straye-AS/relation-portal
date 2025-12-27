@@ -48,6 +48,8 @@ import { ContactInfoCard } from "@/components/shared/contact-info-card";
 import { SyncWithBrregButton } from "@/components/shared/sync-with-brreg-button";
 import type { BrregMappedData } from "@/lib/brreg";
 
+import type { DomainContactDTO } from "@/lib/.generated/data-contracts";
+
 // Local interface for contact to satisfy TS and expected usage
 interface CustomerContact {
   id: string;
@@ -92,22 +94,14 @@ export default function CustomerDetailPage({
   const deleteContact = useDeleteCustomerContact();
 
   // Map contactsData to local interface properly
-  // Robustly handle potential pagination wrapper or diverse return types
-  // Map contactsData to local interface properly
-  // Robustly handle potential pagination wrapper or diverse return types
+  // contactsList returns DomainContactDTO[] directly (not paginated)
   const contacts: CustomerContact[] = (() => {
-    let rawList: any[] = [];
+    // contactsData is DomainContactDTO[] or undefined
+    let rawList: DomainContactDTO[] = [];
 
     // Try to get list from contactsData (dedicated endpoint)
-    if (contactsData) {
-      if (Array.isArray(contactsData)) {
-        rawList = contactsData;
-      } else if (
-        (contactsData as any).data &&
-        Array.isArray((contactsData as any).data)
-      ) {
-        rawList = (contactsData as any).data;
-      }
+    if (contactsData && Array.isArray(contactsData)) {
+      rawList = contactsData;
     }
 
     // Fallback to customer.contacts if dedicated list is empty or unavailable
@@ -120,16 +114,15 @@ export default function CustomerDetailPage({
       rawList = customer.contacts;
     }
 
-    return rawList.map((c: any) => ({
+    return rawList.map((c: DomainContactDTO) => ({
       id: c.id || "",
       name:
         c.fullName ||
         `${c.firstName || ""} ${c.lastName || ""}`.trim() ||
-        c.name ||
         "Ukjent navn",
       email: c.email,
       phone: c.phone || c.mobile,
-      role: c.title || c.contactType || c.role,
+      role: c.title || c.contactType,
     }));
   })();
 
@@ -228,7 +221,7 @@ export default function CustomerDetailPage({
                 name: customer.name,
                 email: customer.email,
                 phone: customer.phone,
-                website: (customer as any).website,
+                website: customer.website,
                 address: customer.address,
                 postalCode: customer.postalCode,
                 city: customer.city,
@@ -398,7 +391,7 @@ export default function CustomerDetailPage({
                 <ContactInfoCard
                   email={customer.email}
                   phone={customer.phone}
-                  website={(customer as any).website}
+                  website={customer.website}
                   address={customer.address}
                   postalCode={customer.postalCode}
                   city={customer.city}
