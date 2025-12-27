@@ -232,7 +232,7 @@ export type LossReasonCategory =
 
 // Norwegian labels for UI display
 export const OFFER_PHASE_LABELS: Record<OfferPhase, string> = {
-  draft: "Kladd",
+  draft: "Forespørsel",
   in_progress: "I gang",
   sent: "Sendt",
   order: "Ordre",

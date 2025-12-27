@@ -16,6 +16,7 @@ interface DeleteOfferDialogProps {
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
   isDeleting?: boolean;
+  isDraft?: boolean;
 }
 
 export function DeleteOfferDialog({
@@ -23,14 +24,18 @@ export function DeleteOfferDialog({
   onOpenChange,
   onConfirm,
   isDeleting,
+  isDraft,
 }: DeleteOfferDialogProps) {
+  const itemLabel = isDraft ? "forespørselen" : "tilbudet";
+  const buttonLabel = isDraft ? "Slett forespørsel" : "Slett tilbud";
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Slett tilbud?</AlertDialogTitle>
+          <AlertDialogTitle>{buttonLabel}?</AlertDialogTitle>
           <AlertDialogDescription>
-            Dette vil permanent slette tilbudet og all tilhørende data. Denne
+            Dette vil permanent slette {itemLabel} og all tilhørende data. Denne
             handlingen kan ikke angres.
           </AlertDialogDescription>
         </AlertDialogHeader>
@@ -41,7 +46,7 @@ export function DeleteOfferDialog({
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             disabled={isDeleting}
           >
-            {isDeleting ? "Sletter..." : "Slett tilbud"}
+            {isDeleting ? "Sletter..." : buttonLabel}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

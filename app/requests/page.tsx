@@ -1,7 +1,8 @@
 "use client";
 
 import { AppLayout } from "@/components/layout/app-layout";
-import { useOffers } from "@/hooks/useOffers";
+import { useInquiries, useDeleteInquiry } from "@/hooks/useInquiries";
+import { useUsers } from "@/hooks/useUsers";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
 import {
   Table,
@@ -11,30 +12,31 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import { nb } from "date-fns/locale";
 import type { DomainOfferDTO } from "@/lib/.generated/data-contracts";
-import { DomainOfferPhase } from "@/lib/.generated/data-contracts";
 import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { NewBadge } from "@/components/ui/new-badge";
 import { Button } from "@/components/ui/button";
-import { Trash2, ArrowRight } from "lucide-react";
-import { ConvertRequestModal } from "@/components/requests/convert-request-modal";
+import { Trash2 } from "lucide-react";
 import { CompanyBadge } from "@/components/ui/company-badge";
-import { useDeleteOffer } from "@/hooks/useOffers";
 import { DeleteConfirmationModal } from "@/components/ui/delete-confirmation-modal";
 
 export default function RequestsPage() {
-  // Fetch ONLY drafts
-  const { data, isLoading } = useOffers({
-    phase: DomainOfferPhase.OfferPhaseDraft,
-  });
-  const deleteOffer = useDeleteOffer();
+  const router = useRouter();
+  // Fetch inquiries (draft offers) from /inquiries endpoint
+  const { data, isLoading } = useInquiries();
+  const { data: users } = useUsers();
+  const deleteInquiry = useDeleteInquiry();
+
+  const handleRowClick = (offerId: string) => {
+    router.push(`/offers/${offerId}`);
+  };
 
   const [selectedOffer, setSelectedOffer] = useState<DomainOfferDTO | null>(
     null
   );
-  const [isConvertModalOpen, setIsConvertModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const offers = useMemo<DomainOfferDTO[]>(
@@ -42,10 +44,11 @@ export default function RequestsPage() {
     [data?.data]
   );
 
-  const handleConvertClick = (offer: DomainOfferDTO, e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent row click? Though we might not have row click navigation
-    setSelectedOffer(offer);
-    setIsConvertModalOpen(true);
+  // Helper to get user name by ID
+  const getUserName = (userId?: string) => {
+    if (!userId || !users) return "-";
+    const user = users.find((u: { id?: string }) => u.id === userId);
+    return (user as { name?: string })?.name || "-";
   };
 
   const handleDeleteClick = (offer: DomainOfferDTO, e: React.MouseEvent) => {
@@ -56,7 +59,7 @@ export default function RequestsPage() {
 
   const handleDeleteConfirm = async () => {
     if (selectedOffer?.id) {
-      await deleteOffer.mutateAsync(selectedOffer.id);
+      await deleteInquiry.mutateAsync(selectedOffer.id);
       setSelectedOffer(null);
     }
   };
@@ -72,18 +75,17 @@ export default function RequestsPage() {
                 Oversikt over innkommende forespørsler som må behandles.
               </p>
             </div>
-            {/* No "Create" button here as per requirements */}
           </div>
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 py-6 md:px-8">
           <div className="space-y-6">
             {isLoading ? (
-              <TableSkeleton rows={5} columns={4} />
+              <TableSkeleton rows={5} columns={6} />
             ) : offers.length === 0 ? (
               <div className="rounded-lg border bg-muted/20 py-12 text-center">
                 <p className="text-muted-foreground">
-                  Ingen forespørsler funnet 👍
+                  Ingen forespørsler funnet
                 </p>
               </div>
             ) : (
@@ -93,21 +95,37 @@ export default function RequestsPage() {
                     <TableRow>
                       <TableHead>Tittel</TableHead>
                       <TableHead>Kunde</TableHead>
+                      <TableHead>Ansvarlig</TableHead>
                       <TableHead>Selskap</TableHead>
+                      <TableHead>Frist</TableHead>
                       <TableHead>Opprettet</TableHead>
-                      <TableHead className="text-right">Handling</TableHead>
+                      <TableHead className="w-[50px]"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {offers.map((offer) => (
-                      <TableRow key={offer.id} className="hover:bg-muted/50">
+                      <TableRow
+                        key={offer.id}
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => offer.id && handleRowClick(offer.id)}
+                      >
                         <TableCell className="font-medium">
                           {offer.title}
                           <NewBadge createdAt={offer.createdAt} />
                         </TableCell>
-                        <TableCell>{offer.customerName}</TableCell>
+                        <TableCell>{offer.customerName || "-"}</TableCell>
+                        <TableCell>
+                          {getUserName(offer.responsibleUserId)}
+                        </TableCell>
                         <TableCell>
                           <CompanyBadge companyId={offer.companyId} />
+                        </TableCell>
+                        <TableCell>
+                          {offer.dueDate
+                            ? format(new Date(offer.dueDate), "d. MMM yyyy", {
+                                locale: nb,
+                              })
+                            : "-"}
                         </TableCell>
                         <TableCell>
                           {offer.createdAt
@@ -117,25 +135,16 @@ export default function RequestsPage() {
                               })
                             : "-"}
                         </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={(e) => handleDeleteClick(offer, e)}
-                              className="text-muted-foreground hover:text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              onClick={(e) => handleConvertClick(offer, e)}
-                              className="gap-2"
-                            >
-                              Konverter
-                              <ArrowRight className="h-4 w-4" />
-                            </Button>
-                          </div>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => handleDeleteClick(offer, e)}
+                            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                            title="Slett"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -143,17 +152,6 @@ export default function RequestsPage() {
                 </Table>
               </div>
             )}
-
-            {/* Pagination info could go here */}
-
-            <ConvertRequestModal
-              offer={selectedOffer}
-              isOpen={isConvertModalOpen}
-              onClose={() => {
-                setIsConvertModalOpen(false);
-                setSelectedOffer(null);
-              }}
-            />
 
             <DeleteConfirmationModal
               isOpen={isDeleteModalOpen}
@@ -165,7 +163,7 @@ export default function RequestsPage() {
               title="Slett forespørsel"
               description="Er du sikker på at du vil slette denne forespørselen? Dette kan ikke angres."
               itemTitle={selectedOffer?.title}
-              isLoading={deleteOffer.isPending}
+              isLoading={deleteInquiry.isPending}
             />
           </div>
         </div>

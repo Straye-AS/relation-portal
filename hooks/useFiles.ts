@@ -286,6 +286,10 @@ export function useUploadOfferFile() {
       queryClient.invalidateQueries({
         queryKey: ["files", "offer", variables.offerId],
       });
+      // Also invalidate offer details to update file count
+      queryClient.invalidateQueries({
+        queryKey: ["offers", variables.offerId, "details"],
+      });
       toast.success("Fil lastet opp");
     },
     onError: (error: Error) => {
@@ -390,18 +394,37 @@ export function useUploadOfferSupplierFile() {
 
 /**
  * Generic File Delete Hook
+ *
+ * Accepts an optional entityId and entityType to invalidate the correct detail queries
  */
 export function useDeleteFile() {
   const api = useApi();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (fileId: string) => {
+    mutationFn: async ({
+      fileId,
+      entityId,
+      entityType,
+    }: {
+      fileId: string;
+      entityId?: string;
+      entityType?: "offer" | "project" | "customer" | "supplier";
+    }) => {
       await api.files.filesDelete({ id: fileId });
+      return { entityId, entityType };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       // Invalidate all file queries to be safe
       queryClient.invalidateQueries({ queryKey: ["files"] });
+
+      // Also invalidate entity details to update file count
+      if (result?.entityId && result?.entityType === "offer") {
+        queryClient.invalidateQueries({
+          queryKey: ["offers", result.entityId, "details"],
+        });
+      }
+
       toast.success("Fil slettet");
     },
     onError: (error: Error) => {
