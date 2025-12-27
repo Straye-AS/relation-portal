@@ -50,6 +50,7 @@ const markdownComponents: Components = {
       className={cn("text-primary hover:underline", className)}
       target="_blank"
       rel="noopener noreferrer"
+      onClick={(e) => e.stopPropagation()}
       {...props}
     />
   ),
@@ -121,7 +122,7 @@ export function OfferDescription({
             className="min-h-[200px] resize-y font-mono text-base"
             placeholder="Skriv en beskrivelse... (Markdown støttes)"
           />
-          <div className="mt-2 flex justify-between text-xs text-muted-foreground">
+          <div className="flex justify-between text-xs text-muted-foreground">
             <span>
               Støtter Markdown: **bold**, *italic*, # heading, - lists
             </span>
@@ -133,7 +134,7 @@ export function OfferDescription({
 
   return (
     <Card className={cn("group w-full transition-all duration-200", className)}>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0">
         <CardTitle>Beskrivelse</CardTitle>
         {!readOnly && (
           <Button

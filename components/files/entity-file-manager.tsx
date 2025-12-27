@@ -38,7 +38,11 @@ export function CustomerFileManager({
   };
 
   const handleDelete = async (file: FileDTO) => {
-    await deleteMutation.mutateAsync(file.id!);
+    await deleteMutation.mutateAsync({
+      fileId: file.id!,
+      entityId: customerId,
+      entityType: "customer",
+    });
   };
 
   return (
@@ -72,7 +76,11 @@ export function ProjectFileManager({
   };
 
   const handleDelete = async (file: FileDTO) => {
-    await deleteMutation.mutateAsync(file.id!);
+    await deleteMutation.mutateAsync({
+      fileId: file.id!,
+      entityId: projectId,
+      entityType: "project",
+    });
   };
 
   return (
@@ -104,7 +112,11 @@ export function OfferFileManager({ offerId }: BaseProps & { offerId: string }) {
   };
 
   const handleDelete = async (file: FileDTO) => {
-    await deleteMutation.mutateAsync(file.id!);
+    await deleteMutation.mutateAsync({
+      fileId: file.id!,
+      entityId: offerId,
+      entityType: "offer",
+    });
   };
 
   return (
@@ -138,7 +150,11 @@ export function SupplierFileManager({
   };
 
   const handleDelete = async (file: FileDTO) => {
-    await deleteMutation.mutateAsync(file.id!);
+    await deleteMutation.mutateAsync({
+      fileId: file.id!,
+      entityId: supplierId,
+      entityType: "supplier",
+    });
   };
 
   return (
@@ -176,7 +192,11 @@ export function OfferSupplierFileManager({
   };
 
   const handleDelete = async (file: FileDTO) => {
-    await deleteMutation.mutateAsync(file.id!);
+    await deleteMutation.mutateAsync({
+      fileId: file.id!,
+      entityId: offerId,
+      entityType: "offer",
+    });
   };
 
   return (

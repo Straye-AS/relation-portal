@@ -100,46 +100,44 @@ export default function ProjectDetailPage({
     <AppLayout disableScroll>
       <div className="flex h-full flex-col">
         <div className="flex-none border-b bg-background px-4 py-4 md:px-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link href="/projects">
-                <Button variant="ghost" size="icon">
-                  <ArrowLeft className="h-5 w-5" />
-                </Button>
-              </Link>
-              <div>
-                <span className="mb-1 hidden font-mono text-sm uppercase tracking-wider text-muted-foreground md:block">
-                  Prosjekt: {project.projectNumber ?? ""}
-                </span>
-                <div className="flex items-center gap-3">
-                  <h1 className="text-3xl font-bold">
-                    <InlineEdit
-                      value={project.name || ""}
-                      onSave={async (val) => {
-                        await updateProjectName.mutateAsync({
-                          id: project.id!,
-                          data: { name: String(val) },
-                        });
-                      }}
-                      className="-ml-1 border-transparent p-0 text-3xl font-bold hover:border-transparent hover:bg-transparent"
-                    />
-                  </h1>
-                  <ProjectPhaseBadge
-                    phase={project.phase || "tilbud"}
-                    className="px-3 py-1 text-base"
-                  />
-                </div>
-                <p className="text-muted-foreground">
-                  Startet{" "}
-                  {format(
-                    new Date(project.startDate ?? new Date().toISOString()),
-                    "dd. MMMM yyyy",
-                    {
-                      locale: nb,
-                    }
-                  )}
-                </p>
+          <div className="flex items-start gap-4">
+            <Link href="/projects" className="shrink-0">
+              <Button variant="ghost" size="icon">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+            </Link>
+            <div className="min-w-0 flex-1">
+              <span className="mb-1 block font-mono text-sm uppercase tracking-wider text-muted-foreground">
+                Prosjekt: {project.projectNumber ?? ""}
+              </span>
+              <h1 className="text-2xl font-bold md:text-3xl">
+                <InlineEdit
+                  value={project.name || ""}
+                  onSave={async (val) => {
+                    await updateProjectName.mutateAsync({
+                      id: project.id!,
+                      data: { name: String(val) },
+                    });
+                  }}
+                  className="-ml-1 border-transparent p-0 text-2xl font-bold hover:border-transparent hover:bg-transparent md:text-3xl"
+                />
+              </h1>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <ProjectPhaseBadge
+                  phase={project.phase || "tilbud"}
+                  className="px-3 py-1"
+                />
               </div>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Startet{" "}
+                {format(
+                  new Date(project.startDate ?? new Date().toISOString()),
+                  "dd. MMMM yyyy",
+                  {
+                    locale: nb,
+                  }
+                )}
+              </p>
             </div>
           </div>
         </div>

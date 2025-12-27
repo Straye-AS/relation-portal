@@ -29,8 +29,10 @@ import {
   useRevertToSent,
   useUpdateOfferHealth,
 } from "@/hooks/useOffers";
-import { useCompanyStore } from "@/store/company-store"; // Imported for company access
+import { useCompanyStore, getAccessibleCompanies } from "@/store/company-store";
 import { useCustomers } from "@/hooks/useCustomers";
+import { useUpdateInquiryCompany } from "@/hooks/useInquiries";
+import { COMPANIES, CompanyId } from "@/lib/api/types";
 
 import confetti from "canvas-confetti";
 import {
@@ -61,12 +63,14 @@ import {
 } from "@/components/ui/card";
 import { CardSkeleton } from "@/components/ui/card-skeleton";
 import { OfferStatusBadge } from "@/components/offers/offer-status-badge";
+import { CompanyBadge } from "@/components/ui/company-badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
+  ArrowRight,
   Link as LinkIcon,
   Info,
   Check,
@@ -124,7 +128,6 @@ import {
   SortOrderEnum,
 } from "@/lib/.generated/data-contracts";
 import type { Project } from "@/lib/api/types";
-import { COMPANIES, type CompanyId } from "@/lib/api/types";
 
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
@@ -156,7 +159,11 @@ export default function OfferDetailPage({
   const resolvedParams = use(params);
   const router = useRouter();
   const { data: offer, isLoading } = useOfferWithDetails(resolvedParams.id);
-  const { userCompany: _userCompany } = useCompanyStore();
+  const { userCompany, canViewAllCompanies } = useCompanyStore();
+  const accessibleCompanies = getAccessibleCompanies(
+    canViewAllCompanies,
+    userCompany
+  ).filter((c) => c.id !== "all"); // Exclude "all" for individual offer assignment
   const { data: users } = useUsers();
 
   // Modal states - declared early so they can be used in query hooks
@@ -274,6 +281,7 @@ export default function OfferDetailPage({
   const revertToSent = useRevertToSent();
   const updateHealth = useUpdateOfferHealth();
   const deleteOffer = useDeleteOffer();
+  const updateInquiryCompany = useUpdateInquiryCompany();
 
   const [isResponsibleModalOpen, setIsResponsibleModalOpen] = useState(false);
 
@@ -305,6 +313,8 @@ export default function OfferDetailPage({
   const [showReopenConfirm, setShowReopenConfirm] = useState(false);
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
   const [showRevertToSentConfirm, setShowRevertToSentConfirm] = useState(false);
+  const [showConvertToOfferConfirm, setShowConvertToOfferConfirm] =
+    useState(false);
 
   useEffect(() => {
     if (confirmationAction === "win" && offer) {
@@ -390,25 +400,28 @@ export default function OfferDetailPage({
     <AppLayout disableScroll>
       <div className="flex h-full flex-col">
         <div className="flex-none border-b bg-background px-4 py-4 md:px-8">
-          <div className="w-full">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <Link href="/offers">
+          <div className="w-full space-y-4">
+            {/* Top row: Back button + Title info + Actions (on desktop) */}
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-4">
+                <Link href="/offers" className="shrink-0">
                   <Button variant="ghost" size="icon">
                     <ArrowLeft className="h-5 w-5" />
                   </Button>
                 </Link>
-                <div>
+                <div className="min-w-0 flex-1">
                   <span className="mb-1 block font-mono text-sm uppercase tracking-wider text-muted-foreground">
-                    {offer.offerNumber
-                      ? `Tilbud: ${formatOfferNumber(
-                          offer.offerNumber,
-                          offer.phase
-                        )}`
-                      : "Tilbud"}
+                    {offer.phase === "draft"
+                      ? "Forespørsel"
+                      : offer.offerNumber
+                        ? `Tilbud: ${formatOfferNumber(
+                            offer.offerNumber,
+                            offer.phase
+                          )}`
+                        : "Tilbud"}
                   </span>
-                  <div className="flex items-center gap-2">
-                    <h1 className="text-3xl font-bold">
+                  <div className="flex flex-col gap-2 md:flex-row md:items-center">
+                    <h1 className="text-2xl font-bold md:text-3xl">
                       {isLocked ? (
                         <span>{offer.title || ""}</span>
                       ) : (
@@ -420,16 +433,67 @@ export default function OfferDetailPage({
                               data: { title: String(val) },
                             });
                           }}
-                          className="-ml-1 border-transparent p-0 text-3xl font-bold hover:border-transparent hover:bg-transparent"
+                          className="-ml-1 border-transparent p-0 text-2xl font-bold hover:border-transparent hover:bg-transparent md:text-3xl"
                         />
                       )}
                     </h1>
-                    <OfferStatusBadge
-                      phase={offer.phase || "draft"}
-                      className="px-3 py-1 text-base"
-                    />
+                    <div className="flex flex-wrap items-center gap-2">
+                      <OfferStatusBadge
+                        phase={offer.phase || "draft"}
+                        className="px-3 py-1"
+                      />
+                      {/* Company badge/selector */}
+                      {offer.phase === "draft" &&
+                      accessibleCompanies.length > 1 ? (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button className="cursor-pointer">
+                              <CompanyBadge
+                                companyId={offer.companyId}
+                                className="px-3 py-1 hover:opacity-80"
+                              />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start">
+                            {accessibleCompanies.map((company) => (
+                              <DropdownMenuItem
+                                key={company.id}
+                                onClick={() => {
+                                  if (
+                                    offer.id &&
+                                    company.id !== offer.companyId
+                                  ) {
+                                    updateInquiryCompany.mutate({
+                                      id: offer.id,
+                                      companyId: company.id,
+                                    });
+                                  }
+                                }}
+                                className="cursor-pointer"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <div
+                                    className="h-3 w-3 rounded-full"
+                                    style={{ backgroundColor: company.color }}
+                                  />
+                                  <span>{company.name}</span>
+                                  {company.id === offer.companyId && (
+                                    <Check className="ml-auto h-4 w-4" />
+                                  )}
+                                </div>
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      ) : (
+                        <CompanyBadge
+                          companyId={offer.companyId}
+                          className="px-3 py-1"
+                        />
+                      )}
+                    </div>
                   </div>
-                  <p className="text-muted-foreground">
+                  <p className="mt-1 text-sm text-muted-foreground">
                     Opprettet{" "}
                     {formatDistanceToNow(
                       new Date(offer.createdAt ?? new Date().toISOString()),
@@ -441,9 +505,17 @@ export default function OfferDetailPage({
                   </p>
                 </div>
               </div>
-              {/* Status actions */}
-              <div className="flex items-center gap-2">
-                {(offer.phase === "draft" || offer.phase === "in_progress") && (
+
+              {/* Desktop actions - pushed to right by justify-between */}
+              <div className="hidden shrink-0 items-center gap-2 md:flex">
+                {offer.phase === "draft" && (
+                  <Button onClick={() => setShowConvertToOfferConfirm(true)}>
+                    <ArrowRight className="mr-2 h-4 w-4" />
+                    Konverter til tilbud
+                  </Button>
+                )}
+
+                {offer.phase === "in_progress" && (
                   <Button
                     className="bg-purple-600 text-white hover:bg-purple-700"
                     onClick={() => setIsSendDetailsModalOpen(true)}
@@ -531,435 +603,608 @@ export default function OfferDetailPage({
                       onClick={() => setShowDeleteConfirm(true)}
                     >
                       <Trash2 className="mr-2 h-4 w-4" />
-                      Slett tilbud
+                      {offer.phase === "draft"
+                        ? "Slett forespørsel"
+                        : "Slett tilbud"}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
+              </div>
+            </div>
 
-                {/* Confirmation Dialog */}
-                <AlertDialog
-                  open={!!confirmationAction}
-                  onOpenChange={(open) => !open && setConfirmationAction(null)}
-                >
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>
-                        {confirmationAction === "win" && "Konverter til ordre?"}
-                        {confirmationAction === "loss" && "Marker som tapt?"}
-                      </AlertDialogTitle>
-                      <AlertDialogDescription asChild>
-                        <div className="space-y-4">
-                          {confirmationAction === "win" && (
-                            <>
-                              {!offer.projectId ? (
-                                <>
-                                  <p>
-                                    <strong>Gratulerer!</strong>
-                                    <br /> Siden dette tilbudet ikke er koblet
-                                    til et prosjekt, vil et prosjekt bli
-                                    opprettet automatisk nar du bekrefter.
-                                  </p>
-                                  <p className="text-sm text-muted-foreground">
-                                    Dette vil være standardnavnet, men du kan
-                                    valgfritt endre det nedenfor til noe som gir
-                                    mer mening.
-                                  </p>
-                                  <div className="pt-2">
-                                    <Label htmlFor="project-name">
-                                      Prosjektnavn
-                                    </Label>
-                                    <Input
-                                      id="project-name"
-                                      value={projectCreationName}
-                                      onChange={(e) => {
-                                        const val = e.target.value;
-                                        // Capitalize first letter logic
-                                        const washed =
-                                          val.charAt(0).toUpperCase() +
-                                          val.slice(1);
-                                        setProjectCreationName(washed);
-                                      }}
-                                      className="mt-1"
-                                      placeholder="Prosjektnavn..."
-                                    />
-                                    {projectCreationName.length <= 2 && (
-                                      <p className="mt-1 text-xs text-red-500">
-                                        Navnet ma vaere lenger enn 2 tegn
-                                      </p>
-                                    )}
-                                  </div>
-                                </>
-                              ) : (
-                                <>
-                                  <p>
-                                    Herlig! Er du sikker pa at du vil konvertere
-                                    tilbudet som ordre?
-                                  </p>
-                                  {hasOtherActiveOffersFromSameCompany && (
-                                    <Alert className="mt-4 border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
-                                      <Info className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                                      <AlertTitle className="ml-2 text-amber-900 dark:text-amber-100">
-                                        Obs! Andre tilbud vil utlope
-                                      </AlertTitle>
-                                      <AlertDescription className="ml-2 text-amber-800 dark:text-amber-200">
-                                        Dette tilbudet er en del av et prosjekt.
-                                        Hvis du gjør om tilbudet til ordre, vil
-                                        alle andre aktive tilbud for{" "}
-                                        <span
-                                          className="font-medium"
-                                          style={{
-                                            color:
-                                              COMPANIES[
-                                                offer.companyId as CompanyId
-                                              ]?.color,
-                                          }}
-                                        >
-                                          {COMPANIES[
-                                            offer.companyId as CompanyId
-                                          ]?.name || "dette selskapet"}
-                                        </span>{" "}
-                                        i samme prosjekt automatisk settes til{" "}
-                                        <OfferStatusBadge phase="expired" />
-                                      </AlertDescription>
-                                    </Alert>
-                                  )}
-                                  <div className="mt-4 flex flex-wrap gap-4">
-                                    <div className="min-w-[140px] flex-1">
-                                      <Label className="text-sm text-muted-foreground">
-                                        Startdato{" "}
-                                        <span className="text-xs">
-                                          (valgfritt)
-                                        </span>
-                                      </Label>
-                                      <SmartDatePicker
-                                        value={orderStartDate}
-                                        onSelect={setOrderStartDate}
-                                        disabledDates={(date) => {
-                                          if (
-                                            orderEndDate &&
-                                            date > orderEndDate
-                                          )
-                                            return true;
-                                          return false;
-                                        }}
-                                        className="mt-1 w-full"
-                                      />
-                                    </div>
-                                    <div className="min-w-[140px] flex-1">
-                                      <Label className="text-sm text-muted-foreground">
-                                        Sluttdato{" "}
-                                        <span className="text-xs">
-                                          (valgfritt)
-                                        </span>
-                                      </Label>
-                                      <SmartDatePicker
-                                        value={orderEndDate}
-                                        onSelect={setOrderEndDate}
-                                        disabledDates={(date) => {
-                                          if (
-                                            orderStartDate &&
-                                            date < orderStartDate
-                                          )
-                                            return true;
-                                          return false;
-                                        }}
-                                        className="mt-1 w-full"
-                                      />
-                                    </div>
-                                  </div>
-                                  <div className="mt-2 text-sm text-muted-foreground">
-                                    Tilbudet gar over til ordrefase. Du kan
-                                    følge opp okonomi og fremdrift direkte pa
-                                    tilbudet.
-                                  </div>
-                                </>
-                              )}
-                            </>
-                          )}
-                          {confirmationAction === "loss" && (
+            {/* Confirmation Dialog */}
+            <AlertDialog
+              open={!!confirmationAction}
+              onOpenChange={(open) => !open && setConfirmationAction(null)}
+            >
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    {confirmationAction === "win" && "Konverter til ordre?"}
+                    {confirmationAction === "loss" && "Marker som tapt?"}
+                  </AlertDialogTitle>
+                  <AlertDialogDescription asChild>
+                    <div className="space-y-4">
+                      {confirmationAction === "win" && (
+                        <>
+                          {!offer.projectId ? (
                             <>
                               <p>
-                                Det var kjedelig! Er du sikker på at du vil
-                                markere tilbudet som tapt?
+                                <strong>Gratulerer!</strong>
+                                <br /> Siden dette tilbudet ikke er koblet til
+                                et prosjekt, vil et prosjekt bli opprettet
+                                automatisk nar du bekrefter.
                               </p>
                               <p className="text-sm text-muted-foreground">
-                                Tilbudet låses for redigering for å sikre
-                                historikk, og tas ut av aktiv pipeline.
+                                Dette vil være standardnavnet, men du kan
+                                valgfritt endre det nedenfor til noe som gir mer
+                                mening.
                               </p>
+                              <div className="pt-2">
+                                <Label htmlFor="project-name">
+                                  Prosjektnavn
+                                </Label>
+                                <Input
+                                  id="project-name"
+                                  value={projectCreationName}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    // Capitalize first letter logic
+                                    const washed =
+                                      val.charAt(0).toUpperCase() +
+                                      val.slice(1);
+                                    setProjectCreationName(washed);
+                                  }}
+                                  className="mt-1"
+                                  placeholder="Prosjektnavn..."
+                                />
+                                {projectCreationName.length <= 2 && (
+                                  <p className="mt-1 text-xs text-red-500">
+                                    Navnet ma vaere lenger enn 2 tegn
+                                  </p>
+                                )}
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <p>
+                                Herlig! Er du sikker pa at du vil konvertere
+                                tilbudet som ordre?
+                              </p>
+                              {hasOtherActiveOffersFromSameCompany && (
+                                <Alert className="mt-4 border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+                                  <Info className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                                  <AlertTitle className="ml-2 text-amber-900 dark:text-amber-100">
+                                    Obs! Andre tilbud vil utlope
+                                  </AlertTitle>
+                                  <AlertDescription className="ml-2 text-amber-800 dark:text-amber-200">
+                                    Dette tilbudet er en del av et prosjekt.
+                                    Hvis du gjør om tilbudet til ordre, vil alle
+                                    andre aktive tilbud for{" "}
+                                    <span
+                                      className="font-medium"
+                                      style={{
+                                        color:
+                                          COMPANIES[
+                                            offer.companyId as CompanyId
+                                          ]?.color,
+                                      }}
+                                    >
+                                      {COMPANIES[offer.companyId as CompanyId]
+                                        ?.name || "dette selskapet"}
+                                    </span>{" "}
+                                    i samme prosjekt automatisk settes til{" "}
+                                    <OfferStatusBadge phase="expired" />
+                                  </AlertDescription>
+                                </Alert>
+                              )}
+                              <div className="mt-4 flex flex-wrap gap-4">
+                                <div className="min-w-[140px] flex-1">
+                                  <Label className="text-sm text-muted-foreground">
+                                    Startdato{" "}
+                                    <span className="text-xs">(valgfritt)</span>
+                                  </Label>
+                                  <SmartDatePicker
+                                    value={orderStartDate}
+                                    onSelect={setOrderStartDate}
+                                    disabledDates={(date) => {
+                                      if (orderEndDate && date > orderEndDate)
+                                        return true;
+                                      return false;
+                                    }}
+                                    className="mt-1 w-full"
+                                  />
+                                </div>
+                                <div className="min-w-[140px] flex-1">
+                                  <Label className="text-sm text-muted-foreground">
+                                    Sluttdato{" "}
+                                    <span className="text-xs">(valgfritt)</span>
+                                  </Label>
+                                  <SmartDatePicker
+                                    value={orderEndDate}
+                                    onSelect={setOrderEndDate}
+                                    disabledDates={(date) => {
+                                      if (
+                                        orderStartDate &&
+                                        date < orderStartDate
+                                      )
+                                        return true;
+                                      return false;
+                                    }}
+                                    className="mt-1 w-full"
+                                  />
+                                </div>
+                              </div>
+                              <div className="mt-2 text-sm text-muted-foreground">
+                                Tilbudet gar over til ordrefase. Du kan følge
+                                opp okonomi og fremdrift direkte pa tilbudet.
+                              </div>
                             </>
                           )}
-                        </div>
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Avbryt</AlertDialogCancel>
-                      <AlertDialogAction
-                        className={cn(
-                          confirmationAction === "win" &&
-                            "bg-green-600 hover:bg-green-700",
-                          confirmationAction === "loss" &&
-                            "bg-red-600 hover:bg-red-700"
-                        )}
-                        disabled={
-                          confirmationAction === "win" &&
-                          !offer.projectId &&
-                          projectCreationName.length <= 2
-                        }
-                        onClick={async () => {
-                          if (confirmationAction === "win") {
-                            if (!offer.projectId) {
-                              // Use acceptOffer which creates a project
-                              await acceptOffer.mutateAsync({
-                                id: offer.id!,
-                                createProject: true,
-                                projectName: projectCreationName,
-                              });
-                            } else {
-                              // Use acceptOrder for the sent -> order transition
-                              await acceptOrder.mutateAsync({ id: offer.id! });
-                            }
-                            // Update start/end dates if provided
-                            if (orderStartDate) {
-                              updateStartDate.mutate({
-                                id: offer.id!,
-                                startDate: orderStartDate.toISOString(),
-                              });
-                            }
-                            if (orderEndDate) {
-                              updateEndDate.mutate({
-                                id: offer.id!,
-                                endDate: orderEndDate.toISOString(),
-                              });
-                            }
-                            // Reset date state
-                            setOrderStartDate(undefined);
-                            setOrderEndDate(undefined);
-                            confetti({
-                              particleCount: 100,
-                              spread: 70,
-                              origin: { y: 0.6 },
-                              colors: ["#f59e0b", "#d97706", "#b45309"],
-                            });
-                          } else if (confirmationAction === "loss") {
-                            rejectOffer.mutate({ id: offer.id! });
-                          }
-                          setConfirmationAction(null);
-                        }}
-                      >
-                        {confirmationAction === "win" && "Aksepter som ordre"}
-                        {confirmationAction === "loss" && "Marker som tapt"}
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-
-                <DeleteConfirmationModal
-                  isOpen={showDeleteConfirm}
-                  onClose={() => setShowDeleteConfirm(false)}
-                  onConfirm={async () => {
-                    await deleteOffer.mutateAsync(offer.id!);
-                    router.push("/offers");
-                  }}
-                  title="Slett tilbud?"
-                  description="Dette vil slette tilbudet permanent. Handlingen kan ikke angres."
-                />
-
-                {/* Reopen Confirmation Dialog */}
-                <AlertDialog
-                  open={showReopenConfirm}
-                  onOpenChange={setShowReopenConfirm}
-                >
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Gjenåpne som ordre?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Er du sikker på at du vil gjenåpne dette tilbudet som en
-                        aktiv ordre? Dette vil flytte tilbudet tilbake til
-                        ordrefasen slik at du kan fortsette å oppdatere
-                        kostnader, fakturering og fremdrift.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Avbryt</AlertDialogCancel>
-                      <AlertDialogAction
-                        className="bg-amber-600 hover:bg-amber-700"
-                        onClick={() => {
-                          reopenOffer.mutate(offer.id!);
-                          setShowReopenConfirm(false);
-                        }}
-                      >
-                        Gjenåpne som ordre
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-
-                {/* Revert to Sent Confirmation Dialog */}
-                <AlertDialog
-                  open={showRevertToSentConfirm}
-                  onOpenChange={setShowRevertToSentConfirm}
-                >
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>
-                        Tilbakestill til sendt?
-                      </AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Er du sikker på at du vil sette dette tilbudet tilbake
-                        til <OfferStatusBadge phase="sent" /> Start- og
-                        sluttdatoer vil bli fjernet.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Avbryt</AlertDialogCancel>
-                      <AlertDialogAction
-                        className="bg-amber-600 hover:bg-amber-700"
-                        onClick={() => {
-                          revertToSent.mutate(offer.id!);
-                          setShowRevertToSentConfirm(false);
-                        }}
-                      >
-                        Tilbakestill til sendt
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-
-                {/* Complete Confirmation Dialog */}
-                <AlertDialog
-                  open={showCompleteConfirm}
-                  onOpenChange={setShowCompleteConfirm}
-                >
-                  <AlertDialogContent className="max-w-xl">
-                    {(() => {
-                      const invoicedPercent =
-                        calcPrice > 0
-                          ? ((offer.invoiced || 0) / calcPrice) * 100
-                          : 0;
-                      const spentPercent =
-                        calcCost > 0
-                          ? ((offer.spent || 0) / calcCost) * 100
-                          : 0;
-                      const hasWarnings =
-                        invoicedPercent < 100 || spentPercent < 80;
-
-                      return (
-                        <>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>
-                              {hasWarnings
-                                ? "Marker som ferdig?"
-                                : "Klar til å fullføre!"}
-                            </AlertDialogTitle>
-                            <AlertDialogDescription asChild>
-                              <div className="space-y-4">
-                                {hasWarnings ? (
-                                  <>
-                                    <Alert className="border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
-                                      <Info className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                                      <AlertTitle className="ml-2 text-amber-900 dark:text-amber-100">
-                                        Er du sikker?
-                                      </AlertTitle>
-                                      <AlertDescription className="ml-2 text-amber-800 dark:text-amber-200">
-                                        Tallene indikerer at ordren kanskje ikke
-                                        er helt ferdig:
-                                      </AlertDescription>
-                                    </Alert>
-                                    <ul className="ml-4 list-disc space-y-1 text-sm text-muted-foreground">
-                                      {invoicedPercent < 100 && (
-                                        <li>
-                                          Fakturert:{" "}
-                                          <span className="font-medium text-foreground">
-                                            {Math.round(invoicedPercent)}%
-                                          </span>{" "}
-                                          av total pris (
-                                          {new Intl.NumberFormat("nb-NO", {
-                                            style: "currency",
-                                            currency: "NOK",
-                                            maximumFractionDigits: 0,
-                                          }).format(offer.invoiced || 0)}{" "}
-                                          av{" "}
-                                          {new Intl.NumberFormat("nb-NO", {
-                                            style: "currency",
-                                            currency: "NOK",
-                                            maximumFractionDigits: 0,
-                                          }).format(calcPrice)}
-                                          )
-                                        </li>
-                                      )}
-                                      {spentPercent < 80 && (
-                                        <li>
-                                          Påløpte kostnader:{" "}
-                                          <span className="font-medium text-foreground">
-                                            {Math.round(spentPercent)}%
-                                          </span>{" "}
-                                          av beregnet kostnad. <br />
-                                          Dette vil i så fall gi en dekningsgrad
-                                          på{" "}
-                                          <span
-                                            className={`font-medium ${
-                                              (offer.invoiced || 0) <
-                                              (offer.spent || 0)
-                                                ? "text-red-600"
-                                                : "text-green-600"
-                                            }`}
-                                          >
-                                            {Math.round(
-                                              (((offer.invoiced || 0) -
-                                                (offer.spent || 0)) /
-                                                (offer.invoiced || 1)) *
-                                                100
-                                            )}
-                                            %
-                                          </span>
-                                        </li>
-                                      )}
-                                    </ul>
-                                  </>
-                                ) : (
-                                  <Alert className="border-green-200 bg-green-50 text-green-900 dark:border-green-800 dark:bg-green-950/30 dark:text-green-200">
-                                    <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
-                                    <AlertTitle className="ml-2 text-green-900 dark:text-green-100">
-                                      Alt ser bra ut!
-                                    </AlertTitle>
-                                    <AlertDescription className="ml-2 text-green-800 dark:text-green-200">
-                                      Ordren er klar til å markeres som
-                                      fullført.
-                                    </AlertDescription>
-                                  </Alert>
-                                )}
-                                <p className="text-sm text-muted-foreground">
-                                  Når ordren er markert som ferdig vil den låses
-                                  for videre redigering. Du kan senere gjenåpne
-                                  den via menyen hvis nødvendig.
-                                </p>
-                              </div>
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Avbryt</AlertDialogCancel>
-                            <AlertDialogAction
-                              className={
-                                hasWarnings
-                                  ? "bg-slate-600 hover:bg-slate-700"
-                                  : "bg-green-600 hover:bg-green-700"
-                              }
-                              onClick={() => {
-                                completeOffer.mutate(offer.id!);
-                                setShowCompleteConfirm(false);
-                              }}
-                            >
-                              {hasWarnings
-                                ? "Marker som ferdig likevel"
-                                : "Fullfør ordren"}
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
                         </>
-                      );
-                    })()}
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
+                      )}
+                      {confirmationAction === "loss" && (
+                        <>
+                          <p>
+                            Det var kjedelig! Er du sikker på at du vil markere
+                            tilbudet som tapt?
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            Tilbudet låses for redigering for å sikre historikk,
+                            og tas ut av aktiv pipeline.
+                          </p>
+                        </>
+                      )}
+                    </div>
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Avbryt</AlertDialogCancel>
+                  <AlertDialogAction
+                    className={cn(
+                      confirmationAction === "win" &&
+                        "bg-green-600 hover:bg-green-700",
+                      confirmationAction === "loss" &&
+                        "bg-red-600 hover:bg-red-700"
+                    )}
+                    disabled={
+                      confirmationAction === "win" &&
+                      !offer.projectId &&
+                      projectCreationName.length <= 2
+                    }
+                    onClick={async () => {
+                      if (confirmationAction === "win") {
+                        if (!offer.projectId) {
+                          // Use acceptOffer which creates a project
+                          await acceptOffer.mutateAsync({
+                            id: offer.id!,
+                            createProject: true,
+                            projectName: projectCreationName,
+                          });
+                        } else {
+                          // Use acceptOrder for the sent -> order transition
+                          await acceptOrder.mutateAsync({ id: offer.id! });
+                        }
+                        // Update start/end dates if provided
+                        if (orderStartDate) {
+                          updateStartDate.mutate({
+                            id: offer.id!,
+                            startDate: orderStartDate.toISOString(),
+                          });
+                        }
+                        if (orderEndDate) {
+                          updateEndDate.mutate({
+                            id: offer.id!,
+                            endDate: orderEndDate.toISOString(),
+                          });
+                        }
+                        // Reset date state
+                        setOrderStartDate(undefined);
+                        setOrderEndDate(undefined);
+                        confetti({
+                          particleCount: 100,
+                          spread: 70,
+                          origin: { y: 0.6 },
+                          colors: ["#f59e0b", "#d97706", "#b45309"],
+                        });
+                      } else if (confirmationAction === "loss") {
+                        rejectOffer.mutate({ id: offer.id! });
+                      }
+                      setConfirmationAction(null);
+                    }}
+                  >
+                    {confirmationAction === "win" && "Aksepter som ordre"}
+                    {confirmationAction === "loss" && "Marker som tapt"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
+            <DeleteConfirmationModal
+              isOpen={showDeleteConfirm}
+              onClose={() => setShowDeleteConfirm(false)}
+              onConfirm={async () => {
+                await deleteOffer.mutateAsync(offer.id!);
+                router.push(offer.phase === "draft" ? "/requests" : "/offers");
+              }}
+              title={
+                offer.phase === "draft" ? "Slett forespørsel?" : "Slett tilbud?"
+              }
+              description={
+                offer.phase === "draft"
+                  ? "Dette vil slette forespørselen permanent. Handlingen kan ikke angres."
+                  : "Dette vil slette tilbudet permanent. Handlingen kan ikke angres."
+              }
+            />
+
+            {/* Reopen Confirmation Dialog */}
+            <AlertDialog
+              open={showReopenConfirm}
+              onOpenChange={setShowReopenConfirm}
+            >
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Gjenåpne som ordre?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Er du sikker på at du vil gjenåpne dette tilbudet som en
+                    aktiv ordre? Dette vil flytte tilbudet tilbake til
+                    ordrefasen slik at du kan fortsette å oppdatere kostnader,
+                    fakturering og fremdrift.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Avbryt</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-amber-600 hover:bg-amber-700"
+                    onClick={() => {
+                      reopenOffer.mutate(offer.id!);
+                      setShowReopenConfirm(false);
+                    }}
+                  >
+                    Gjenåpne som ordre
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Revert to Sent Confirmation Dialog */}
+            <AlertDialog
+              open={showRevertToSentConfirm}
+              onOpenChange={setShowRevertToSentConfirm}
+            >
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Tilbakestill til sendt?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Er du sikker på at du vil sette dette tilbudet tilbake til{" "}
+                    <OfferStatusBadge phase="sent" /> Start- og sluttdatoer vil
+                    bli fjernet.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Avbryt</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-amber-600 hover:bg-amber-700"
+                    onClick={() => {
+                      revertToSent.mutate(offer.id!);
+                      setShowRevertToSentConfirm(false);
+                    }}
+                  >
+                    Tilbakestill til sendt
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Convert to Offer Confirmation Dialog */}
+            <AlertDialog
+              open={showConvertToOfferConfirm}
+              onOpenChange={setShowConvertToOfferConfirm}
+            >
+              <AlertDialogContent>
+                {(() => {
+                  const missingFields: string[] = [];
+                  if (!offer.customerId) missingFields.push("Kunde");
+                  if (!offer.responsibleUserId) missingFields.push("Ansvarlig");
+                  const canConvert = missingFields.length === 0;
+
+                  return (
+                    <>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>
+                          Konvertere til tilbud?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription asChild>
+                          <div className="space-y-4">
+                            <p>
+                              Dette vil gjøre om forespørselen til et tilbud for{" "}
+                              <CompanyBadge
+                                companyId={offer.companyId}
+                                className="inline-flex"
+                              />{" "}
+                              og endre fasen til{" "}
+                              <OfferStatusBadge
+                                phase="in_progress"
+                                className="inline-flex"
+                              />
+                              .
+                            </p>
+                            {!canConvert && (
+                              <div className="rounded-md border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/30">
+                                <p className="mb-2 font-medium text-amber-900 dark:text-amber-100">
+                                  Før det kan skje må følgende fylles ut:
+                                </p>
+                                <ul className="ml-4 list-disc space-y-1 text-amber-800 dark:text-amber-200">
+                                  {missingFields.map((field) => (
+                                    <li key={field}>{field}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>
+                          {canConvert ? "Avbryt" : "Lukk"}
+                        </AlertDialogCancel>
+                        {canConvert && (
+                          <AlertDialogAction
+                            onClick={() => {
+                              advanceOffer.mutate({
+                                id: offer.id!,
+                                phase: "in_progress",
+                              });
+                              setShowConvertToOfferConfirm(false);
+                            }}
+                          >
+                            Konverter til tilbud
+                          </AlertDialogAction>
+                        )}
+                      </AlertDialogFooter>
+                    </>
+                  );
+                })()}
+              </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Complete Confirmation Dialog */}
+            <AlertDialog
+              open={showCompleteConfirm}
+              onOpenChange={setShowCompleteConfirm}
+            >
+              <AlertDialogContent className="max-w-xl">
+                {(() => {
+                  const invoicedPercent =
+                    calcPrice > 0
+                      ? ((offer.invoiced || 0) / calcPrice) * 100
+                      : 0;
+                  const spentPercent =
+                    calcCost > 0 ? ((offer.spent || 0) / calcCost) * 100 : 0;
+                  const hasWarnings =
+                    invoicedPercent < 100 || spentPercent < 80;
+
+                  return (
+                    <>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>
+                          {hasWarnings
+                            ? "Marker som ferdig?"
+                            : "Klar til å fullføre!"}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription asChild>
+                          <div className="space-y-4">
+                            {hasWarnings ? (
+                              <>
+                                <Alert className="border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+                                  <Info className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                                  <AlertTitle className="ml-2 text-amber-900 dark:text-amber-100">
+                                    Er du sikker?
+                                  </AlertTitle>
+                                  <AlertDescription className="ml-2 text-amber-800 dark:text-amber-200">
+                                    Tallene indikerer at ordren kanskje ikke er
+                                    helt ferdig:
+                                  </AlertDescription>
+                                </Alert>
+                                <ul className="ml-4 list-disc space-y-1 text-sm text-muted-foreground">
+                                  {invoicedPercent < 100 && (
+                                    <li>
+                                      Fakturert:{" "}
+                                      <span className="font-medium text-foreground">
+                                        {Math.round(invoicedPercent)}%
+                                      </span>{" "}
+                                      av total pris (
+                                      {new Intl.NumberFormat("nb-NO", {
+                                        style: "currency",
+                                        currency: "NOK",
+                                        maximumFractionDigits: 0,
+                                      }).format(offer.invoiced || 0)}{" "}
+                                      av{" "}
+                                      {new Intl.NumberFormat("nb-NO", {
+                                        style: "currency",
+                                        currency: "NOK",
+                                        maximumFractionDigits: 0,
+                                      }).format(calcPrice)}
+                                      )
+                                    </li>
+                                  )}
+                                  {spentPercent < 80 && (
+                                    <li>
+                                      Påløpte kostnader:{" "}
+                                      <span className="font-medium text-foreground">
+                                        {Math.round(spentPercent)}%
+                                      </span>{" "}
+                                      av beregnet kostnad. <br />
+                                      Dette vil i så fall gi en dekningsgrad på{" "}
+                                      <span
+                                        className={`font-medium ${
+                                          (offer.invoiced || 0) <
+                                          (offer.spent || 0)
+                                            ? "text-red-600"
+                                            : "text-green-600"
+                                        }`}
+                                      >
+                                        {Math.round(
+                                          (((offer.invoiced || 0) -
+                                            (offer.spent || 0)) /
+                                            (offer.invoiced || 1)) *
+                                            100
+                                        )}
+                                        %
+                                      </span>
+                                    </li>
+                                  )}
+                                </ul>
+                              </>
+                            ) : (
+                              <Alert className="border-green-200 bg-green-50 text-green-900 dark:border-green-800 dark:bg-green-950/30 dark:text-green-200">
+                                <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                <AlertTitle className="ml-2 text-green-900 dark:text-green-100">
+                                  Alt ser bra ut!
+                                </AlertTitle>
+                                <AlertDescription className="ml-2 text-green-800 dark:text-green-200">
+                                  Ordren er klar til å markeres som fullført.
+                                </AlertDescription>
+                              </Alert>
+                            )}
+                            <p className="text-sm text-muted-foreground">
+                              Når ordren er markert som ferdig vil den låses for
+                              videre redigering. Du kan senere gjenåpne den via
+                              menyen hvis nødvendig.
+                            </p>
+                          </div>
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Avbryt</AlertDialogCancel>
+                        <AlertDialogAction
+                          className={
+                            hasWarnings
+                              ? "bg-slate-600 hover:bg-slate-700"
+                              : "bg-green-600 hover:bg-green-700"
+                          }
+                          onClick={() => {
+                            completeOffer.mutate(offer.id!);
+                            setShowCompleteConfirm(false);
+                          }}
+                        >
+                          {hasWarnings
+                            ? "Marker som ferdig likevel"
+                            : "Fullfør ordren"}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </>
+                  );
+                })()}
+              </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Mobile action bar - shown only on mobile */}
+            <div className="flex items-center gap-2 md:hidden">
+              {offer.phase === "draft" && (
+                <Button
+                  onClick={() => setShowConvertToOfferConfirm(true)}
+                  className="flex-1"
+                >
+                  <ArrowRight className="mr-2 h-4 w-4" />
+                  Konverter til tilbud
+                </Button>
+              )}
+
+              {offer.phase === "in_progress" && (
+                <Button
+                  className="flex-1 bg-purple-600 text-white hover:bg-purple-700"
+                  onClick={() => setIsSendDetailsModalOpen(true)}
+                >
+                  <Send className="mr-2 h-4 w-4" />
+                  Marker som sendt
+                </Button>
+              )}
+
+              {offer.phase === "sent" && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="flex-1">
+                      Avgjør skjebne <ChevronDown className="ml-2 h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-56">
+                    <DropdownMenuItem
+                      className="cursor-pointer text-green-600 focus:bg-green-50 focus:text-green-600"
+                      onClick={() => setConfirmationAction("win")}
+                    >
+                      <Trophy className="mr-2 h-4 w-4" />
+                      Konverter til ordre
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="cursor-pointer text-red-600 focus:bg-red-50 focus:text-red-600"
+                      onClick={() => setConfirmationAction("loss")}
+                    >
+                      <XCircle className="mr-2 h-4 w-4" />
+                      Tapt
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="cursor-pointer text-muted-foreground focus:bg-gray-100"
+                      onClick={() =>
+                        advanceOffer.mutate({
+                          id: offer.id!,
+                          phase: "in_progress",
+                        })
+                      }
+                    >
+                      <Undo2 className="mr-2 h-4 w-4" />
+                      Tilbake til <OfferStatusBadge phase="in_progress" />
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+
+              {offer.phase === "order" && (
+                <Button
+                  className="flex-1 bg-slate-600 text-white hover:bg-slate-700"
+                  onClick={() => setShowCompleteConfirm(true)}
+                >
+                  <Check className="mr-2 h-4 w-4" />
+                  Marker som ferdig
+                </Button>
+              )}
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon">
+                    <MoreVertical className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {isCompletedPhase && (
+                    <DropdownMenuItem
+                      className="cursor-pointer text-amber-600 focus:bg-amber-50 focus:text-amber-600"
+                      onClick={() => setShowReopenConfirm(true)}
+                    >
+                      <Undo2 className="mr-2 h-4 w-4" />
+                      Gjenåpne som ordre
+                    </DropdownMenuItem>
+                  )}
+                  {isOrderPhase && (
+                    <DropdownMenuItem
+                      className="cursor-pointer text-amber-600 focus:bg-amber-50 focus:text-amber-600"
+                      onClick={() => setShowRevertToSentConfirm(true)}
+                    >
+                      <Undo2 className="mr-2 h-4 w-4" />
+                      Tilbakestill til sendt
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem
+                    className="cursor-pointer text-red-600 focus:bg-red-50 focus:text-red-600"
+                    onClick={() => setShowDeleteConfirm(true)}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    {offer.phase === "draft"
+                      ? "Slett forespørsel"
+                      : "Slett tilbud"}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>
@@ -1111,8 +1356,8 @@ export default function OfferDetailPage({
                             {offer.customerName}
                           </Link>
                         ) : (
-                          <span className="font-medium">
-                            {offer.customerName}
+                          <span className="font-medium hover:border-input hover:bg-transparent">
+                            {offer.customerName ?? "Ikke satt"}
                           </span>
                         )}
                         {!isLocked && (

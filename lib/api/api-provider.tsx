@@ -38,6 +38,7 @@ import { Deals } from "@/lib/.generated/Deals";
 import { Files } from "@/lib/.generated/Files";
 import { Notifications } from "@/lib/.generated/Notifications";
 
+import { Inquiries } from "@/lib/.generated/Inquiries";
 import { Offers } from "@/lib/.generated/Offers";
 import { Projects } from "@/lib/.generated/Projects";
 import { Search } from "@/lib/.generated/Search";
@@ -58,8 +59,8 @@ export interface ApiClient {
   dashboard: Dashboard;
   deals: Deals;
   files: Files;
+  inquiries: Inquiries;
   notifications: Notifications;
-
   offers: Offers;
   projects: Projects;
   search: Search;
@@ -192,8 +193,8 @@ export function ApiProvider({ children }: ApiProviderProps) {
       dashboard: new Dashboard(http),
       deals: new Deals(http),
       files: new Files(http),
+      inquiries: new Inquiries(http),
       notifications: new Notifications(http),
-
       offers: new Offers(http),
       projects: new Projects(http),
       search: new Search(http),
