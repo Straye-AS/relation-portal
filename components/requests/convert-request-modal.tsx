@@ -13,8 +13,10 @@ import { useUpdateOffer } from "@/hooks/useOffers";
 import type {
   DomainOfferDTO,
   DomainCreateOfferRequest,
+  DomainUpdateOfferRequest,
 } from "@/lib/.generated/data-contracts";
 import { DomainOfferPhase } from "@/lib/.generated/data-contracts";
+import { logger } from "@/lib/logging";
 
 // Lazy load the form component to reduce initial bundle size
 const OfferForm = lazy(() =>
@@ -54,12 +56,15 @@ export function ConvertRequestModal({
 
       await updateOffer.mutateAsync({
         id: offer.id!,
-        data: updatePayload as any, // DomainUpdateOfferRequest overlaps with Create mostly
+        data: updatePayload as DomainUpdateOfferRequest,
       });
 
       onClose();
     } catch (error) {
-      console.error("Failed to convert request:", error);
+      logger.error(
+        "Failed to convert request:",
+        error instanceof Error ? error : undefined
+      );
       // Toast is handled in hook
     }
   };

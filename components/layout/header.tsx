@@ -15,7 +15,11 @@ interface Route {
   active: boolean;
 }
 
-export function Header({ user }: { user: any }) {
+interface HeaderProps {
+  user: { id: string; name?: string } | null;
+}
+
+export function Header({ user }: HeaderProps) {
   const pathname = usePathname();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);

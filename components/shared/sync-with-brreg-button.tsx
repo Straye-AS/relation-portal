@@ -21,6 +21,7 @@ import {
 } from "@/lib/brreg";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { logger } from "@/lib/logging";
 
 interface CurrentData {
   name?: string;
@@ -77,7 +78,7 @@ export function SyncWithBrregButton({
 
     try {
       const enhet = await fetchBrregData(orgNumber);
-      console.log(enhet);
+      logger.debug("BRREG data fetched", { component: "SyncWithBrregButton" });
 
       if (!enhet) {
         setError("Fant ingen bedrift med dette organisasjonsnummeret");

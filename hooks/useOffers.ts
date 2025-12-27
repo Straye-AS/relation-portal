@@ -39,7 +39,14 @@ import {
   type DomainUpdateOfferDescriptionRequest,
   type DomainUpdateOfferDueDateRequest,
   type DomainUpdateOfferCustomerRequest,
+  type DomainUpdateOfferNumberRequest,
 } from "@/lib/.generated/data-contracts";
+
+// Request body for sendCreate endpoint (not in generated types but required by backend)
+interface SendOfferRequestBody {
+  sentDate?: string;
+  expirationDate?: string;
+}
 import { ContentType } from "@/lib/.generated/http-client";
 import { getHttpErrorStatus } from "@/lib/api/types";
 
@@ -174,10 +181,12 @@ export function useSendOffer() {
       sentDate?: string;
       expirationDate?: string;
     }) => {
-      const response = await api.offers.sendCreate({ id }, {
-        sentDate,
-        expirationDate,
-      } as any);
+      // API accepts body but generated types don't reflect this - use type assertion
+      const body: SendOfferRequestBody = { sentDate, expirationDate };
+      const response = await api.offers.sendCreate(
+        { id },
+        body as unknown as undefined
+      );
       return response.data;
     },
     onSuccess: (_, id) => {
@@ -606,11 +615,8 @@ export function useUpdateOfferNumber() {
       id: string;
       offerNumber: string;
     }) => {
-      // Using generic update since specific endpoint might not exist
-      // Casting to any to ensure we can pass offerNumber even if type definition is lagging
-      const response = await api.offers.offersUpdate({ id }, {
-        offerNumber,
-      } as any);
+      const request: DomainUpdateOfferNumberRequest = { offerNumber };
+      const response = await api.offers.offerNumberUpdate({ id }, request);
       return response.data;
     },
     onSuccess: (_, variables) => {

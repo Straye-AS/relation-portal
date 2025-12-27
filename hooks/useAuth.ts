@@ -1,7 +1,7 @@
 "use client";
 
 import { useMsal } from "@azure/msal-react";
-import { AccountInfo } from "@azure/msal-browser";
+import { AccountInfo, AuthError } from "@azure/msal-browser";
 import { loginRequest } from "@/lib/auth/msalConfig";
 import { User } from "@/types";
 import { useCallback, useMemo } from "react";
@@ -10,6 +10,7 @@ import {
   isLocalAuthEnabled,
   getAuthModePreference,
 } from "@/lib/auth/localAuthConfig";
+import { logger } from "@/lib/logging";
 
 /**
  * Auth context return type
@@ -61,26 +62,30 @@ export function useAuth(): AuthContext {
   const msalLogin = useCallback(async () => {
     // Prevent login if interaction is already in progress
     if (inProgress !== "none") {
-      console.warn("Login aborted: Interaction in progress", inProgress);
+      logger.warn("Login aborted: Interaction in progress", { inProgress });
       return;
     }
 
     try {
       await instance.loginRedirect(loginRequest);
     } catch (error) {
-      console.error("Login error:", error);
+      logger.error("Login error", error as Error);
 
       // Attempt to clear stuck interaction
+      const authError = error as AuthError;
       if (
-        (error as any).errorCode === "interaction_in_progress" ||
+        authError.errorCode === "interaction_in_progress" ||
         (error as Error).message?.includes("interaction_in_progress")
       ) {
         try {
-          console.log("Attempting to clear stuck interaction...");
+          logger.info("Attempting to clear stuck interaction...");
           await instance.handleRedirectPromise();
           // Optional: Auto-retry? For now, let's just clear it so next click works.
         } catch (e) {
-          console.error("Failed to recover from interaction_in_progress:", e);
+          logger.error(
+            "Failed to recover from interaction_in_progress",
+            e as Error
+          );
         }
       }
     }
@@ -93,7 +98,7 @@ export function useAuth(): AuthContext {
         account: account,
       });
     } catch (error) {
-      console.error("Logout error:", error);
+      logger.error("Logout error", error as Error);
       throw error;
     }
   }, [instance, account, inProgress]);
@@ -118,7 +123,7 @@ export function useAuth(): AuthContext {
         });
         return response.accessToken;
       } catch (error) {
-        console.warn("Failed to acquire token silently:", error);
+        logger.warn("Failed to acquire token silently", error as Error);
         // Do not automatically trigger popup, as it disrupts UX and can cause "interaction in progress" loops.
         // If the user needs to login, the app should handle the 401/null token.
         return null;

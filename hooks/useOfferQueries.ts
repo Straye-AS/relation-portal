@@ -12,14 +12,14 @@ import { useApi } from "@/lib/api/api-provider";
 import { useAuth } from "@/hooks/useAuth";
 import { useCompanyStore } from "@/store/company-store";
 import { ContentType } from "@/lib/.generated/http-client";
-import type { OffersListParams } from "@/lib/.generated/data-contracts";
+import type { OffersListParams2 } from "@/lib/.generated/data-contracts";
 import { Offer, OfferDetail } from "@/lib/api/types";
 
 /**
  * Fetch paginated list of offers
  */
 export function useOffers(
-  params?: Partial<OffersListParams>,
+  params?: OffersListParams2,
   options?: { enabled?: boolean }
 ) {
   const api = useApi();
@@ -29,7 +29,7 @@ export function useOffers(
   return useQuery({
     queryKey: ["offers", params, selectedCompanyId],
     queryFn: async () => {
-      const response = await api.offers.offersList((params as any) ?? {});
+      const response = await api.offers.offersList(params ?? {});
       return response.data;
     },
     enabled: isAuthenticated && (options?.enabled ?? true),

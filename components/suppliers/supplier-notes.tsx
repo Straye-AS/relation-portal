@@ -9,6 +9,7 @@ import { Edit2, Save, X } from "lucide-react";
 import { useUpdateSupplierNotes } from "@/hooks/useSuppliers";
 import { cn } from "@/lib/utils";
 import type { Components } from "react-markdown";
+import { logger } from "@/lib/logging";
 
 interface SupplierNotesProps {
   supplierId: string;
@@ -82,7 +83,10 @@ export function SupplierNotes({
       });
       setIsEditing(false);
     } catch (error) {
-      console.error("Failed to update notes", error);
+      logger.error(
+        "Failed to update notes",
+        error instanceof Error ? error : undefined
+      );
     }
   };
 

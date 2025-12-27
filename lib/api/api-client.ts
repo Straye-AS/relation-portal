@@ -6,15 +6,25 @@
  */
 
 import { HttpClient, type RequestParams } from "@/lib/.generated/http-client";
+import { logger } from "@/lib/logging";
 
 export interface TokenProvider {
   (): Promise<string | null>;
+}
+
+/**
+ * Handler for 401 unauthorized responses
+ * @returns true if token was refreshed and request should be retried, false otherwise
+ */
+export interface UnauthorizedHandler {
+  (): Promise<boolean>;
 }
 
 export interface ApiClientConfig {
   baseUrl?: string;
   tokenProvider: TokenProvider;
   headersProvider?: () => Promise<Record<string, string>>;
+  onUnauthorized?: UnauthorizedHandler;
 }
 
 /**
@@ -77,6 +87,9 @@ export function createApiClient(config: ApiClientConfig) {
   // Add response interceptor for common error handling with retry logic
   const originalRequest = client.request.bind(client);
 
+  // Track if we're already handling a 401 to prevent infinite loops
+  let handlingUnauthorized = false;
+
   client.request = async <T, E>(
     ...args: Parameters<typeof originalRequest>
   ) => {
@@ -94,14 +107,38 @@ export function createApiClient(config: ApiClientConfig) {
           const status = (error as { status: number }).status;
 
           if (status === 401) {
-            // Token expired or invalid - don't retry
-            console.error("[API] Unauthorized - token may be expired");
+            // Token expired or invalid - try to refresh
+            logger.warn("[API] Unauthorized - attempting token refresh");
+
+            // Prevent infinite loops if refresh also returns 401
+            if (!handlingUnauthorized && config.onUnauthorized) {
+              handlingUnauthorized = true;
+              try {
+                const tokenRefreshed = await config.onUnauthorized();
+                if (tokenRefreshed) {
+                  logger.info("[API] Token refreshed, retrying request");
+                  handlingUnauthorized = false;
+                  // Retry the original request with the new token
+                  continue;
+                }
+              } catch (refreshError) {
+                logger.error(
+                  "[API] Token refresh failed:",
+                  refreshError as Error
+                );
+              } finally {
+                handlingUnauthorized = false;
+              }
+            }
+
+            // If we get here, either refresh failed or wasn't available
+            logger.error("[API] Unauthorized - session expired");
             throw error;
           }
 
           if (status === 403) {
             // Forbidden - don't retry
-            console.error("[API] Forbidden - insufficient permissions");
+            logger.error("[API] Forbidden - insufficient permissions");
             throw error;
           }
 
@@ -109,19 +146,19 @@ export function createApiClient(config: ApiClientConfig) {
             // Rate limited - retry with exponential backoff
             if (attempt < RETRY_CONFIG.maxRetries) {
               const delay = getBackoffDelay(attempt);
-              console.warn(
+              logger.warn(
                 `[API] Rate limited, retrying in ${delay}ms (attempt ${attempt + 1}/${RETRY_CONFIG.maxRetries})`
               );
               await sleep(delay);
               continue;
             }
-            console.error("[API] Rate limited - max retries exceeded");
+            logger.error("[API] Rate limited - max retries exceeded");
           }
 
           if (status >= 500 && attempt < RETRY_CONFIG.maxRetries) {
             // Server error - retry with exponential backoff
             const delay = getBackoffDelay(attempt);
-            console.warn(
+            logger.warn(
               `[API] Server error (${status}), retrying in ${delay}ms (attempt ${attempt + 1}/${RETRY_CONFIG.maxRetries})`
             );
             await sleep(delay);

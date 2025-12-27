@@ -13,10 +13,11 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useCompanyStore } from "@/store/company-store";
 import { MAX_PAGE_SIZE, QUERY_STALE_TIME_DEFAULT } from "@/lib/constants";
+import { logger } from "@/lib/logging";
 import type {
   DomainUpdateProjectNameRequest,
   DomainUpdateProjectDescriptionRequest,
-  ProjectsListParams,
+  ProjectsListParams2,
 } from "@/lib/.generated/data-contracts";
 import type {
   CreateProjectRequest as DomainCreateProjectRequest,
@@ -27,7 +28,7 @@ import type {
  * Fetch paginated list of projects
  */
 export function useProjects(
-  params?: Partial<ProjectsListParams>,
+  params?: Partial<ProjectsListParams2>,
   options?: { enabled?: boolean }
 ) {
   const api = useApi();
@@ -37,7 +38,7 @@ export function useProjects(
   return useQuery({
     queryKey: ["projects", params, selectedCompanyId],
     queryFn: async () => {
-      const response = await api.projects.projectsList((params as any) ?? {});
+      const response = await api.projects.projectsList(params ?? {});
 
       return response.data;
     },
@@ -124,7 +125,7 @@ export function useCreateProject() {
       toast.success("Prosjekt opprettet");
     },
     onError: (error: Error) => {
-      console.error("Failed to create project:", error);
+      logger.error("Failed to create project", error);
       toast.error("Kunne ikke opprette prosjekt");
     },
   });
@@ -156,7 +157,7 @@ export function useUpdateProject() {
       toast.success("Prosjekt oppdatert");
     },
     onError: (error: Error) => {
-      console.error("Failed to update project:", error);
+      logger.error("Failed to update project", error);
       toast.error("Kunne ikke oppdatere prosjekt");
     },
   });
@@ -188,7 +189,7 @@ export function useUpdateProjectName() {
       toast.success("Prosjektnavn oppdatert");
     },
     onError: (error: Error) => {
-      console.error("Failed to update project name:", error);
+      logger.error("Failed to update project name", error);
       toast.error("Kunne ikke oppdatere prosjektnavn");
     },
   });
@@ -218,7 +219,7 @@ export function useUpdateProjectDescription() {
       toast.success("Beskrivelse oppdatert");
     },
     onError: (error: Error) => {
-      console.error("Failed to update description:", error);
+      logger.error("Failed to update description", error);
       toast.error("Kunne ikke oppdatere beskrivelse");
     },
   });
@@ -242,7 +243,7 @@ export function useDeleteProject() {
       toast.success("Prosjekt slettet");
     },
     onError: (error: Error) => {
-      console.error("Failed to delete project:", error);
+      logger.error("Failed to delete project", error);
       toast.error("Kunne ikke slette prosjekt");
     },
   });
@@ -278,7 +279,7 @@ export function useUpdateProjectPhase() {
       toast.success("Prosjektfase oppdatert");
     },
     onError: (error: Error) => {
-      console.error("Failed to update project phase:", error);
+      logger.error("Failed to update project phase", error);
       toast.error("Kunne ikke oppdatere prosjektfase");
     },
   });

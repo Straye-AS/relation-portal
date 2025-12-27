@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
+import { logger } from "@/lib/logging";
 import {
   Form,
   FormControl,
@@ -164,7 +165,10 @@ export function CustomerForm({
         setSearchResults(data._embedded?.enheter || []);
       }
     } catch (error) {
-      console.error("Brreg search failed", error);
+      logger.error(
+        "Brreg search failed",
+        error instanceof Error ? error : undefined
+      );
     } finally {
       setIsSearching(false);
     }

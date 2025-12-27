@@ -21,6 +21,15 @@ interface OfferRowProps {
   offer: DomainOfferDTO;
 }
 
+// Translate warning codes to Norwegian messages (short version for list)
+function getWarningMessage(warning: string): string {
+  const warningMessages: Record<string, string> = {
+    "value.not.equals.dwTotalFixedPrice": "Verdi avviker fra CW fastpris",
+    "missing.dwTotalFixedPrice": "Mangler fastpris i CW",
+  };
+  return warningMessages[warning] ?? warning;
+}
+
 export const OfferRow = memo(function OfferRow({ offer }: OfferRowProps) {
   const router = useRouter();
 
@@ -52,6 +61,23 @@ export const OfferRow = memo(function OfferRow({ offer }: OfferRowProps) {
       role="link"
       aria-label={`Åpne tilbud: ${offer.title}`}
     >
+      {/* Warning indicator column */}
+      <TableCell className="w-8 px-2">
+        {offer.phase === "order" &&
+          offer.warnings &&
+          offer.warnings.length > 0 && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center justify-center">
+                  <AlertTriangle className="h-4 w-4 text-amber-500" />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{getWarningMessage(offer.warnings[0])}</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
+      </TableCell>
       <TableCell className="whitespace-nowrap font-mono text-sm text-muted-foreground">
         {formatOfferNumber(offer.offerNumber, offer.phase)}
       </TableCell>
@@ -74,12 +100,12 @@ export const OfferRow = memo(function OfferRow({ offer }: OfferRowProps) {
       </TableCell>
       <TableCell className="text-sm">
         <div className="flex items-center gap-2">
-          {(offer as any).externalReference ? (
+          {offer.externalReference ? (
             <span
               className="max-w-[120px] truncate"
-              title={(offer as any).externalReference}
+              title={offer.externalReference}
             >
-              {(offer as any).externalReference}
+              {offer.externalReference}
             </span>
           ) : offer.phase === "order" ? (
             <Tooltip>

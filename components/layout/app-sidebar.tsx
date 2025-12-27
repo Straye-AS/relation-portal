@@ -33,6 +33,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useOffers } from "@/hooks/useOffers";
+import { DomainOfferPhase } from "@/lib/.generated/data-contracts";
 
 const navigation = [
   {
@@ -158,7 +159,7 @@ export function AppSidebar() {
     setSidebarOpen,
   } = useUIStore();
   const { data: offersData } = useOffers({
-    phase: "draft" as any,
+    phase: DomainOfferPhase.OfferPhaseDraft,
   });
   const requestCount = offersData?.data?.length ?? 0;
 

@@ -1,13 +1,17 @@
 "use client";
 
 import { OfferStatusBadge } from "@/components/offers/offer-status-badge";
-import { OfferHealthBadge } from "@/components/offers/offer-health-badge";
+import {
+  OfferHealthBadge,
+  type OfferHealth,
+} from "@/components/offers/offer-health-badge";
 import { ProjectPhaseBadge } from "@/components/projects/project-phase-badge";
 import { Badge } from "@/components/ui/badge";
 
 interface ActivityBodyProps {
   title: string;
   body: string;
+  targetName?: string;
 }
 
 // Format currency in Norwegian format
@@ -40,7 +44,11 @@ const healthMap: Record<string, string> = {
   over_budget: "over_budget",
 };
 
-export function ActivityBody({ title: _title, body }: ActivityBodyProps) {
+export function ActivityBody({
+  title: _title,
+  body,
+  targetName,
+}: ActivityBodyProps) {
   // Handle empty body
   if (!body) {
     return <span className="text-muted-foreground">Ingen beskrivelse</span>;
@@ -105,9 +113,9 @@ export function ActivityBody({ title: _title, body }: ActivityBodyProps) {
       return (
         <span className="flex flex-wrap items-center gap-1">
           <span>Helse endret fra</span>
-          <OfferHealthBadge health={fromHealth as any} />
+          <OfferHealthBadge health={fromHealth as OfferHealth} />
           <span>til</span>
-          <OfferHealthBadge health={toHealth as any} />
+          <OfferHealthBadge health={toHealth as OfferHealth} />
         </span>
       );
     }
@@ -137,6 +145,14 @@ export function ActivityBody({ title: _title, body }: ActivityBodyProps) {
           <Badge variant="outline" className="font-mono text-xs">
             {formatCurrency(toNum)}
           </Badge>
+          {targetName && (
+            <>
+              <span>for</span>
+              <Badge variant="secondary" className="text-xs font-normal">
+                {targetName}
+              </Badge>
+            </>
+          )}
         </span>
       );
     }
